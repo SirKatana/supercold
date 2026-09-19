@@ -41,3 +41,6 @@ One line per call made in auto mode, with why.
 - M7: `Performance.TIME_PROCESS` and `TIME_PHYSICS_PROCESS` are per-second maxima. The smoke bot measures real intervals between `process_frame` signals instead.
 - M7: bullets share one mesh pair and the pool pre-builds 48 at level load, shards share one mesh per material. A firefight allocates nothing.
 - M7: perf on F5 with 12 dudes and 40-bullet volleys, real GPU, vsync off: median 3.4 ms, p95 10 ms, 2 to 8 frames out of about 1190 between 17 and 31 ms. The "no frame over 16 ms" bar is not yet met, so the M7 box stays open. Re-measuring needs a real window, which needs the user's go-ahead.
+- M8: installed export templates are 4.7.0 while the editor is 4.7.2, so the preset names the 4.7.0 release template explicitly through `custom_template/release`. The build boots and loads floors.
+- M8: `export_presets.cfg` is committed (it holds no secrets) and `include_filter` carries `levels/*.txt` and `*.json`, which are not resources and would otherwise be left out of the pack.
+- M8: tuning values were left at the plan's numbers. No human has played a full run yet, so a real balance pass is still owed.

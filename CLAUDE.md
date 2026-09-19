@@ -290,8 +290,8 @@ Work in order. One milestone at a time. Tick the box here when its acceptance pa
 - [x] **M4 World.** Level parser, builder, navmesh bake, door, glass, elevator, floor flow in `game.gd`. *Accept:* parser tests, door HP table test, reachability validator passes on test room.
 - [x] **M5 Floors F1 to F5.** Author grids and json, waves, triggers, intro text, title, pause, settings. *Accept:* every floor loads headless, validator passes, smoke bot survives 10 s per floor with zero script errors.
 - [x] **M6 Boss.** Roof arena, Director, waves, ending screen. *Accept:* Director takes exactly 3 bullets, wave spawns after each flinch, ending triggers.
-- [ ] **M7 Juice.** Synth SFX, pitch follow, trails, shard polish, word flash, camera kick, hit pause of 0.05 s real on kill. *Accept:* no frame over 16 ms with 12 dudes and 40 bullets on F5, checked via `Performance` monitor in smoke bot run **without** `--headless`, since headless renders nothing.
-- [ ] **M8 Balance and ship.** Tuning pass, Linux export preset, `build/SuperCold.x86_64`, README with controls. *Accept:* exported binary boots to title.
+- [ ] **M7 Juice.** *(all features done; only the perf bar is open: 2 to 8 frames in about 1190 ran 17 to 31 ms, re-measure needs a real window and the user's OK)* Synth SFX, pitch follow, trails, shard polish, word flash, camera kick, hit pause of 0.05 s real on kill. *Accept:* no frame over 16 ms with 12 dudes and 40 bullets on F5, checked via `Performance` monitor in smoke bot run **without** `--headless`, since headless renders nothing.
+- [x] **M8 Balance and ship.** Tuning pass, Linux export preset, `build/SuperCold.x86_64`, README with controls. *Accept:* exported binary boots to title.
 
 ## 11. Verification loop, every milestone
 
@@ -321,14 +321,25 @@ on_empty = "godot4: ok"
 
 Headless gotchas:
 
+- A `-s` entry script compiles before autoloads exist. It must not name any class that refers to `Game` or `TimeManager`; `load()` such scripts at runtime. A compile failure there never reaches `quit`, so Godot hangs.
 - Scripts run with `-s` must `extends SceneTree`, do their work in `_initialize()`, and end with `quit(code)`. Without `quit` the process hangs.
 - Run the `--import` command once after a fresh clone and after adding any new `class_name` script. Otherwise tests fail with "Could not find type" because `.godot/` class cache is stale.
 - After adding collision bodies in a test, `await physics_frame` twice before any `direct_space_state` raycast, or the query sees an empty world.
 - Autoloads exist under `-s`, but are not ready inside `_init()`. Touch them from `_initialize()` onward.
 
-Then run for real with Godot MCP `run_project`, read `get_debug_output`, `stop_project`. Zero errors and zero
-warnings about missing resources required. Use the `game-development` skill to capture and look at a frame
-whenever visuals changed. Never claim a milestone done without the test output in hand.
+**Never open a game window on the user's desktop** for checks, captures, the smoke bot, or perf runs, unless
+the user asks. That rules out Godot MCP `run_project` and the `game-development` skill's `shot`. Instead:
+
+```bash
+rtk proxy tests/run.sh [test_file_basename]        # unit tests, exit code is Godot's own, gate every commit on it
+rtk proxy tools/shot.sh out.png <level> <seconds>  # one frame on a hidden Xvfb display, then Read the png
+rtk proxy tools/shot.sh out.png test_room 1.5 --do=punch   # also --do=hold
+```
+
+`tools/shot.sh` uses the OpenGL compatibility renderer on llvmpipe, so colours differ a little from Forward+.
+Frame-time numbers need the real GPU and a real window: ask the user before running
+`godot4 --disable-vsync --path . -s tests/smoke_bot.gd -- --perf --floor=f5_executive`.
+Never claim a milestone done without the test output in hand.
 
 ## 12. Auto mode rules
 
