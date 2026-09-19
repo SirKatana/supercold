@@ -62,6 +62,14 @@ func _arg(arg_name: String, fallback: String) -> String:
 ## Debug aid: `godot4 --path . -- --shot=/tmp/f.png --shot-after=1.5` saves one frame and quits.
 func _capture(path: String, after: float) -> void:
 	await get_tree().create_timer(after, true, false, true).timeout
+	if _arg("do", "") == "hold" and Game.player != null:
+		var pistol: Pistol = Pistol.create()
+		Game.entities_root(self).add_child(pistol)
+		Game.player.hands.pick_up(pistol)
+		await get_tree().create_timer(0.1, true, false, true).timeout
+	if _arg("do", "") == "punch" and Game.player != null:
+		Game.player.hands.punch()
+		await get_tree().create_timer(0.06, true, false, true).timeout
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(path)
 	get_tree().quit()
@@ -74,7 +82,7 @@ func _build_environment() -> void:
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(1, 1, 1)
 	env.ambient_light_energy = 0.55
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.glow_enabled = true
 	env.glow_intensity = 0.7
 	env.glow_bloom = 0.05

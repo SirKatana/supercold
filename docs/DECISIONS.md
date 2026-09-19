@@ -35,3 +35,9 @@ One line per call made in auto mode, with why.
 - M6: the Director is sized through `PinkDude.body_scale` (visual root plus a bigger capsule), not by scaling the CharacterBody3D. Scaling a physics body skews its collision shape.
 - M6: the killing third bullet calls no wave, so the Director brings two waves of four in total. Blunt hits only stagger him briefly and never disarm him.
 - M6: the roof exit pad is a helipad in the arena centre. Stepping on it after the floor is clear ends the run and shows time and deaths.
+- M7: the punch was a bare black cube thrown at the crosshair, and the user rightly called it broken. Replaced with two forearms and fists that jab in from the lower corners, alternating sides. Held items sit in the right fist.
+- M7: frames for review are rendered on a hidden Xvfb display with `tools/shot.sh` (OpenGL compatibility renderer on llvmpipe). Nothing may open a window on the user's desktop without being asked. Colours differ slightly from Forward+, layout and geometry do not.
+- M7: a `-s` entry script is compiled before autoloads exist, so it must not name any class that refers to `Game` or `TimeManager`. The smoke bot loads `bullet_pool.gd` at runtime for that reason. A compile failure there leaves Godot running with no `quit`, which looked like a hang.
+- M7: `Performance.TIME_PROCESS` and `TIME_PHYSICS_PROCESS` are per-second maxima. The smoke bot measures real intervals between `process_frame` signals instead.
+- M7: bullets share one mesh pair and the pool pre-builds 48 at level load, shards share one mesh per material. A firefight allocates nothing.
+- M7: perf on F5 with 12 dudes and 40-bullet volleys, real GPU, vsync off: median 3.4 ms, p95 10 ms, 2 to 8 frames out of about 1190 between 17 and 31 ms. The "no frame over 16 ms" bar is not yet met, so the M7 box stays open. Re-measuring needs a real window, which needs the user's go-ahead.

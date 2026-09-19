@@ -14,6 +14,8 @@ var _scale: PackedVector3Array = []
 var _age: float = 0.0
 var _life: float = 3.0
 
+static var _meshes: Dictionary[Material, PrismMesh] = {}
+
 
 ## `half_extents` is the volume shards start in, `impulse` pushes them all one way.
 static func burst(parent: Node, origin: Vector3, count: int, material: Material, half_extents: Vector3,
@@ -22,9 +24,12 @@ static func burst(parent: Node, origin: Vector3, count: int, material: Material,
 	parent.add_child(s)
 	s.global_position = origin
 	s._life = T.shard_life
-	var mesh := PrismMesh.new()
-	mesh.size = Vector3.ONE
-	mesh.material = material
+	if not _meshes.has(material):
+		var shared := PrismMesh.new()
+		shared.size = Vector3.ONE
+		shared.material = material
+		_meshes[material] = shared
+	var mesh: PrismMesh = _meshes[material]
 	s._multimesh = MultiMesh.new()
 	s._multimesh.transform_format = MultiMesh.TRANSFORM_3D
 	s._multimesh.mesh = mesh

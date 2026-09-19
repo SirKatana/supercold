@@ -126,6 +126,7 @@ func load_level(name_of_level: String) -> bool:
 	level = LevelBuilder.build(data)
 	level_root.add_child(level)
 	LevelBuilder.bake_navigation(level, data)
+	BulletPool.for_node(level)
 
 	player = PLAYER_SCENE.instantiate()
 	level.add_child(player)

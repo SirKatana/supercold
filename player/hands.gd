@@ -14,23 +14,47 @@ var held: Pickup = null
 var punch_cooldown_left: float = 0.0
 
 var _hold_point: Node3D
-var _fist: MeshInstance3D
+var _arm_r: Node3D
+var _arm_l: Node3D
+var _punch_left_next: bool = false
+var _arm_tween: Tween
+
+const ARM_REST_R := Vector3(0.31, -0.43, -0.26)
+const ARM_HOLD_R := Vector3(0.27, -0.27, -0.30)
+const ARM_REST_L := Vector3(-0.31, -0.43, -0.26)
 
 
 func _ready() -> void:
+	_arm_r = _build_arm(ARM_REST_R, -1.0)
+	_arm_l = _build_arm(ARM_REST_L, 1.0)
+	# Whatever is held sits in the right fist.
 	_hold_point = Node3D.new()
 	_hold_point.name = "HoldPoint"
-	_hold_point.position = Vector3(0.26, -0.2, -0.5)
-	add_child(_hold_point)
+	_hold_point.position = Vector3(0, 0.07, -0.30)
+	_arm_r.add_child(_hold_point)
 
-	_fist = MeshInstance3D.new()
+
+## A forearm and fist that reach in from a lower screen corner. `inward` is -1 for the
+## right arm and +1 for the left, so both angle toward the crosshair.
+func _build_arm(rest: Vector3, inward: float) -> Node3D:
+	var arm := Node3D.new()
+	arm.position = rest
+	arm.rotation = Vector3(0.12, 0.10 * inward, 0.0)
+	add_child(arm)
+	_add_arm_box(arm, Vector3(0.075, 0.075, 0.46), Vector3(0, 0, 0.02))
+	_add_arm_box(arm, Vector3(0.10, 0.10, 0.12), Vector3(0, 0, -0.26))
+	return arm
+
+
+func _add_arm_box(arm: Node3D, size: Vector3, at: Vector3) -> void:
+	var mi := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.1, 0.1, 0.16)
-	mesh.material = Mats.black()
-	_fist.mesh = mesh
-	_fist.position = Vector3(0.22, -0.28, -0.25)
-	_fist.visible = false
-	add_child(_fist)
+	mesh.size = size
+	mesh.material = Mats.arm()
+	mi.mesh = mesh
+	mi.position = at
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	arm.add_child(mi)
 
 
 func _physics_process(delta: float) -> void:
@@ -52,6 +76,7 @@ func primary() -> void:
 		var pistol: Pistol = held
 		if pistol.fire(player.aim_origin() + player.aim_direction() * 0.35, player.aim_direction(), player):
 			TimeManager.burst(T.burst_action)
+			player.fx.kick(0.05)
 			_kick()
 	elif held != null:
 		throw_held()
@@ -82,7 +107,7 @@ func punch() -> bool:
 	punch_cooldown_left = T.punch_cooldown
 	TimeManager.burst(T.burst_action)
 	Sfx.play(&"punch")
-	_animate_fist()
+	_animate_jab()
 	var from: Vector3 = player.aim_origin()
 	var query := PhysicsRayQueryParameters3D.create(from, from + player.aim_direction() * T.punch_range, PUNCH_MASK)
 	query.exclude = [player.get_rid()]
@@ -155,6 +180,7 @@ func _set_held(item: Pickup) -> void:
 			old.ammo_changed.disconnect(_on_ammo_changed)
 	held = item
 	held_changed.emit(item)
+	_arm_r.position = ARM_HOLD_R if item != null else ARM_REST_R
 	if item is Pistol:
 		var pistol: Pistol = item
 		pistol.ammo_changed.connect(_on_ammo_changed)
@@ -169,16 +195,23 @@ func _on_ammo_changed(ammo: int) -> void:
 
 func _kick() -> void:
 	var tween: Tween = create_tween()
-	_hold_point.rotation.x = 0.22
-	_hold_point.position.z = -0.44
-	tween.tween_property(_hold_point, ^"rotation:x", 0.0, 0.16)
-	tween.parallel().tween_property(_hold_point, ^"position:z", -0.5, 0.16)
+	_arm_r.rotation.x = 0.30
+	_arm_r.position.z = ARM_HOLD_R.z + 0.05
+	tween.tween_property(_arm_r, ^"rotation:x", 0.12, 0.16)
+	tween.parallel().tween_property(_arm_r, ^"position:z", ARM_HOLD_R.z, 0.16)
 
 
-func _animate_fist() -> void:
-	_fist.visible = true
-	_fist.position = Vector3(0.22, -0.28, -0.25)
-	var tween: Tween = create_tween()
-	tween.tween_property(_fist, ^"position", Vector3(0.06, -0.12, -0.75), 0.07)
-	tween.tween_property(_fist, ^"position", Vector3(0.22, -0.28, -0.25), 0.14)
-	tween.tween_callback(func() -> void: _fist.visible = false)
+## A short jab from alternating sides that ends near the crosshair, then pulls back.
+func _animate_jab() -> void:
+	var arm: Node3D = _arm_l if _punch_left_next else _arm_r
+	var rest: Vector3 = ARM_REST_L if _punch_left_next else ARM_REST_R
+	var side: float = -1.0 if _punch_left_next else 1.0
+	_punch_left_next = not _punch_left_next
+	if _arm_tween != null and _arm_tween.is_valid():
+		_arm_tween.kill()
+		_arm_l.position = ARM_REST_L
+		_arm_r.position = ARM_REST_R
+	_arm_tween = create_tween()
+	_arm_tween.tween_property(arm, ^"position", Vector3(0.11 * side, -0.20, -0.58), 0.07) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_arm_tween.tween_property(arm, ^"position", rest, 0.18).set_trans(Tween.TRANS_QUAD)

@@ -10,6 +10,7 @@ const MASK: int = 1 | 4 | 32  # world, enemies, breakables
 var head: Node3D
 var camera: Camera3D
 var hands: Hands
+var fx: CameraFx
 var alive: bool = true
 var input_enabled: bool = true
 
@@ -42,7 +43,12 @@ func _ready() -> void:
 	camera.near = 0.05
 	camera.current = true
 	head.add_child(camera)
-	Settings.changed.connect(func() -> void: camera.fov = Settings.fov)
+
+	fx = CameraFx.new()
+	fx.name = "CameraFx"
+	fx.camera = camera
+	add_child(fx)
+	Game.enemy_killed.connect(_on_enemy_killed)
 
 	hands = Hands.new()
 	hands.name = "Hands"
@@ -94,6 +100,10 @@ func _physics_process(delta: float) -> void:
 	var real: Vector3 = get_real_velocity()
 	TimeManager.report_move(Vector2(real.x, real.z).length() if alive else 0.0)
 	TimeManager.report_look(_look_rate if alive else 0.0)
+
+
+func _on_enemy_killed(_remaining: int) -> void:
+	fx.punch_fov(4.0)
 
 
 func on_bullet_hit(_bullet: Node, _point: Vector3, _normal: Vector3) -> void:

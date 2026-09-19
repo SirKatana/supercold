@@ -17,21 +17,26 @@ var age: float = 0.0
 var _trail: MeshInstance3D
 var _travelled: float = 0.0
 
+static var _core_mesh: BoxMesh
+static var _trail_mesh: BoxMesh
+
 
 func _ready() -> void:
+	# One mesh shared by every bullet, so spawning one costs a node and nothing else.
+	if _core_mesh == null:
+		_core_mesh = BoxMesh.new()
+		_core_mesh.size = Vector3(0.05, 0.05, 0.22)
+		_core_mesh.material = Mats.pink_bright()
+		_trail_mesh = BoxMesh.new()
+		_trail_mesh.size = Vector3(0.03, 0.03, 1.0)
+		_trail_mesh.material = Mats.pink_trail()
 	var core := MeshInstance3D.new()
-	var core_mesh := BoxMesh.new()
-	core_mesh.size = Vector3(0.05, 0.05, 0.22)
-	core_mesh.material = Mats.pink_bright()
-	core.mesh = core_mesh
+	core.mesh = _core_mesh
 	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(core)
 
 	_trail = MeshInstance3D.new()
-	var trail_mesh := BoxMesh.new()
-	trail_mesh.size = Vector3(0.03, 0.03, 1.0)
-	trail_mesh.material = Mats.pink_trail()
-	_trail.mesh = trail_mesh
+	_trail.mesh = _trail_mesh
 	_trail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_trail)
 	deactivate()
@@ -87,6 +92,10 @@ func step(wd: float) -> void:
 	global_position = point
 	if collider.has_method(&"on_bullet_hit"):
 		collider.call(&"on_bullet_hit", self, point, result["normal"])
+	else:
+		var normal: Vector3 = result["normal"]
+		Shatter.burst(Game.entities_root(self), point + normal * 0.05, 4, Mats.pink_bright(),
+			Vector3.ONE * 0.02, normal * 1.5, 0.05)
 	hit.emit(collider, point)
 	deactivate()
 

@@ -46,13 +46,21 @@ static func black() -> StandardMaterial3D:
 		return m)
 
 
+static func arm() -> StandardMaterial3D:
+	return _cached(&"arm", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.20, 0.21, 0.24)
+		m.roughness = 0.9
+		return m)
+
+
 static func pink() -> StandardMaterial3D:
 	return _cached(&"pink", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()
 		m.albedo_color = PINK
 		m.emission_enabled = true
-		m.emission = PINK
-		m.emission_energy_multiplier = 1.4
+		m.emission = Color(1.0, 0.12, 0.5)
+		m.emission_energy_multiplier = 0.9
 		m.roughness = 0.5
 		return m)
 

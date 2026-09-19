@@ -5,8 +5,16 @@ extends Node3D
 var _bullets: Array[Bullet] = []
 
 
+const PREWARM: int = 48
+
+
 func _ready() -> void:
 	add_to_group(&"bullet_pool")
+	# Built at level load so a firefight never allocates.
+	for i: int in PREWARM:
+		var bullet := Bullet.new()
+		add_child(bullet)
+		_bullets.append(bullet)
 
 
 static func for_node(node: Node) -> BulletPool:
