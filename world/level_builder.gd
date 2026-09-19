@@ -26,7 +26,44 @@ static func build(data: LevelData) -> Node3D:
 	if not data.open_sky:
 		_build_ceiling(data, level)
 	_place_pickups(data, nav, entities)
+	_place_breakables(data, nav, entities)
+	_place_exit_and_triggers(data, entities)
 	return level
+
+
+static func _place_breakables(data: LevelData, geometry: Node3D, entities: Node3D) -> void:
+	for entry: Dictionary in data.doors:
+		var door := Door.new()
+		door.name = "Door"
+		door.along_x = entry["along_x"]
+		door.position = data.cell_center(entry["cell"])
+		entities.add_child(door)
+		# Lintel and jambs fill the rest of the cell so the opening reads as a doorway.
+		var lintel_h: float = T.wall_height - Door.HEIGHT
+		var lintel_size := Vector3(data.cell_size, lintel_h, 0.3) if door.along_x else Vector3(0.3, lintel_h, data.cell_size)
+		var lintel: StaticBody3D = make_box(lintel_size, Mats.wall())
+		lintel.name = "Lintel"
+		lintel.position = data.cell_center(entry["cell"], Door.HEIGHT + lintel_h * 0.5)
+		geometry.add_child(lintel)
+	for entry: Dictionary in data.glass:
+		var pane := GlassPane.new()
+		pane.name = "Glass"
+		pane.along_x = entry["along_x"]
+		pane.position = data.cell_center(entry["cell"])
+		# Under Nav so the pane carves the navmesh.
+		geometry.add_child(pane)
+
+
+static func _place_exit_and_triggers(data: LevelData, entities: Node3D) -> void:
+	var elevator := Elevator.new()
+	elevator.name = "Elevator"
+	elevator.position = data.cell_center(data.exit_cell)
+	entities.add_child(elevator)
+	for cell: Vector2i in data.triggers:
+		var zone := TriggerZone.new()
+		zone.name = "Trigger"
+		zone.position = data.cell_center(cell)
+		entities.add_child(zone)
 
 
 static func create_pickup(kind: StringName) -> Pickup:
@@ -49,7 +86,7 @@ static func _place_pickups(data: LevelData, geometry: Node3D, entities: Node3D) 
 
 ## Bakes the navmesh from layer-1 static colliders under `Nav`. Must run with the level in the tree.
 ## Mesh parsing is avoided on purpose: it yields nothing under --headless.
-static func bake_navigation(level: Node3D, data: LevelData) -> void:
+static func bake_navigation(level: Node3D, _data: LevelData) -> void:
 	var region: NavigationRegion3D = level.get_node(^"Nav")
 	var mesh := NavigationMesh.new()
 	mesh.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
@@ -60,9 +97,8 @@ static func bake_navigation(level: Node3D, data: LevelData) -> void:
 	mesh.agent_radius = 0.5
 	mesh.agent_height = 1.75
 	mesh.agent_max_climb = 0.25
-	# Only the floor slab counts as ground. Wall and prop tops are cut off.
-	mesh.filter_baking_aabb = AABB(Vector3(-1, -1, -1),
-		Vector3(data.width * data.cell_size + 2.0, 1.6, data.height * data.cell_size + 2.0))
+	# No baking AABB: clipping it below wall height turns every wall into a low walkable platform.
+	# Wall and prop tops become unreachable islands instead, which is harmless.
 	region.navigation_mesh = mesh
 	region.bake_navigation_mesh(false)
 

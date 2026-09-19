@@ -22,3 +22,8 @@ One line per call made in auto mode, with why.
 - M3: unaware dudes only notice the player inside a forward cone or within 5 m, and gunfire alerts everyone within `dude_hearing`. Without this every dude on a floor woke up at once.
 - M3: dudes do not collide with the player or each other (mask is world and breakables only). CharacterBody pushing caused jitter, and rushers stop at punch range anyway.
 - M3: `Game.god_mode` (`-- --god=1`) exists for tests, the smoke bot and frame captures.
+- M4: no `filter_baking_aabb` on the navmesh. Clipping the bake volume below wall height made every wall a low walkable platform and paths ran straight through them. Wall and prop tops are unreachable islands instead.
+- M4: `LevelValidator.wait_until_synced()` polls until the nav map owns this level's region. A fixed frame count was not reliable after a level swap.
+- M4: doors slide open for dudes via an `Area3D` sensor, and are not part of the navmesh (layer 6 only), so paths run through doorways.
+- M4: every door cell gets a lintel on layer 1 above the 2.6 m panel so the opening reads as a doorway.
+- M4: breaking a door gives an action burst, same as a punch, so the panels visibly fly.
