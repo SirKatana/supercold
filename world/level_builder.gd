@@ -27,7 +27,7 @@ static func build(data: LevelData) -> Node3D:
 		_build_ceiling(data, level)
 	_place_pickups(data, nav, entities)
 	_place_breakables(data, nav, entities)
-	_place_exit_and_triggers(data, entities)
+	_place_exit_and_triggers(data, nav, entities)
 	return level
 
 
@@ -54,11 +54,32 @@ static func _place_breakables(data: LevelData, geometry: Node3D, entities: Node3
 		geometry.add_child(pane)
 
 
-static func _place_exit_and_triggers(data: LevelData, entities: Node3D) -> void:
-	var elevator := Elevator.new()
-	elevator.name = "Elevator"
-	elevator.position = data.cell_center(data.exit_cell)
-	entities.add_child(elevator)
+static func elevator_transform(data: LevelData, cell: Vector2i) -> Transform3D:
+	var dir: Vector2i = data.door_direction(cell)
+	# The cabin's doors are on its local -Z side.
+	return Transform3D(Basis(Vector3.UP, atan2(-dir.x, -dir.y)), data.cell_center(cell))
+
+
+static func _add_elevator(data: LevelData, cell: Vector2i, mode: Elevator.Mode, node_name: String,
+		geometry: Node3D, entities: Node3D) -> void:
+	var xform: Transform3D = elevator_transform(data, cell)
+	Elevator.build_shell(geometry, xform)
+	var lift := Elevator.new()
+	lift.name = node_name
+	lift.mode = mode
+	lift.transform = xform
+	entities.add_child(lift)
+
+
+static func _place_exit_and_triggers(data: LevelData, geometry: Node3D, entities: Node3D) -> void:
+	_add_elevator(data, data.player_start, Elevator.Mode.ARRIVAL, "Arrival", geometry, entities)
+	if data.exit_kind == &"helipad":
+		var pad := Helipad.new()
+		pad.name = "Exit"
+		pad.position = data.cell_center(data.exit_cell)
+		entities.add_child(pad)
+	else:
+		_add_elevator(data, data.exit_cell, Elevator.Mode.EXIT, "Exit", geometry, entities)
 	for cell: Vector2i in data.triggers:
 		var zone := TriggerZone.new()
 		zone.name = "Trigger"

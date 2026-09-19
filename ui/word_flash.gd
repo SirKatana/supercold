@@ -6,7 +6,8 @@ var _serial: int = 0
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Anchors alone leave the rect at zero size under a CanvasLayer, which pinned the word top-left.
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

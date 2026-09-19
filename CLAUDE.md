@@ -227,7 +227,8 @@ flinches 1 s after each hit and calls a wave of 4 dudes through rooftop doors.
 
 - **Door**: HP 2. Punch 1, thrown item 2, bullet 1. Breaks into 6 panel shards that fly away from the hit and stun enemies they strike. Enemies open doors normally by walking into them.
 - **Glass wall**: HP 1, blocks movement, not sight.
-- **Elevator**: locked until all enemies on floor are dead, then opens. Entering loads next floor.
+- **Elevator** (`world/elevator.gd`): a real cabin with steel frame, two sliding doors, a call button and digital floor screens outside and inside. Locked (screen shows enemies left) until the floor is clear. Then the button opens it, and the button reacts to a punch, a bullet or a thrown object. Step in, doors close, synthesized lift music plays for `elevator_ride_seconds`, next floor loads. The player starts every floor inside an arrival cabin, and stepping out flashes `LEVEL N` plus the intro text. Lifts run on **real time**, never world time. `P` and `X` sit against a wall so the cabin reads as built in. The roof exit is a `Helipad` (`"exit": "helipad"` in the sidecar).
+- **Pillar** `o`: full-height 1.1 m cover. Every floor needs at least 4, enemy spawns stay 4 cells apart and 6 from the player. Tests enforce both.
 - Collision layers: 1 world, 2 player, 3 enemies, 4 pickups, 5 bullets (raycast mask only), 6 breakables.
 
 ## 7. Levels: data-driven

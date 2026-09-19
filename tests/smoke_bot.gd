@@ -42,6 +42,7 @@ func _run() -> void:
 			only = arg.trim_prefix("--floor=")
 	var game: Node = root.get_node(^"Game")
 	game.set(&"god_mode", true)
+	game.set(&"fast_elevators", true)
 	var floors: PackedStringArray = game.get(&"FLOORS")
 	var total: int = 0
 	var passed: int = 0

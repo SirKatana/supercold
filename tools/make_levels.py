@@ -214,7 +214,7 @@ def roof():
     g.put("m", (24, 24))
     g.put("l", (24, 5))
     g.pillars(4, 4, 25, 25, step=5, ox=3, oy=3)
-    save("roof", g, {"intro": "ROOF\nTHE DIRECTOR. THREE BULLETS.", "open_sky": True})
+    save("roof", g, {"intro": "ROOF\nTHE DIRECTOR. THREE BULLETS.", "open_sky": True, "exit": "helipad"})
 
 
 if __name__ == "__main__":

@@ -9,6 +9,10 @@ var _flat: Array[AudioStreamPlayer] = []
 var _spatial: Array[AudioStreamPlayer3D] = []
 var _next_flat: int = 0
 var _next_spatial: int = 0
+var _music: AudioStreamPlayer
+var _music_task: int = -1
+var _music_wanted: bool = false
+var _music_tween: Tween
 
 
 func _ready() -> void:
@@ -25,6 +29,51 @@ func _ready() -> void:
 		spatial.add_to_group(&"time_scaled")
 		add_child(spatial)
 		_spatial.append(spatial)
+	# Lift music is not in `time_scaled`: it plays at true pitch however slow the world is.
+	_music = AudioStreamPlayer.new()
+	_music.volume_db = -60.0
+	add_child(_music)
+	# About 150k samples of synthesis. Done on a worker thread so boot does not stall.
+	_music_task = WorkerThreadPool.add_task(func() -> void:
+		var stream: AudioStreamWAV = SfxSynth.build_music()
+		_music.set_deferred(&"stream", stream))
+
+
+func _exit_tree() -> void:
+	if _music_task >= 0:
+		WorkerThreadPool.wait_for_task_completion(_music_task)
+
+
+func _process(_delta: float) -> void:
+	if _music_wanted and not _music.playing and _music.stream != null:
+		_music.play()
+
+
+func music_ready() -> bool:
+	return _music.stream != null
+
+
+func is_music_wanted() -> bool:
+	return _music_wanted
+
+
+func play_music() -> void:
+	_music_wanted = true
+	if _music_tween != null and _music_tween.is_valid():
+		_music_tween.kill()
+	_music_tween = create_tween()
+	_music_tween.tween_property(_music, ^"volume_db", -9.0, 0.8)
+
+
+func stop_music(fade_seconds: float = 1.5) -> void:
+	if not _music_wanted:
+		return
+	_music_wanted = false
+	if _music_tween != null and _music_tween.is_valid():
+		_music_tween.kill()
+	_music_tween = create_tween()
+	_music_tween.tween_property(_music, ^"volume_db", -60.0, fade_seconds)
+	_music_tween.tween_callback(_music.stop)
 
 
 func has_sound(sound: StringName) -> bool:

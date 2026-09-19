@@ -18,7 +18,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	_slowmo = ColorRect.new()
-	_slowmo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_slowmo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_slowmo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_slowmo_material = ShaderMaterial.new()
 	_slowmo_material.shader = preload("res://fx/slowmo.gdshader")
@@ -64,6 +64,7 @@ func _ready() -> void:
 
 	Game.floor_loaded.connect(_on_floor_loaded)
 	Game.state_changed.connect(_on_state_changed)
+	Game.floor_announced.connect(_on_floor_announced)
 	if Game.player != null:
 		_on_floor_loaded(Game.data)
 
@@ -86,7 +87,8 @@ func _process(delta: float) -> void:
 func _on_state_changed(state: Game.State) -> void:
 	match state:
 		Game.State.CLEARED:
-			_hint.text = "FLOOR CLEAR. TAKE THE ELEVATOR."
+			_hint.text = "FLOOR CLEAR. GET TO THE HELIPAD." if Game.data != null and Game.data.exit_kind == &"helipad" \
+				else "FLOOR CLEAR. HIT THE ELEVATOR BUTTON."
 			_words.flash(["SUPER", "COLD"], 0.42, 2)
 		Game.State.DEAD:
 			_hint.text = "R TO RESTART"
@@ -99,9 +101,9 @@ func _on_state_changed(state: Game.State) -> void:
 	visible = state != Game.State.TITLE and state != Game.State.ENDING
 
 
-func _on_floor_loaded(data: LevelData) -> void:
+func _on_floor_loaded(_data: LevelData) -> void:
 	_words.clear()
-	_show_intro(data.intro if data != null else "")
+	_show_intro("")
 	set_ammo(-1, 0)
 	if Game.player != null and Game.player.hands != null:
 		Game.player.hands.ammo_changed.connect(set_ammo)
@@ -118,6 +120,12 @@ func set_ammo(ammo: int, capacity: int) -> void:
 		pip.custom_minimum_size = Vector2(8, 18)
 		pip.color = Color(0.05, 0.05, 0.06, 0.9) if i < ammo else Color(0.05, 0.05, 0.06, 0.18)
 		_pips.add_child(pip)
+
+
+## Fired when the player walks out of the arrival lift.
+func _on_floor_announced(label: String, intro: String) -> void:
+	_words.flash([label], 1.1)
+	_show_intro(intro)
 
 
 func _show_intro(text: String) -> void:

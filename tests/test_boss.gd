@@ -81,8 +81,9 @@ func test_clearing_the_roof_ends_the_run() -> void:
 	var finished: Dictionary = {"count": 0}
 	var on_finished: Callable = func() -> void: finished["count"] += 1
 	Game.run_finished.connect(on_finished)
-	var elevator: Elevator = get_tree().get_first_node_in_group(&"elevator") as Elevator
-	Game.player.global_position = elevator.global_position + Vector3(0, 0.05, 0)
+	var pad: Helipad = get_tree().get_first_node_in_group(&"exit") as Helipad
+	check(pad != null, "the roof exit is a helipad")
+	Game.player.global_position = pad.global_position + Vector3(0, 0.05, 0)
 	for guard: int in 8:
 		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 			var dude: PinkDude = node as PinkDude

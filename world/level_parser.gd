@@ -81,6 +81,7 @@ static func parse(text: String, json_text: String = "") -> LevelData:
 			var d: Dictionary = parsed
 			data.intro = str(d.get("intro", ""))
 			data.open_sky = bool(d.get("open_sky", false))
+			data.exit_kind = StringName(str(d.get("exit", "elevator")))
 			for w: Variant in d.get("waves", []):
 				if w is Dictionary:
 					var wd: Dictionary = w

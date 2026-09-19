@@ -10,7 +10,7 @@ const TOLERANCE: float = 1.2
 ## Waits until the navigation map has picked up this level's region. Returns false on timeout.
 static func wait_until_synced(level: Node3D, data: LevelData, max_frames: int = 60) -> bool:
 	var region: NavigationRegion3D = level.get_node(^"Nav")
-	var start: Vector3 = data.cell_center(data.player_start)
+	var start: Vector3 = data.cell_center(data.front_cell(data.player_start))
 	for i: int in max_frames:
 		await level.get_tree().physics_frame
 		if not is_instance_valid(level):
@@ -30,8 +30,10 @@ static func unreachable(level: Node3D, data: LevelData) -> PackedStringArray:
 	if NavigationServer3D.map_get_iteration_id(map) == 0:
 		problems.append("navigation map never synced")
 		return problems
-	var start: Vector3 = data.cell_center(data.player_start)
-	var targets: Dictionary[String, Vector2i] = {"exit": data.exit_cell}
+	# Lift doorways are narrower than the navmesh agent, so walk from and to the cell at each lift's doors.
+	var start: Vector3 = data.cell_center(data.front_cell(data.player_start))
+	var exit_target: Vector2i = data.exit_cell if data.exit_kind == &"helipad" else data.front_cell(data.exit_cell)
+	var targets: Dictionary[String, Vector2i] = {"exit": exit_target}
 	if data.boss_cell.x >= 0:
 		targets["boss"] = data.boss_cell
 	for i: int in data.spawns.size():

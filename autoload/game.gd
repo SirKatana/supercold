@@ -7,6 +7,8 @@ signal floor_loaded(data: LevelData)
 signal floor_cleared
 signal enemy_killed(remaining: int)
 signal run_finished
+## The player stepped out of the arrival elevator. The HUD announces the level on this.
+signal floor_announced(label: String, intro: String)
 
 enum State { TITLE, PLAYING, DEAD, CLEARED, ENDING }
 
@@ -27,6 +29,10 @@ var alive_enemies: int = 0
 ## Debug and test aid: the player cannot die.
 var god_mode: bool = false
 var deaths: int = 0
+## Tests and the smoke bot: doors are already open and rides take a blink.
+var fast_elevators: bool = false
+## Set while reloading after a death, so the retry starts almost at once.
+var quick_arrival: bool = false
 var run_seconds: float = 0.0
 
 var _pending_waves: Array[Dictionary] = []
@@ -73,7 +79,25 @@ func load_floor(index: int) -> bool:
 
 func restart_floor() -> void:
 	if level_name != "":
+		quick_arrival = true
 		load_level(level_name)
+		quick_arrival = false
+
+
+func floor_label(name_of_level: String) -> String:
+	if name_of_level == "roof":
+		return "ROOF"
+	var index: int = FLOORS.find(name_of_level)
+	return "LEVEL %d" % (index + 1) if index >= 0 else "TEST"
+
+
+func next_floor_name() -> String:
+	var index: int = FLOORS.find(level_name)
+	return FLOORS[index + 1] if index >= 0 and index < FLOORS.size() - 1 else ""
+
+
+func announce_floor() -> void:
+	floor_announced.emit(floor_label(level_name), data.intro if data != null else "")
 
 
 func next_floor() -> void:
@@ -130,10 +154,9 @@ func load_level(name_of_level: String) -> bool:
 
 	player = PLAYER_SCENE.instantiate()
 	level.add_child(player)
-	player.global_position = data.cell_center(data.player_start, 0.05)
-	var centre := Vector3(data.width * data.cell_size * 0.5, 0.05, data.height * data.cell_size * 0.5)
-	if centre.distance_to(player.global_position) > 0.5:
-		player.look_at(Vector3(centre.x, player.global_position.y, centre.z))
+	# The player arrives inside the lift, facing its doors.
+	var arrival: Transform3D = LevelBuilder.elevator_transform(data, data.player_start)
+	player.global_transform = Transform3D(arrival.basis, arrival * Vector3(0, 0.05, 0.2))
 	player.died.connect(_on_player_died)
 
 	for spawn: Dictionary in data.spawns:

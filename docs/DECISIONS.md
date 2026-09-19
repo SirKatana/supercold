@@ -53,3 +53,11 @@ One line per call made in auto mode, with why.
 - Playtest 2: between shots a dude samples 48 navmesh spots within 6 m, runs (4.3 m/s) to the nearest one the player cannot see, waits 0.5 to 1.3 s, then peeks out again. It is a target only while it aims. The Director never hides.
 - Playtest 2: the held-gun angle was the mesh keeping its tumble from flight. `attach_to` now zeroes the mesh rotation.
 - Playtest 2: the pistol is about 45 primitives: slide, serrations, ejection port, sights, barrel, frame and rail, trigger and guard, raked grip with teal panels and grooves, magazine plate, hammer, cyan accent line and front sight.
+- Playtest 2 (user): wanted a realistic elevator. `world/elevator.gd` is a cabin with steel frame, two sliding panels, `ElevatorButton` on layer 6 (so punch ray, bullets and thrown items all reach it), and `Label3D` floor screens outside and inside. Locked shows enemies left, ready blinks the button, a press opens the doors, standing inside closes them, music plays, the next floor loads, and stepping out of the arrival cabin flashes `LEVEL N`.
+- Lifts run on real time. At world scale 0.06 a 0.9 s door would take 15 s, and the ride is the rest between fights.
+- The cabin's solid walls are built by `LevelBuilder` under the navmesh parent before the level enters the tree, so the bake carves around the cabin. The doors are a separate layer-1 body that also blocks sight, so dudes cannot see or shoot the player before the arrival doors open.
+- A lift doorway (1.2 m) is narrower than the navmesh agent allows, so the validator walks between the cells in front of each lift instead of the cabin cells.
+- Lift music is synthesized (`SfxSynth.build_music`): four jazz chords, soft electric piano, bass, shaker, pentatonic lead, 16 beats at 100 bpm, seamless loop. Built on a worker thread at boot so startup does not stall. It is not in `time_scaled`, so it keeps true pitch.
+- The roof keeps a landing pad (`Helipad`), chosen by `"exit": "helipad"` in the sidecar. An elevator going up from the roof made no sense.
+- Retries after death use `Game.quick_arrival`: doors open after 0.25 s and no music, so dying stays instant.
+- `WordFlash` and the slow-mo rect used `set_anchors_preset`, which leaves a zero-size rect under a CanvasLayer. The word sat top-left. Both now use `set_anchors_and_offsets_preset`.

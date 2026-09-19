@@ -62,6 +62,18 @@ func _arg(arg_name: String, fallback: String) -> String:
 ## Debug aid: `godot4 --path . -- --shot=/tmp/f.png --shot-after=1.5` saves one frame and quits.
 func _capture(path: String, after: float) -> void:
 	await get_tree().create_timer(after, true, false, true).timeout
+	if _arg("do", "").begins_with("lift") and Game.player != null:
+		var lift: Elevator = get_tree().get_first_node_in_group(&"elevator") as Elevator
+		if lift != null:
+			for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+				(node as PinkDude).die()
+			var out: Vector3 = -lift.global_transform.basis.z
+			Game.player.global_position = lift.global_position + out * 3.4 + lift.global_transform.basis.x * 0.5
+			Game.player.look_at(lift.global_position + Vector3(0, 0.0, 0) + out * 0.9)
+			if _arg("do", "") == "lift_open":
+				await get_tree().create_timer(0.3, true, false, true).timeout
+				lift.press()
+			await get_tree().create_timer(1.4, true, false, true).timeout
 	if _arg("do", "") == "shoot" and Game.player != null:
 		var gun: Pistol = Pistol.create()
 		Game.entities_root(self).add_child(gun)

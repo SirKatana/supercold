@@ -1,4 +1,5 @@
 {
   "intro": "ROOF\nTHE DIRECTOR. THREE BULLETS.",
-  "open_sky": true
+  "open_sky": true,
+  "exit": "helipad"
 }

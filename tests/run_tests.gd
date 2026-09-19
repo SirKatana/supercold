@@ -17,6 +17,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await process_frame
+	root.get_node(^"Game").set(&"fast_elevators", true)
 	var only: String = ""
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="):

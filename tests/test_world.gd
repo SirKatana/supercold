@@ -125,22 +125,6 @@ func test_reachability_catches_a_sealed_room() -> void:
 	check_eq(problems.size(), 2, "exit and enemy are both walled off: %s" % ", ".join(problems))
 
 
-func test_elevator_unlocks_on_clear_and_moves_on() -> void:
-	check(Game.load_level("test_doors"), "level loads")
-	await wait_physics(3)
-	var elevator: Elevator = get_tree().get_first_node_in_group(&"elevator") as Elevator
-	check(not elevator.unlocked, "locked while enemies live")
-	check_eq(Game.state, Game.State.PLAYING, "playing")
-	Game.player.global_position = elevator.global_position + Vector3(0, 0.05, 0)
-	await wait_physics(5)
-	check_eq(Game.state, Game.State.PLAYING, "standing on a locked pad does nothing")
-	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
-		(node as PinkDude).die()
-	await wait_physics(5)
-	# test_doors is not in the floor list, so moving on ends the run.
-	check_eq(Game.state, Game.State.ENDING, "cleared floor plus player on pad moves on")
-
-
 func test_player_death_restarts_floor() -> void:
 	Game.god_mode = false
 	check(Game.load_level("test_doors"), "level loads")

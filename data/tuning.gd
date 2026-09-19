@@ -85,3 +85,4 @@ extends Resource
 @export var glass_hp: int = 1
 @export var shard_life: float = 3.0
 @export var door_shard_stun_radius: float = 2.5
+@export var elevator_ride_seconds: float = 4.5
