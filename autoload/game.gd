@@ -13,7 +13,7 @@ enum State { TITLE, PLAYING, DEAD, CLEARED, ENDING }
 const T: Tuning = preload("res://data/tuning.tres")
 const PLAYER_SCENE: PackedScene = preload("res://player/player.tscn")
 const DUDE_SCENE: PackedScene = preload("res://enemies/pink_dude.tscn")
-const FLOORS: PackedStringArray = ["f1_lobby", "f2_offices", "f3_servers", "f4_labs", "f5_executive"]
+const FLOORS: PackedStringArray = ["f1_lobby", "f2_offices", "f3_servers", "f4_labs", "f5_executive", "roof"]
 
 var state: State = State.TITLE
 var level_root: Node3D
@@ -26,6 +26,8 @@ var kills: int = 0
 var alive_enemies: int = 0
 ## Debug and test aid: the player cannot die.
 var god_mode: bool = false
+var deaths: int = 0
+var run_seconds: float = 0.0
 
 var _pending_waves: Array[Dictionary] = []
 var _load_serial: int = 0
@@ -48,7 +50,20 @@ func _set_state(next: State) -> void:
 # ---------------------------------------------------------------- run flow
 
 func start_run(from_floor: int = 0) -> void:
+	deaths = 0
+	run_seconds = 0.0
 	load_floor(from_floor)
+
+
+func back_to_title() -> void:
+	unload_level()
+	level_name = ""
+	_set_state(State.TITLE)
+
+
+func _process(delta: float) -> void:
+	if (state == State.PLAYING or state == State.CLEARED) and not get_tree().paused:
+		run_seconds += delta
 
 
 func load_floor(index: int) -> bool:
@@ -143,8 +158,8 @@ func spawn_dude(at: Vector3, armed: bool) -> PinkDude:
 
 
 func spawn_boss(at: Vector3) -> PinkDude:
-	var boss: PinkDude = DUDE_SCENE.instantiate()
-	boss.set_script(load("res://enemies/director.gd"))
+	var boss := Director.new()
+	boss.name = "Director"
 	_register(boss, at)
 	return boss
 
@@ -211,6 +226,7 @@ func _on_player_died() -> void:
 	if state != State.PLAYING and state != State.CLEARED:
 		return
 	_set_state(State.DEAD)
+	deaths += 1
 	Sfx.play(&"death")
 	var serial: int = _load_serial
 	await get_tree().create_timer(T.death_restart_delay, true, false, true).timeout

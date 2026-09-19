@@ -8,6 +8,7 @@ const EXPECTED: Dictionary[String, Vector3i] = {
 	"f3_servers": Vector3i(28, 20, 8),
 	"f4_labs": Vector3i(36, 24, 10),
 	"f5_executive": Vector3i(40, 28, 12),
+	"roof": Vector3i(30, 30, 2),
 }
 
 

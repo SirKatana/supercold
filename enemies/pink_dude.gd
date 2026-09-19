@@ -13,6 +13,8 @@ var seeks_weapons: bool = true
 var hp: int = 3
 var alive: bool = true
 var weapon: Pistol = null
+## Visual and collision size multiplier. The Director is bigger.
+var body_scale: float = 1.0
 
 # Senses. Tests set `sense_override` and write these directly.
 var sense_override: bool = false
@@ -46,10 +48,10 @@ func _ready() -> void:
 
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.35
-	capsule.height = 1.8
+	capsule.radius = 0.35 * body_scale
+	capsule.height = 1.8 * body_scale
 	shape.shape = capsule
-	shape.position.y = 0.9
+	shape.position.y = 0.9 * body_scale
 	add_child(shape)
 
 	agent = NavigationAgent3D.new()
@@ -59,6 +61,7 @@ func _ready() -> void:
 	add_child(agent)
 
 	parts = BodyBuilder.build(self)
+	parts[&"root"].scale = Vector3.ONE * body_scale
 	_build_laser()
 
 	_states = {
@@ -153,7 +156,7 @@ func player_position() -> Vector3:
 
 
 func eye_position() -> Vector3:
-	return global_position + Vector3(0, 1.55 * scale.y, 0)
+	return global_position + Vector3(0, 1.55 * body_scale, 0)
 
 
 func sense() -> void:
@@ -226,7 +229,7 @@ func has_weapon() -> bool:
 
 
 func muzzle() -> Vector3:
-	return global_position + Vector3(0, 1.4 * scale.y, 0) - global_transform.basis.z.normalized() * 0.55
+	return global_position + Vector3(0, 1.4 * body_scale, 0) - global_transform.basis.z.normalized() * 0.55 * body_scale
 
 
 func shoot() -> void:
@@ -333,8 +336,8 @@ func die(_at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO) -> void:
 	collision_layer = 0
 	collision_mask = 0
 	_laser.visible = false
-	Shatter.burst(Game.entities_root(self), global_position + Vector3(0, 1.0 * scale.y, 0), 24, Mats.pink(),
-		Vector3(0.25, 0.8, 0.2) * scale.y, push * 4.0, 0.2 * scale.y)
+	Shatter.burst(Game.entities_root(self), global_position + Vector3(0, 1.0 * body_scale, 0), 24, Mats.pink(),
+		Vector3(0.25, 0.8, 0.2) * body_scale, push * 4.0, 0.2 * body_scale)
 	Sfx.play(&"shatter", global_position)
 	TimeManager.hit_pause(0.05)
 	died.emit(self)

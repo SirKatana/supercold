@@ -289,7 +289,7 @@ Work in order. One milestone at a time. Tick the box here when its acceptance pa
 - [x] **M3 Pink dudes.** Body builder, FSM, nav, aim telegraph, fire, stun, disarm, weapon seek, shatter, player death and restart. *Accept:* FSM transition tests. In test room, 3 dudes fight, die, drop pistols, and no errors in debug output.
 - [x] **M4 World.** Level parser, builder, navmesh bake, door, glass, elevator, floor flow in `game.gd`. *Accept:* parser tests, door HP table test, reachability validator passes on test room.
 - [x] **M5 Floors F1 to F5.** Author grids and json, waves, triggers, intro text, title, pause, settings. *Accept:* every floor loads headless, validator passes, smoke bot survives 10 s per floor with zero script errors.
-- [ ] **M6 Boss.** Roof arena, Director, waves, ending screen. *Accept:* Director takes exactly 3 bullets, wave spawns after each flinch, ending triggers.
+- [x] **M6 Boss.** Roof arena, Director, waves, ending screen. *Accept:* Director takes exactly 3 bullets, wave spawns after each flinch, ending triggers.
 - [ ] **M7 Juice.** Synth SFX, pitch follow, trails, shard polish, word flash, camera kick, hit pause of 0.05 s real on kill. *Accept:* no frame over 16 ms with 12 dudes and 40 bullets on F5, checked via `Performance` monitor in smoke bot run **without** `--headless`, since headless renders nothing.
 - [ ] **M8 Balance and ship.** Tuning pass, Linux export preset, `build/SuperCold.x86_64`, README with controls. *Accept:* exported binary boots to title.
 

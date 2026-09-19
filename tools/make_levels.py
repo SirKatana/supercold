@@ -150,9 +150,33 @@ def f5_executive():
     })
 
 
+def roof():
+    g = Grid(30, 30)
+    g.room(4, 4, 25, 25)     # arena
+    g.room(13, 1, 16, 2)     # north stairwell
+    g.room(13, 27, 16, 28)   # south stairwell
+    g.room(1, 13, 2, 16)     # west stairwell
+    g.room(27, 13, 28, 16)   # east stairwell
+    g.put("D", (14, 3), (15, 26), (3, 14), (26, 15))
+    g.put("w", (14, 1), (15, 28), (1, 15), (28, 14))
+    g.put("s", (9, 9), (20, 9), (9, 20), (20, 20), (14, 12), (15, 18))
+    g.put("c", (11, 15), (12, 15), (18, 15), (19, 15))
+    g.put("P", (6, 23))
+    g.put("B", (15, 7))
+    g.put("X", (15, 15))
+    g.put("a", (10, 6), (20, 6))
+    g.put("p", (7, 15), (23, 15))
+    g.put("b", (15, 22))
+    g.put("k", (5, 5))
+    g.put("m", (24, 24))
+    g.put("l", (24, 5))
+    save("roof", g, {"intro": "ROOF\nTHE DIRECTOR. THREE BULLETS.", "open_sky": True})
+
+
 if __name__ == "__main__":
     f1_lobby()
     f2_offices()
     f3_servers()
     f4_labs()
     f5_executive()
+    roof()

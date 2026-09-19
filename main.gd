@@ -4,8 +4,10 @@ extends Node3D
 const HUD_SCENE: PackedScene = preload("res://ui/hud.tscn")
 const TITLE_SCENE: PackedScene = preload("res://ui/title.tscn")
 const PAUSE_SCENE: PackedScene = preload("res://ui/pause.tscn")
+const ENDING_SCENE: PackedScene = preload("res://ui/ending.tscn")
 
 var _title: TitleScreen
+var _ending: EndingScreen
 
 
 func _ready() -> void:
@@ -19,6 +21,9 @@ func _ready() -> void:
 	_title = TITLE_SCENE.instantiate()
 	add_child(_title)
 	_title.start_requested.connect(_start_run)
+	_ending = ENDING_SCENE.instantiate()
+	add_child(_ending)
+	_ending.dismissed.connect(Game.back_to_title)
 	Game.state_changed.connect(_on_state_changed)
 
 	Game.god_mode = _arg("god", "") != ""
@@ -42,6 +47,8 @@ func _on_state_changed(state: Game.State) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if playing else Input.MOUSE_MODE_VISIBLE
 	if state == Game.State.TITLE:
 		_title.visible = true
+	elif state == Game.State.ENDING:
+		_ending.show_stats(Game.run_seconds, Game.deaths)
 
 
 ## Reads `--name=value` from the arguments after `--` on the command line.

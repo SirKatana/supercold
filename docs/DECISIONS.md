@@ -32,3 +32,6 @@ One line per call made in auto mode, with why.
 - M5: a trigger wave the player never walks into is released when the last enemy dies, so a floor can never soft-lock.
 - M5: the smoke bot runs in god mode and drives `Hands` directly plus movement actions. It checks for engine errors, not for skill.
 - M5: `FLOORS` lists only floors that exist. The roof joins at M6.
+- M6: the Director is sized through `PinkDude.body_scale` (visual root plus a bigger capsule), not by scaling the CharacterBody3D. Scaling a physics body skews its collision shape.
+- M6: the killing third bullet calls no wave, so the Director brings two waves of four in total. Blunt hits only stagger him briefly and never disarm him.
+- M6: the roof exit pad is a helipad in the arena centre. Stepping on it after the floor is clear ends the run and shows time and deaths.
