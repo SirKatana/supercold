@@ -2,6 +2,10 @@ extends Node3D
 ## Entry scene. Builds environment, light and HUD, then hands over to Game.
 
 const HUD_SCENE: PackedScene = preload("res://ui/hud.tscn")
+const TITLE_SCENE: PackedScene = preload("res://ui/title.tscn")
+const PAUSE_SCENE: PackedScene = preload("res://ui/pause.tscn")
+
+var _title: TitleScreen
 
 
 func _ready() -> void:
@@ -11,11 +15,33 @@ func _ready() -> void:
 	add_child(root)
 	Game.level_root = root
 	add_child(HUD_SCENE.instantiate())
+	add_child(PAUSE_SCENE.instantiate())
+	_title = TITLE_SCENE.instantiate()
+	add_child(_title)
+	_title.start_requested.connect(_start_run)
+	Game.state_changed.connect(_on_state_changed)
+
 	Game.god_mode = _arg("god", "") != ""
-	Game.load_level(_arg("level", "test_room"))
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	var level: String = _arg("level", "")
+	if level != "":
+		_title.visible = false
+		Game.load_level(level)
+	else:
+		Game.state_changed.emit(Game.State.TITLE)
 	if _arg("shot", "") != "":
 		_capture.call_deferred(_arg("shot", ""), float(_arg("shot-after", "1.0")))
+
+
+func _start_run() -> void:
+	_title.visible = false
+	Game.start_run(int(_arg("floor", "0")))
+
+
+func _on_state_changed(state: Game.State) -> void:
+	var playing: bool = state == Game.State.PLAYING or state == Game.State.CLEARED or state == Game.State.DEAD
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if playing else Input.MOUSE_MODE_VISIBLE
+	if state == Game.State.TITLE:
+		_title.visible = true
 
 
 ## Reads `--name=value` from the arguments after `--` on the command line.

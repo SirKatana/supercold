@@ -13,7 +13,7 @@ enum State { TITLE, PLAYING, DEAD, CLEARED, ENDING }
 const T: Tuning = preload("res://data/tuning.tres")
 const PLAYER_SCENE: PackedScene = preload("res://player/player.tscn")
 const DUDE_SCENE: PackedScene = preload("res://enemies/pink_dude.tscn")
-const FLOORS: PackedStringArray = ["f1_lobby", "f2_offices", "f3_servers", "f4_labs", "f5_executive", "roof"]
+const FLOORS: PackedStringArray = ["f1_lobby", "f2_offices", "f3_servers", "f4_labs", "f5_executive"]
 
 var state: State = State.TITLE
 var level_root: Node3D

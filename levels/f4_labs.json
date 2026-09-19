@@ -1,0 +1,10 @@
+{
+  "intro": "LABS\nLONG HALLS. WATCH THE BULLETS.",
+  "waves": [
+    {
+      "after_kills": 6,
+      "count": 4,
+      "armed": 3
+    }
+  ]
+}

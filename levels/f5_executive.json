@@ -1,0 +1,15 @@
+{
+  "intro": "EXECUTIVE FLOOR\nEVERYTHING YOU LEARNED.",
+  "waves": [
+    {
+      "after_kills": 5,
+      "count": 4,
+      "armed": 3
+    },
+    {
+      "after_kills": 10,
+      "count": 5,
+      "armed": 4
+    }
+  ]
+}

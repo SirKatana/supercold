@@ -8,6 +8,9 @@ var _crosshair: ColorRect
 var _debug: Label
 var _amount: float = 0.0
 var _pips: HBoxContainer
+var _words: WordFlash
+var _intro: Label
+var _hint: Label
 
 
 func _ready() -> void:
@@ -36,7 +39,31 @@ func _ready() -> void:
 	_pips.add_theme_constant_override(&"separation", 6)
 	_pips.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pips)
+	_intro = Label.new()
+	_intro.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_intro.position = Vector2(-400, 90)
+	_intro.size = Vector2(800, 120)
+	_intro.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_intro.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_intro.add_theme_font_size_override(&"font_size", 30)
+	_intro.add_theme_color_override(&"font_color", Color(0.04, 0.04, 0.05))
+	add_child(_intro)
+
+	_hint = Label.new()
+	_hint.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_hint.position = Vector2(-400, -110)
+	_hint.size = Vector2(800, 40)
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint.add_theme_font_size_override(&"font_size", 22)
+	_hint.add_theme_color_override(&"font_color", Color(0.04, 0.04, 0.05))
+	add_child(_hint)
+
+	_words = WordFlash.new()
+	add_child(_words)
+
 	Game.floor_loaded.connect(_on_floor_loaded)
+	Game.state_changed.connect(_on_state_changed)
 	if Game.player != null:
 		_on_floor_loaded(Game.data)
 
@@ -56,7 +83,25 @@ func _process(delta: float) -> void:
 		_debug.text = "world_scale %.2f   fps %d" % [TimeManager.world_scale, Engine.get_frames_per_second()]
 
 
-func _on_floor_loaded(_data: LevelData) -> void:
+func _on_state_changed(state: Game.State) -> void:
+	match state:
+		Game.State.CLEARED:
+			_hint.text = "FLOOR CLEAR. TAKE THE ELEVATOR."
+			_words.flash(["SUPER", "COLD"], 0.42, 2)
+		Game.State.DEAD:
+			_hint.text = "R TO RESTART"
+			_words.flash(["DEAD"], 0.5)
+		Game.State.PLAYING:
+			_hint.text = ""
+		_:
+			_hint.text = ""
+			_words.clear()
+	visible = state != Game.State.TITLE and state != Game.State.ENDING
+
+
+func _on_floor_loaded(data: LevelData) -> void:
+	_words.clear()
+	_show_intro(data.intro if data != null else "")
 	set_ammo(-1, 0)
 	if Game.player != null and Game.player.hands != null:
 		Game.player.hands.ammo_changed.connect(set_ammo)
@@ -73,3 +118,13 @@ func set_ammo(ammo: int, capacity: int) -> void:
 		pip.custom_minimum_size = Vector2(8, 18)
 		pip.color = Color(0.05, 0.05, 0.06, 0.9) if i < ammo else Color(0.05, 0.05, 0.06, 0.18)
 		_pips.add_child(pip)
+
+
+func _show_intro(text: String) -> void:
+	_intro.text = text
+	_intro.modulate.a = 1.0
+	if text == "":
+		return
+	var tween: Tween = create_tween()
+	tween.tween_interval(2.4)
+	tween.tween_property(_intro, ^"modulate:a", 0.0, 0.8)
