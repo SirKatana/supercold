@@ -18,6 +18,15 @@ func _ensure_root() -> void:
 		get_tree().root.add_child(level_root)
 
 
+## Where loose world objects (bullets, dropped items, shards) should live.
+func entities_root(fallback: Node) -> Node:
+	if level != null and is_instance_valid(level):
+		return level.get_node(^"Entities")
+	# No level (unit tests): stay beside the caller so nothing leaks into the tree root.
+	var parent: Node = fallback.get_parent()
+	return parent if parent != null else fallback.get_tree().root
+
+
 func unload_level() -> void:
 	if level != null and is_instance_valid(level):
 		level.free()

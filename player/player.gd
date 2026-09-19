@@ -9,6 +9,7 @@ const MASK: int = 1 | 4 | 32  # world, enemies, breakables
 
 var head: Node3D
 var camera: Camera3D
+var hands: Hands
 var alive: bool = true
 var input_enabled: bool = true
 
@@ -42,6 +43,11 @@ func _ready() -> void:
 	camera.current = true
 	head.add_child(camera)
 	Settings.changed.connect(func() -> void: camera.fov = Settings.fov)
+
+	hands = Hands.new()
+	hands.name = "Hands"
+	hands.player = self
+	camera.add_child(hands)
 
 
 func chest_position() -> Vector3:
@@ -88,6 +94,10 @@ func _physics_process(delta: float) -> void:
 	var real: Vector3 = get_real_velocity()
 	TimeManager.report_move(Vector2(real.x, real.z).length() if alive else 0.0)
 	TimeManager.report_look(_look_rate if alive else 0.0)
+
+
+func on_bullet_hit(_bullet: Node, _point: Vector3, _normal: Vector3) -> void:
+	die()
 
 
 func die() -> void:

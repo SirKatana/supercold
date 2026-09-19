@@ -12,3 +12,8 @@ One line per call made in auto mode, with why.
 - M1: time only advances from real horizontal velocity, so pushing into a wall does not move the clock.
 - M1: `tests/run.sh` wraps the test command so the exit code is Godot's and not a pipe's. An M1 commit went in with one failing test because `| tail` hid the code. Always gate commits on `tests/run.sh`.
 - M1: tests run with `--fixed-fps 60`, which removes real-time waiting and makes timing deterministic.
+- M2: pickups are `Area3D` with a sphere shape, not bodies. They never need to block movement, and a bullet ray can still hit them through `collide_with_areas`.
+- M2: placed pickups sit on a 0.9 m pedestal. A black pistol lying on a grey floor was hard to spot and hard to aim at.
+- M2: a thrown item is `dangerous` only until its first impact, and a weapon knocked out of a hand is never dangerous. Otherwise bounces would stun twice and dropped guns would hurt people.
+- M2: enemies fire without spending ammo (`fire(..., spend=false)`), their dropped pistol carries `enemy_drop_ammo` rounds.
+- M2: with no level loaded, `Game.entities_root()` falls back to the caller's parent, not the tree root. Thrown items leaked between unit tests otherwise.

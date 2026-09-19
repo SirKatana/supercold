@@ -25,7 +25,26 @@ static func build(data: LevelData) -> Node3D:
 	_build_props(data, nav)
 	if not data.open_sky:
 		_build_ceiling(data, level)
+	_place_pickups(data, nav, entities)
 	return level
+
+
+static func create_pickup(kind: StringName) -> Pickup:
+	if kind == &"pistol":
+		return Pistol.create()
+	return Throwable.create(kind)
+
+
+## Items sit on a small pedestal so they read at hand height against the white floor.
+static func _place_pickups(data: LevelData, geometry: Node3D, entities: Node3D) -> void:
+	for entry: Dictionary in data.pickups:
+		var pedestal: StaticBody3D = make_box(Vector3(0.7, 0.9, 0.7), Mats.prop())
+		pedestal.name = "Pedestal"
+		pedestal.position = data.cell_center(entry["cell"], 0.45)
+		geometry.add_child(pedestal)
+		var item: Pickup = create_pickup(entry["kind"])
+		item.position = data.cell_center(entry["cell"], 0.9 + Pickup.REST_HEIGHT)
+		entities.add_child(item)
 
 
 static func make_box(size: Vector3, material: Material, layer: int = LAYER_WORLD) -> StaticBody3D:
