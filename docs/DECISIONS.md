@@ -17,3 +17,8 @@ One line per call made in auto mode, with why.
 - M2: a thrown item is `dangerous` only until its first impact, and a weapon knocked out of a hand is never dangerous. Otherwise bounces would stun twice and dropped guns would hurt people.
 - M2: enemies fire without spending ammo (`fire(..., spend=false)`), their dropped pistol carries `enemy_drop_ammo` rounds.
 - M2: with no level loaded, `Game.entities_root()` falls back to the caller's parent, not the tree root. Thrown items leaked between unit tests otherwise.
+- M3: navmesh baking pulled forward from M4, dudes cannot move without it.
+- M3: glass sits on layers 1 and 6. Layer 1 makes it carve the navmesh so dudes never path into a pane; `Sight` skips anything in group `see_through` so it still does not block vision.
+- M3: unaware dudes only notice the player inside a forward cone or within 5 m, and gunfire alerts everyone within `dude_hearing`. Without this every dude on a floor woke up at once.
+- M3: dudes do not collide with the player or each other (mask is world and breakables only). CharacterBody pushing caused jitter, and rushers stop at punch range anyway.
+- M3: `Game.god_mode` (`-- --god=1`) exists for tests, the smoke bot and frame captures.

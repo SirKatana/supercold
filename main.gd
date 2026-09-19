@@ -11,6 +11,7 @@ func _ready() -> void:
 	add_child(root)
 	Game.level_root = root
 	add_child(HUD_SCENE.instantiate())
+	Game.god_mode = _arg("god", "") != ""
 	Game.load_level(_arg("level", "test_room"))
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if _arg("shot", "") != "":

@@ -47,6 +47,26 @@ static func _place_pickups(data: LevelData, geometry: Node3D, entities: Node3D) 
 		entities.add_child(item)
 
 
+## Bakes the navmesh from layer-1 static colliders under `Nav`. Must run with the level in the tree.
+## Mesh parsing is avoided on purpose: it yields nothing under --headless.
+static func bake_navigation(level: Node3D, data: LevelData) -> void:
+	var region: NavigationRegion3D = level.get_node(^"Nav")
+	var mesh := NavigationMesh.new()
+	mesh.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
+	mesh.geometry_collision_mask = LAYER_WORLD
+	mesh.geometry_source_geometry_mode = NavigationMesh.SOURCE_GEOMETRY_ROOT_NODE_CHILDREN
+	mesh.cell_size = 0.25
+	mesh.cell_height = 0.25
+	mesh.agent_radius = 0.5
+	mesh.agent_height = 1.75
+	mesh.agent_max_climb = 0.25
+	# Only the floor slab counts as ground. Wall and prop tops are cut off.
+	mesh.filter_baking_aabb = AABB(Vector3(-1, -1, -1),
+		Vector3(data.width * data.cell_size + 2.0, 1.6, data.height * data.cell_size + 2.0))
+	region.navigation_mesh = mesh
+	region.bake_navigation_mesh(false)
+
+
 static func make_box(size: Vector3, material: Material, layer: int = LAYER_WORLD) -> StaticBody3D:
 	var body := StaticBody3D.new()
 	body.collision_layer = layer

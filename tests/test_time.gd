@@ -5,6 +5,7 @@ func after_each() -> void:
 	for action: StringName in [&"move_forward", &"move_back", &"move_left", &"move_right"]:
 		Input.action_release(action)
 	TimeManager.override_scale = -1.0
+	Game.god_mode = false
 	Game.unload_level()
 
 
@@ -47,6 +48,7 @@ func test_world_delta_scales() -> void:
 
 
 func test_standing_still_settles_to_min_and_walking_reaches_one() -> void:
+	Game.god_mode = true
 	check(Game.load_level("test_room"), "test room should load")
 	await wait_physics(90)
 	check_near(TimeManager.world_scale, T.min_scale, 0.001, "standing still")

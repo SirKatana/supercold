@@ -101,7 +101,7 @@ func on_bullet_hit(_bullet: Node, _point: Vector3, _normal: Vector3) -> void:
 
 
 func die() -> void:
-	if not alive:
+	if not alive or Game.god_mode:
 		return
 	alive = false
 	velocity = Vector3.ZERO
