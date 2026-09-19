@@ -74,6 +74,29 @@ func _capture(path: String, after: float) -> void:
 				await get_tree().create_timer(0.3, true, false, true).timeout
 				lift.press()
 			await get_tree().create_timer(1.4, true, false, true).timeout
+	if (_arg("do", "") == "ram" or _arg("do", "") == "breach") and Game.player != null:
+		var ram: Ram = Ram.create()
+		Game.entities_root(self).add_child(ram)
+		if _arg("do", "") == "breach":
+			var target: Vector3 = Game.data.cell_center(Vector2i(5, 3), 0.05)
+			Game.player.global_position = target + Vector3(-2.6, 0, 0.6)
+			Game.player.look_at(target)
+			Game.player.head.rotation.x = 0.0
+		Game.player.hands.pick_up(ram)
+		await get_tree().create_timer(0.3, true, false, true).timeout
+		if _arg("do", "") == "breach":
+			Game.player.hands.primary()
+			ram.cooldown_left = 0.0
+			await get_tree().create_timer(0.4, true, false, true).timeout
+			Game.player.hands.primary()
+			TimeManager.override_scale = 0.5
+			await get_tree().create_timer(0.7, true, false, true).timeout
+	if _arg("do", "").begins_with("die") and Game.player != null:
+		Game.god_mode = false
+		Game.player.global_position = Game.data.cell_center(Vector2i(5, 7), 0.05)
+		Game.player._last_hit_direction = Vector3(0.3, 0, 1).normalized()
+		Game.player.die()
+		await get_tree().create_timer(0.45 if _arg("do", "") == "die_early" else 1.7, true, false, true).timeout
 	if _arg("do", "") == "shoot" and Game.player != null:
 		var gun: Pistol = Pistol.create()
 		Game.entities_root(self).add_child(gun)

@@ -61,3 +61,11 @@ One line per call made in auto mode, with why.
 - The roof keeps a landing pad (`Helipad`), chosen by `"exit": "helipad"` in the sidecar. An elevator going up from the roof made no sense.
 - Retries after death use `Game.quick_arrival`: doors open after 0.25 s and no music, so dying stays instant.
 - `WordFlash` and the slow-mo rect used `set_anchors_preset`, which leaves a zero-size rect under a CanvasLayer. The word sat top-left. Both now use `set_anchors_and_offsets_preset`.
+- Playtest 3 (user): wanted the wall breaker from Time Shooter and a jointed ragdoll body for the player.
+- Wall breaker: 5 bashes total. I read "5 max hits, a door costs one" as durability, with a wall costing more than a door, so a wall cell takes 2 bashes (crack, then hole). Both numbers are in `data/tuning.gd` (`ram_hits`, `ram_wall_hits`). Bashing something unbreakable costs nothing, so the player is never punished for testing a wall.
+- "Throw it at a player" was taken to mean a pink dude: a thrown ram deals `ram_throw_damage` = 3, which kills, and the ram breaks into two `Debris` halves.
+- Walls stay merged rectangles for draw-call reasons. A breach replaces the one body that covered the cell with up to four, and the grid cell becomes floor so the parser data, the navmesh and the collision all agree.
+- The ragdoll is position-based (Verlet), keeping the project free of RigidBody3D. It runs on real time at 0.75 speed rather than world time: when the player is dead the world sits at 0.06 and a world-time fall would take half a minute.
+- First ragdoll build ran floor collision after the constraint solver. Limbs stretched 51 percent and the body never settled. The ground height is now sampled once per joint per step and clamped inside every solver iteration.
+- Knee, elbow and hip limits were tightened after the first render, where the body folded into a small heap instead of sprawling.
+- `death_restart_delay` went from 0.6 to 2.4 s so the fall can be seen. R still restarts at once.

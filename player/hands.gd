@@ -79,6 +79,10 @@ func primary() -> void:
 			TimeManager.burst(T.burst_action, T.burst_strength_shot)
 			player.fx.kick(0.05)
 			_kick()
+	elif held is Ram:
+		if (held as Ram).bash(player):
+			TimeManager.burst(T.burst_action, T.burst_strength_punch)
+			_animate_thrust()
 	elif held != null:
 		throw_held()
 	else:
@@ -204,6 +208,11 @@ func _set_held(item: Pickup) -> void:
 		var pistol: Pistol = item
 		pistol.ammo_changed.connect(_on_ammo_changed)
 		ammo_changed.emit(pistol.ammo, T.pistol_ammo)
+	elif item is Ram:
+		var ram: Ram = item
+		# The pips show bashes left, same as rounds for a pistol.
+		ram.durability_changed.connect(func(left: int) -> void: ammo_changed.emit(left, T.ram_hits))
+		ammo_changed.emit(ram.durability, T.ram_hits)
 	else:
 		ammo_changed.emit(-1, T.pistol_ammo)
 
@@ -218,6 +227,17 @@ func _kick() -> void:
 	_arm_r.position.z = ARM_HOLD_R.z + 0.05
 	tween.tween_property(_arm_r, ^"rotation:x", 0.12, 0.16)
 	tween.parallel().tween_property(_arm_r, ^"position:z", ARM_HOLD_R.z, 0.16)
+
+
+## The ram goes straight out from the hip and back.
+func _animate_thrust() -> void:
+	if _arm_tween != null and _arm_tween.is_valid():
+		_arm_tween.kill()
+	_arm_r.position = ARM_HOLD_R
+	_arm_tween = create_tween()
+	_arm_tween.tween_property(_arm_r, ^"position", ARM_HOLD_R + Vector3(-0.10, 0.06, -0.42), 0.08) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_arm_tween.tween_property(_arm_r, ^"position", ARM_HOLD_R, 0.24).set_trans(Tween.TRANS_QUAD)
 
 
 ## A short jab from alternating sides that ends near the crosshair, then pulls back.

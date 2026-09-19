@@ -4,14 +4,14 @@ extends RefCounted
 ##
 ## `#` wall  `.` floor  ` ` void  `D` door  `G` glass  `P` player  `X` exit
 ## `a` armed dude  `u` unarmed dude  `B` boss  `w` wave point  `t` trigger
-## `p` pistol  `b` bottle  `m` mug  `k` keyboard  `l` stapler
+## `r` wall breaker  `p` pistol  `b` bottle  `m` mug  `k` keyboard  `l` stapler
 ## `c` desk  `s` server rack  `o` pillar (full height cover)
 
 const PICKUP_KINDS: Dictionary[String, StringName] = {
-	"p": &"pistol", "b": &"bottle", "m": &"mug", "k": &"keyboard", "l": &"stapler",
+	"p": &"pistol", "b": &"bottle", "m": &"mug", "k": &"keyboard", "l": &"stapler", "r": &"ram",
 }
 const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar"}
-const KNOWN: String = "#. DGPXauBwtpbmklcso"
+const KNOWN: String = "#. DGPXauBwtpbmklcsor"
 
 
 static func load_level(level_name: String) -> LevelData:

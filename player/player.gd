@@ -16,6 +16,10 @@ var input_enabled: bool = true
 
 var _look_accum_deg: float = 0.0
 var _look_rate: float = 0.0
+var ragdoll: Ragdoll
+var _death_cam_t: float = 0.0
+var _death_cam_from: Transform3D
+var _last_hit_direction: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -106,7 +110,9 @@ func _on_enemy_killed(_remaining: int) -> void:
 	fx.punch_fov(4.0)
 
 
-func on_bullet_hit(_bullet: Node, _point: Vector3, _normal: Vector3) -> void:
+func on_bullet_hit(bullet: Node, _point: Vector3, _normal: Vector3) -> void:
+	if bullet is Bullet:
+		_last_hit_direction = (bullet as Bullet).direction
 	die()
 
 
@@ -115,7 +121,41 @@ func die() -> void:
 		return
 	alive = false
 	velocity = Vector3.ZERO
-	var tween: Tween = create_tween()
-	tween.tween_property(head, ^"position:y", 0.35, 0.35).set_trans(Tween.TRANS_QUAD)
-	tween.parallel().tween_property(head, ^"rotation:z", 0.6, 0.35)
+	if hands.held != null and is_instance_valid(hands.held):
+		hands.held.drop(aim_origin() + aim_direction() * 0.4)
+	hands.visible = false
+
+	# The body the player never sees while alive goes limp where they stood.
+	var push: Vector3 = _last_hit_direction
+	if push == Vector3.ZERO:
+		push = global_transform.basis.z      # punched from the front: fall backwards
+	push = Vector3(push.x, 0.0, push.z).normalized() * 4.6 + Vector3.UP * 1.4
+	ragdoll = Ragdoll.spawn(Game.entities_root(self), global_transform, push, Mats.arm(), T.ragdoll_speed)
+
+	# The camera lets go of the head and pulls back to watch.
+	_death_cam_from = camera.global_transform
+	camera.top_level = true
+	camera.global_transform = _death_cam_from
+	fx.set_process(false)
+	_death_cam_t = 0.0
 	died.emit()
+
+
+func _process(delta: float) -> void:
+	if alive or ragdoll == null or not is_instance_valid(ragdoll):
+		return
+	_death_cam_t = minf(1.0, _death_cam_t + delta / 1.1)
+	var ease_t: float = 1.0 - pow(1.0 - _death_cam_t, 3.0)
+	var focus: Vector3 = ragdoll.point(&"chest")
+	var back: Vector3 = (_death_cam_from.origin - focus)
+	back.y = 0.0
+	back = back.normalized() if back.length() > 0.05 else global_transform.basis.z
+	var wanted: Vector3 = focus + back * 2.3 + Vector3.UP * 1.5
+	# Never let the camera back through a wall.
+	var query := PhysicsRayQueryParameters3D.create(focus + Vector3.UP * 0.3, wanted, 1)
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		wanted = (hit["position"] as Vector3) + (hit["normal"] as Vector3) * 0.25
+	var eye: Vector3 = _death_cam_from.origin.lerp(wanted, ease_t)
+	if eye.distance_to(focus) > 0.1:
+		camera.global_transform = Transform3D(Basis.IDENTITY, eye).looking_at(focus, Vector3.UP)

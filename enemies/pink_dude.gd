@@ -369,7 +369,12 @@ func on_bullet_hit(_bullet: Node, point: Vector3, _normal: Vector3) -> void:
 
 
 func on_thrown_hit(item: Pickup) -> void:
-	_take_blunt(T.throw_damage, T.throw_stun, item.velocity.normalized())
+	_take_blunt(maxi(T.throw_damage, item.blunt_damage), T.throw_stun, item.velocity.normalized())
+
+
+## A full swing of the wall breaker. Nobody normal gets up from that.
+func on_rammed(direction: Vector3) -> void:
+	_take_blunt(T.ram_throw_damage, T.throw_stun, direction)
 
 
 func on_punched(by: Node, _at: Vector3) -> void:

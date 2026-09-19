@@ -90,6 +90,8 @@ static func _place_exit_and_triggers(data: LevelData, geometry: Node3D, entities
 static func create_pickup(kind: StringName) -> Pickup:
 	if kind == &"pistol":
 		return Pistol.create()
+	if kind == &"ram":
+		return Ram.create()
 	return Throwable.create(kind)
 
 
@@ -187,16 +189,24 @@ static func wall_rects(data: LevelData) -> Array[Rect2i]:
 	return rects
 
 
+static func add_wall_rect(data: LevelData, parent: Node3D, rect: Rect2i) -> StaticBody3D:
+	var size := Vector3(rect.size.x * data.cell_size, T.wall_height, rect.size.y * data.cell_size)
+	var body: StaticBody3D = make_box(size, Mats.wall())
+	body.name = "Wall"
+	body.add_to_group(&"walls")
+	# WallBreach needs to know which cells this body stands for.
+	body.set_meta(&"rect", rect)
+	body.position = Vector3(
+		(rect.position.x + rect.size.x * 0.5) * data.cell_size,
+		T.wall_height * 0.5,
+		(rect.position.y + rect.size.y * 0.5) * data.cell_size)
+	parent.add_child(body)
+	return body
+
+
 static func _build_walls(data: LevelData, parent: Node3D) -> void:
 	for rect: Rect2i in wall_rects(data):
-		var size := Vector3(rect.size.x * data.cell_size, T.wall_height, rect.size.y * data.cell_size)
-		var body: StaticBody3D = make_box(size, Mats.wall())
-		body.name = "Wall"
-		body.position = Vector3(
-			(rect.position.x + rect.size.x * 0.5) * data.cell_size,
-			T.wall_height * 0.5,
-			(rect.position.y + rect.size.y * 0.5) * data.cell_size)
-		parent.add_child(body)
+		add_wall_rect(data, parent, rect)
 
 
 static func _build_props(data: LevelData, parent: Node3D) -> void:

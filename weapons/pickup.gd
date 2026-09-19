@@ -22,6 +22,10 @@ var spin: Vector3 = Vector3.ZERO
 var thrower: Node = null
 ## True only for a deliberate throw. A weapon popped out of a hand does no damage.
 var dangerous: bool = false
+## Damage dealt to a dude when thrown. The ram overrides this.
+var blunt_damage: int = 1
+## Where the item sits relative to the fist when held.
+var hold_offset: Vector3 = Vector3.ZERO
 
 var _mesh_root: Node3D
 
@@ -84,7 +88,7 @@ func attach_to(holder: Node3D) -> void:
 		reparent(holder, false)
 	else:
 		holder.add_child(self)
-	transform = Transform3D.IDENTITY
+	transform = Transform3D(Basis.IDENTITY, hold_offset)
 	# Flight leaves the mesh tumbled. In a hand it must sit straight.
 	if _mesh_root != null:
 		_mesh_root.rotation = Vector3.ZERO

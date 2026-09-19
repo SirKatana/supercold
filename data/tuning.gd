@@ -26,7 +26,8 @@ extends Resource
 @export var jump_velocity: float = 4.5
 @export var gravity: float = 12.0
 @export var eye_height: float = 1.6
-@export var death_restart_delay: float = 0.6
+@export var death_restart_delay: float = 2.4
+@export var ragdoll_speed: float = 0.75
 @export var punch_range: float = 1.6
 @export var punch_cooldown: float = 0.4
 @export var pickup_range: float = 2.5
@@ -42,6 +43,15 @@ extends Resource
 @export var throw_gravity: float = 9.8
 @export var throw_stun: float = 1.2
 @export var throw_damage: int = 1
+
+@export_group("Wall breaker")
+## The ram survives this many bashes, then cracks in half. A door costs one bash,
+## a wall section costs `ram_wall_hits` (the first cracks it, the last opens it).
+@export var ram_hits: int = 5
+@export var ram_wall_hits: int = 2
+@export var ram_cooldown: float = 0.55
+@export var ram_range: float = 2.3
+@export var ram_throw_damage: int = 3
 
 @export_group("Pink dude")
 @export var dude_speed: float = 3.2
