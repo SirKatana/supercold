@@ -51,10 +51,10 @@ func test_standing_still_settles_to_min_and_walking_reaches_one() -> void:
 	await wait_physics(90)
 	check_near(TimeManager.world_scale, T.min_scale, 0.001, "standing still")
 	var start: Vector3 = Game.player.global_position
-	Input.action_press(&"move_back")
+	Input.action_press(&"move_forward")
 	await wait_physics(40)
 	check_near(TimeManager.world_scale, 1.0, 0.001, "walking")
 	check(Game.player.global_position.distance_to(start) > 1.5, "player should have moved at real speed")
-	Input.action_release(&"move_back")
+	Input.action_release(&"move_forward")
 	await wait_physics(90)
 	check_near(TimeManager.world_scale, T.min_scale, 0.001, "settles again after stopping")

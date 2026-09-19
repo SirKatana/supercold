@@ -10,3 +10,5 @@ One line per call made in auto mode, with why.
 - M1: level parser and the wall/floor/prop part of the builder were pulled forward from M4, because the M1 test room is already an ASCII level.
 - M1: added legend characters `B` (boss spawn), `l` (stapler) and space (void, no floor). The plan's legend had no way to place the Director or the stapler.
 - M1: time only advances from real horizontal velocity, so pushing into a wall does not move the clock.
+- M1: `tests/run.sh` wraps the test command so the exit code is Godot's and not a pipe's. An M1 commit went in with one failing test because `| tail` hid the code. Always gate commits on `tests/run.sh`.
+- M1: tests run with `--fixed-fps 60`, which removes real-time waiting and makes timing deterministic.
