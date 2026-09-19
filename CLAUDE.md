@@ -1,0 +1,348 @@
+<!-- rtk-instructions v2 -->
+# RTK (Rust Token Killer) - Token-Optimized Commands
+
+## Golden Rule
+
+**Always prefix commands with `rtk`**. If RTK has a dedicated filter, it uses it. If not, it passes through unchanged. This means RTK is always safe to use.
+
+**Important**: Even in command chains with `&&`, use `rtk`:
+```bash
+# ❌ Wrong
+git add . && git commit -m "msg" && git push
+
+# ✅ Correct
+rtk git add . && rtk git commit -m "msg" && rtk git push
+```
+
+## RTK Commands by Workflow
+
+### Build & Compile (80-90% savings)
+```bash
+rtk cargo build         # Cargo build output
+rtk cargo check         # Cargo check output
+rtk cargo clippy        # Clippy warnings grouped by file (80%)
+rtk tsc                 # TypeScript errors grouped by file/code (83%)
+rtk lint                # ESLint/Biome violations grouped (84%)
+rtk prettier --check    # Files needing format only (70%)
+rtk next build          # Next.js build with route metrics (87%)
+```
+
+### Test (60-99% savings)
+```bash
+rtk cargo test          # Cargo test failures only (90%)
+rtk go test             # Go test failures only (90%)
+rtk jest                # Jest failures only (99.5%)
+rtk vitest              # Vitest failures only (99.5%)
+rtk playwright test     # Playwright failures only (94%)
+rtk pytest              # Python test failures only (90%)
+rtk rake test           # Ruby test failures only (90%)
+rtk rspec               # RSpec test failures only (60%)
+rtk test <cmd>          # Generic test wrapper - failures only
+```
+
+### Git (59-80% savings)
+```bash
+rtk git status          # Compact status
+rtk git log             # Compact log (works with all git flags)
+rtk git diff            # Compact diff (80%)
+rtk git show            # Compact show (80%)
+rtk git add             # Ultra-compact confirmations (59%)
+rtk git commit          # Ultra-compact confirmations (59%)
+rtk git push            # Ultra-compact confirmations
+rtk git pull            # Ultra-compact confirmations
+rtk git branch          # Compact branch list
+rtk git fetch           # Compact fetch
+rtk git stash           # Compact stash
+rtk git worktree        # Compact worktree
+```
+
+Note: Git passthrough works for ALL subcommands, even those not explicitly listed.
+
+### GitHub (26-87% savings)
+```bash
+rtk gh pr view <num>    # Compact PR view (87%)
+rtk gh pr checks        # Compact PR checks (79%)
+rtk gh run list         # Compact workflow runs (82%)
+rtk gh issue list       # Compact issue list (80%)
+rtk gh api              # Compact API responses (26%)
+```
+
+### JavaScript/TypeScript Tooling (70-90% savings)
+```bash
+rtk pnpm list           # Compact dependency tree (70%)
+rtk pnpm outdated       # Compact outdated packages (80%)
+rtk pnpm install        # Compact install output (90%)
+rtk npm run <script>    # Compact npm script output
+rtk npx <cmd>           # Compact npx command output
+rtk prisma              # Prisma without ASCII art (88%)
+rtk uv run <cmd>        # Compact uv project command output
+```
+
+### Files & Search (60-75% savings)
+```bash
+rtk ls <path>           # Tree format, compact (65%)
+rtk read <file>         # Code reading with filtering (60%)
+rtk grep <pattern>      # Search grouped by file (75%). Format flags (-c, -l, -L, -o, -Z) run raw.
+rtk find <pattern>      # Find grouped by directory (70%)
+```
+
+### Analysis & Debug (70-90% savings)
+```bash
+rtk err <cmd>           # Filter errors only from any command
+rtk log <file>          # Deduplicated logs with counts
+rtk json <file>         # JSON structure without values
+rtk deps                # Dependency overview
+rtk env                 # Environment variables compact
+rtk summary <cmd>       # Smart summary of command output
+rtk diff                # Ultra-compact diffs
+```
+
+### Infrastructure (85% savings)
+```bash
+rtk docker ps           # Compact container list
+rtk docker images       # Compact image list
+rtk docker logs <c>     # Deduplicated logs
+rtk kubectl get         # Compact resource list
+rtk kubectl logs        # Deduplicated pod logs
+```
+
+### Network (65-70% savings)
+```bash
+rtk curl <url>          # Compact HTTP responses (70%)
+rtk wget <url>          # Compact download output (65%)
+```
+
+### Meta Commands
+```bash
+rtk gain                # View token savings statistics
+rtk gain --history      # View command history with savings
+rtk discover            # Analyze Claude Code sessions for missed RTK usage
+rtk proxy <cmd>         # Run command without filtering (for debugging)
+rtk init                # Add RTK instructions to CLAUDE.md
+rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
+```
+
+## Token Savings Overview
+
+| Category | Commands | Typical Savings |
+|----------|----------|-----------------|
+| Tests | vitest, playwright, cargo test | 90-99% |
+| Build | next, tsc, lint, prettier | 70-87% |
+| Git | status, log, diff, add, commit | 59-80% |
+| GitHub | gh pr, gh run, gh issue | 26-87% |
+| Package Managers | pnpm, npm, npx | 70-90% |
+| Files | ls, read, grep, find | 60-75% |
+| Infrastructure | docker, kubectl | 85% |
+| Network | curl, wget | 65-70% |
+
+Overall average: **60-90% token reduction** on common development operations.
+<!-- /rtk-instructions -->
+
+# SuperCold
+
+Build plan for auto mode. Execute milestones in section 10 in order. The RTK block above applies to every shell command.
+
+Status: the first unticked box in section 10 is the current milestone. If `project.godot` does not exist, nothing is built yet and work starts at M0.
+
+## 1. Project
+
+SuperCold. Godot 4.7.2, GDScript with static typing, Forward+ renderer, desktop Linux first.
+Binary is `godot4` (there is no `godot` on PATH).
+No external assets, addons, or downloads. Meshes from primitives, SFX synthesized in code.
+Godot MCP calls take `projectPath` = `/home/yousif/Projects/Supercold`.
+
+## 2. Core rule: time
+
+Do **not** use `Engine.time_scale`. It makes physics ticks sparse in real time and the player choppy.
+Use an autoload `TimeManager` exposing `world_scale: float` and `world_delta(delta) -> float`.
+
+- Player runs on real delta, always full speed and 60 Hz responsive.
+- Everything else (bullets, enemies, thrown items, shards, doors, timers, cooldowns) multiplies by `world_scale`.
+- Nodes in group `time_scaled` get `speed_scale` / `pitch_scale` pushed each frame
+  (AnimationPlayer, GPUParticles3D, AudioStreamPlayer3D).
+- All world motion is kinematic and script-driven. No RigidBody3D anywhere.
+
+Scale formula, evaluated every frame:
+
+```
+move   = clamp(horizontal_speed / WALK_SPEED, 0, 1)          # moving  -> 1.0
+look   = clamp(mouse_deg_per_sec / 360, 0, 1) * LOOK_WEIGHT  # looking -> up to 0.30
+burst  = 1.0 while action_timer > 0                          # shoot / throw / punch
+target = max(MIN_SCALE, move, look, burst)
+world_scale moves toward target: rise rate 12/s, fall rate 5/s
+```
+
+| Tunable | Value | Note |
+|---|---|---|
+| `MIN_SCALE` | 0.06 | Never 0. Bullet at 30 m/s crawls at 1.8 m/s, dodgeable |
+| `LOOK_WEIGHT` | 0.30 | Looking around leaks a little time |
+| Action burst | 0.15 s real | Shoot, throw, punch. Pickup gives 0.08 s |
+| Rise / fall | 12 / 5 per s | Snappy start, soft settle |
+
+All tunables live in one resource: `res://data/tuning.tres` (script `tuning.gd`). No magic numbers in entity scripts.
+
+## 3. Player
+
+CharacterBody3D, capsule r 0.35 h 1.8, eye 1.6 m. WASD, mouse look, Space jump, no sprint, no crouch.
+Walk 5 m/s, accel 40, jump 4.5, gravity 12. **One hit kills.** `R` restarts floor instantly, death auto-restarts after 0.6 s real.
+
+| Input | Empty hands | Holding item |
+|---|---|---|
+| LMB | Punch | Shoot if pistol, else throw |
+| RMB | Pick up targeted item | Throw |
+| E | Pick up targeted item | Swap with targeted item |
+
+- Punch: range 1.6 m, cooldown 0.4 s **world time**. First punch disarms, third kills.
+- Pistol: 6 rounds, cooldown 0.35 s **world time**, so you must let time pass to fire again. Empty pistol is a throwable.
+- Throw: 16 m/s, gravity 9.8, custom ballistic step with raycast. Hit enemy: stun 1.2 s world, 1 damage, disarm, weapon pops upward so player can catch it.
+- Throwables: pistol, bottle, mug, keyboard, stapler. Fragile ones shatter on impact.
+- Pickup targeting: raycast 2.5 m plus 12 degree cone assist. Catching a mid-air weapon is allowed.
+
+## 4. Bullets
+
+Not physics bodies. Each frame: `step = dir * 30 * world_delta`, raycast from old to new position.
+Radius 0.05, life 6 s world time, pink emissive tracer with trail mesh.
+One bullet kills player or any pink dude (friendly fire on). Bullets are blocked by thrown items and doors,
+and deal 1 damage to breakables.
+
+## 5. Enemies: Pink Dudes
+
+Low-poly humanoid built in code from capsules and boxes, emissive pink, no texture.
+CharacterBody3D plus NavigationAgent3D. Move 3.2 m/s times `world_scale`. HP 3 versus punches and throws, any bullet kills.
+
+FSM, one script per state under `enemies/states/`:
+`Idle -> Alert -> Approach -> Aim -> Fire -> Reposition`, plus `Stunned`, `Disarmed`, `Dead`.
+
+- Aim: telegraph 0.7 s world time, arm raises, thin pink laser line. Aims at player's **current** position, no lead, spread 1.5 degrees. This is what makes dodging work.
+- Fire cadence 1.4 s world time. Needs line of sight, checked by raycast against layer 1 and 6.
+- Disarmed: runs to nearest free pistol within 12 m, otherwise rushes to punch. Enemy punch kills player, 0.5 s world windup.
+- Unarmed variant spawns without pistol and goes straight to rush.
+- Dead: body swaps to 24 shard pieces in one MultiMeshInstance3D, custom ballistic scaled by world time, fades after 3 s world. Drops pistol.
+
+Boss, **The Director**: 1.3x scale, dual pistols, 3 bullet hits to kill, alternates hands at 0.7 s cadence,
+flinches 1 s after each hit and calls a wave of 4 dudes through rooftop doors.
+
+## 6. World and breakables
+
+- **Door**: HP 2. Punch 1, thrown item 2, bullet 1. Breaks into 6 panel shards that fly away from the hit and stun enemies they strike. Enemies open doors normally by walking into them.
+- **Glass wall**: HP 1, blocks movement, not sight.
+- **Elevator**: locked until all enemies on floor are dead, then opens. Entering loads next floor.
+- Collision layers: 1 world, 2 player, 3 enemies, 4 pickups, 5 bullets (raycast mask only), 6 breakables.
+
+## 7. Levels: data-driven
+
+Floors are ASCII grids, 2 m cells, wall height 3 m, in `res://levels/fN_name.txt` with sidecar `fN_name.json`
+for waves, trigger zones, and intro text. `LevelBuilder` turns the grid into merged StaticBody3D wall and floor
+boxes, instantiates prefabs, then bakes the NavigationRegion3D at load from static colliders.
+Keep `NavigationMesh.geometry_parsed_geometry_type` on static colliders. Mesh parsing returns nothing under `--headless`, which would break the reachability tests.
+
+Legend: `#` wall, `.` floor, `D` door, `G` glass, `P` player start, `X` elevator exit, `a` armed dude,
+`u` unarmed dude, `w` wave spawn point, `p` pistol, `b` bottle, `m` mug, `k` keyboard, `c` desk cover,
+`s` server rack, `t` trigger zone id follows in json.
+
+| Floor | Theme | Size (cells) | Enemies | Teaches |
+|---|---|---|---|---|
+| F1 Lobby | Reception, turnstiles | 20 x 14 | 4 | Time rule, pickup, first shot |
+| F2 Offices | Cubicle maze | 30 x 22 | 7 | Throwing, disarm and catch, first doors |
+| F3 Server Room | Tight aisles, glass | 28 x 20 | 8 | Door breach ambush, glass sightlines |
+| F4 Labs | Long corridors | 36 x 24 | 10 plus 1 wave | Dodging at range, waves |
+| F5 Executive | Mixed, big boardroom | 40 x 28 | 12 plus 2 waves | Everything |
+| Roof | Open arena, 4 doors | 30 x 30 | Director plus waves | Boss |
+
+Validator rule: every enemy and the exit must be nav-reachable from `P`. Test fails otherwise.
+
+## 8. Look, feel, UI
+
+- World: white and light grey, unshaded-ish StandardMaterial with soft ambient, glow enabled. Enemies and bullets emissive pink `#ff2d95`. Weapons and pickups matte black.
+- Slow-mo feedback: screen-space shader with vignette and slight desaturation driven by `1 - world_scale`. Audio pitch follows `world_scale`, floor 0.35.
+- HUD: crosshair dot, ammo pips, nothing else. Big centered word flashes on floor clear: `SUPER` then `COLD`.
+- Title screen, pause menu with mouse sensitivity, FOV, volume. Settings saved to `user://settings.cfg`.
+- SFX synthesized into AudioStreamWAV at boot by `audio/sfx_synth.gd`: shot, shatter, punch, pickup, door break, elevator ding.
+
+## 9. Layout
+
+```
+project.godot          data/tuning.gd, tuning.tres
+autoload/              time_manager.gd  game.gd  sfx.gd  settings.gd
+player/                player.tscn  player.gd  hands.gd  camera_fx.gd
+weapons/               pistol.gd  bullet.gd  bullet_pool.gd  throwable.gd  pickup.gd
+enemies/               pink_dude.tscn  pink_dude.gd  director.gd  body_builder.gd  states/*.gd
+world/                 level_parser.gd  level_builder.gd  door.gd  glass.gd  elevator.gd  props/*.gd
+fx/                    shatter.gd  trail.gd  slowmo.gdshader  materials.gd
+audio/                 sfx_synth.gd
+ui/                    hud.tscn  title.tscn  pause.tscn  word_flash.gd
+levels/                f1_lobby.txt/.json ... roof.txt/.json  test_room.txt
+tests/                 run_tests.gd  test_*.gd  smoke_bot.gd
+main.tscn              docs/DECISIONS.md
+```
+
+Scene rule: every `.tscn` holds only a root node plus its script. Children are built in `_ready()` by code.
+This keeps hand-written scene files trivial and diffable. Use Godot MCP `create_scene` or write the 5-line text form.
+
+## 10. Milestones
+
+Work in order. One milestone at a time. Tick the box here when its acceptance passes.
+
+- [x] **M0 Bootstrap.** `rtk git init`, `.gitignore` with `.godot/` and `build/` (keep `.rtk/` tracked), `godot4` filter in `.rtk/filters.toml`, `project.godot` with input map, layer names, autoloads, 1280x720 window, mouse capture. Own test runner, no GUT. *Accept:* headless test command exits 0 with 1 dummy test.
+- [ ] **M1 Time and player.** `TimeManager`, tuning resource, player controller, `test_room.txt`, slow-mo shader, debug overlay showing `world_scale`. *Accept:* unit tests for scale formula, rise, fall, min clamp. Standing still reads 0.06, walking reads 1.0.
+- [ ] **M2 Combat kit.** Pickup, pistol, pooled bullets, throw, punch, action bursts, HUD ammo. *Accept:* tests for bullet stepping never tunnelling a 0.1 m wall at scale 1.0, ammo count, world-time cooldown, thrown item blocking a bullet.
+- [ ] **M3 Pink dudes.** Body builder, FSM, nav, aim telegraph, fire, stun, disarm, weapon seek, shatter, player death and restart. *Accept:* FSM transition tests. In test room, 3 dudes fight, die, drop pistols, and no errors in debug output.
+- [ ] **M4 World.** Level parser, builder, navmesh bake, door, glass, elevator, floor flow in `game.gd`. *Accept:* parser tests, door HP table test, reachability validator passes on test room.
+- [ ] **M5 Floors F1 to F5.** Author grids and json, waves, triggers, intro text, title, pause, settings. *Accept:* every floor loads headless, validator passes, smoke bot survives 10 s per floor with zero script errors.
+- [ ] **M6 Boss.** Roof arena, Director, waves, ending screen. *Accept:* Director takes exactly 3 bullets, wave spawns after each flinch, ending triggers.
+- [ ] **M7 Juice.** Synth SFX, pitch follow, trails, shard polish, word flash, camera kick, hit pause of 0.05 s real on kill. *Accept:* no frame over 16 ms with 12 dudes and 40 bullets on F5, checked via `Performance` monitor in smoke bot run **without** `--headless`, since headless renders nothing.
+- [ ] **M8 Balance and ship.** Tuning pass, Linux export preset, `build/SuperCold.x86_64`, README with controls. *Accept:* exported binary boots to title.
+
+## 11. Verification loop, every milestone
+
+The RTK block above governs every command here. Godot has no built-in RTK filter, so use the generic wrappers:
+
+```bash
+rtk test godot4 --headless --path . -s tests/run_tests.gd    # unit tests, failures only, exit code is pass/fail
+rtk test godot4 --headless --path . -s tests/smoke_bot.gd    # loads each floor, scripted input, fails on any error
+rtk err godot4 --headless --path . --import                  # reimport after adding files, errors only
+rtk proxy godot4 --headless --path . -s tests/run_tests.gd   # unfiltered, only when a filter hides something needed
+```
+
+Test runner output contract, so `rtk test` and the project filter work: one line per failure as
+`FAIL <file>::<test> <message>`, a final line `TESTS <passed>/<total>`, exit code 1 on any failure.
+
+M0 adds this to `.rtk/filters.toml` to drop engine banner noise on any other `godot4` call:
+
+```toml
+[filters.godot4]
+description = "Compact Godot headless output"
+match_command = "^godot4\\s"
+strip_ansi = true
+strip_lines_matching = ["^\\s*$", "^Godot Engine v", "^Vulkan", "^OpenGL", "^\\s*--- "]
+max_lines = 60
+on_empty = "godot4: ok"
+```
+
+Headless gotchas:
+
+- Scripts run with `-s` must `extends SceneTree`, do their work in `_initialize()`, and end with `quit(code)`. Without `quit` the process hangs.
+- Run the `--import` command once after a fresh clone and after adding any new `class_name` script. Otherwise tests fail with "Could not find type" because `.godot/` class cache is stale.
+- After adding collision bodies in a test, `await physics_frame` twice before any `direct_space_state` raycast, or the query sees an empty world.
+- Autoloads exist under `-s`, but are not ready inside `_init()`. Touch them from `_initialize()` onward.
+
+Then run for real with Godot MCP `run_project`, read `get_debug_output`, `stop_project`. Zero errors and zero
+warnings about missing resources required. Use the `game-development` skill to capture and look at a frame
+whenever visuals changed. Never claim a milestone done without the test output in hand.
+
+## 12. Auto mode rules
+
+- Do not stop to ask. Pick the simplest option that fits this plan and log it in `docs/DECISIONS.md` with one line of why.
+- Commit after each passing milestone: `rtk git add -A && rtk git commit -m "M<n>: <summary>"`. No push, no remote.
+- Never edit anything between the `rtk-instructions` markers in this file. Progress ticks and plan changes go below them only.
+- Every shell command uses the `rtk` prefix per the RTK block. File reads and searches use `rtk read`, `rtk grep`, `rtk find`, `rtk ls`.
+- Never add addons, downloaded assets, RigidBody3D, or `Engine.time_scale`.
+- Static typing everywhere. Signals over polling between systems. One class per file, `class_name` set.
+- If a Godot 4.7 API differs from what this plan assumes, check docs through Context7, adapt, log it.
+- If a milestone's acceptance fails three fix attempts in a row, write findings to `docs/DECISIONS.md`, leave the box unticked, and stop.
+
+- After M8 is ticked, move sections 2 to 9 into `docs/DESIGN.md` and leave only rules, commands, and gotchas here. This file loads into every session.
+
+## 13. Stretch, only after M8
+
+Real-time replay of the cleared floor, endless mode on a random floor, katana, shotgun dudes, gamepad support.
