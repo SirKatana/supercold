@@ -177,3 +177,55 @@ func test_three_dudes_fight_die_and_drop_pistols() -> void:
 		if node is Pistol and (node as Pistol).is_available():
 			pistols += 1
 	check(pistols >= 4, "dropped pistols plus the placed one (%d)" % pistols)
+
+
+func test_dudes_spread_out_instead_of_stacking() -> void:
+	Game.god_mode = true
+	check(Game.load_level("test_room"), "level loads")
+	await LevelValidator.wait_until_synced(Game.level, Game.data)
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		(node as PinkDude).die()
+	var spot: Vector3 = Game.data.cell_center(Vector2i(10, 4), 0.05)
+	var a: PinkDude = Game.spawn_dude(spot, true)
+	var b: PinkDude = Game.spawn_dude(spot + Vector3(0.2, 0, 0.1), true)
+	a.sense_override = true
+	b.sense_override = true
+	await wait_physics(90)
+	check(a.global_position.distance_to(b.global_position) > 1.2,
+		"two dudes spawned on one spot drifted apart (%.2f m)" % a.global_position.distance_to(b.global_position))
+
+
+func test_each_dude_has_its_own_place_on_the_ring() -> void:
+	var angles: Dictionary[int, bool] = {}
+	for i: int in 8:
+		var dude: PinkDude = _puppet()
+		angles[int(dude.flank_angle * 100.0)] = true
+		check(dude.ring_distance >= T.dude_ring_min and dude.ring_distance <= T.dude_ring_max, "ring distance in range")
+	check(angles.size() >= 6, "flank angles differ between dudes")
+
+
+func test_dude_runs_to_cover_between_shots() -> void:
+	Game.god_mode = true
+	check(Game.load_level("f2_offices"), "level loads")
+	await LevelValidator.wait_until_synced(Game.level, Game.data)
+	var dude: PinkDude = null
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		var d: PinkDude = node as PinkDude
+		if dude == null or d.global_position.distance_to(Game.player.global_position) < dude.global_position.distance_to(Game.player.global_position):
+			dude = d
+	# Put the player in the open cubicle hall in plain view of a dude standing by a pillar.
+	Game.player.global_position = Game.data.cell_center(Vector2i(16, 5), 0.05)
+	dude.global_position = Game.data.cell_center(Vector2i(16, 8), 0.05)
+	await wait_physics(3)
+	dude.pick_reposition_target()
+	check(dude.hiding, "found a hiding spot near desks and pillars")
+	var target: Vector3 = dude.agent.target_position
+	var space: PhysicsDirectSpaceState3D = dude.get_world_3d().direct_space_state
+	check(not Sight.is_clear(space, target + Vector3(0, 1.55, 0), Game.player.chest_position()),
+		"the chosen spot is out of the player's sight")
+
+
+func test_director_never_hides() -> void:
+	var boss := Director.new()
+	world.add_child(boss)
+	check(not boss.seeks_cover(), "the boss keeps coming")

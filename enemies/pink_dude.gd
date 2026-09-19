@@ -27,6 +27,11 @@ var desired_velocity: Vector3 = Vector3.ZERO
 var aiming: bool = false
 var stunned: bool = false
 var winding_up: bool = false
+var hiding: bool = false
+
+## Where on the ring around the player this dude likes to stand.
+var flank_angle: float = 0.0
+var ring_distance: float = 8.0
 
 var state: DudeState
 var state_name: StringName = &""
@@ -45,6 +50,8 @@ func _ready() -> void:
 	collision_mask = 1 | 32
 	floor_snap_length = 0.3
 	hp = T.dude_hp
+	flank_angle = randf() * TAU
+	ring_distance = randf_range(T.dude_ring_min, T.dude_ring_max)
 
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
@@ -104,7 +111,11 @@ func reposition_time() -> float:
 
 
 func move_speed() -> float:
-	return T.dude_speed
+	return T.dude_run_speed if state_name == &"reposition" else T.dude_speed
+
+
+func seeks_cover() -> bool:
+	return true
 
 
 # ---------------------------------------------------------------- frame loop
@@ -118,8 +129,9 @@ func _physics_process(delta: float) -> void:
 	tick(wd)
 
 	var rate: float = wd / delta if delta > 0.0 else 0.0
-	velocity.x = desired_velocity.x * rate
-	velocity.z = desired_velocity.z * rate
+	var push: Vector3 = _separation()
+	velocity.x = (desired_velocity.x + push.x) * rate
+	velocity.z = (desired_velocity.z + push.z) * rate
 	velocity.y = 0.0 if is_on_floor() else -4.0 * rate
 	move_and_slide()
 	_animate(wd)
@@ -188,6 +200,35 @@ func flat_distance_to(point: Vector3) -> float:
 
 # ---------------------------------------------------------------- movement
 
+## Pushes away from dudes that are too close, so a squad spreads out instead of stacking.
+func _separation() -> Vector3:
+	var push := Vector3.ZERO
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		var other: PinkDude = node as PinkDude
+		if other == null or other == self or not other.alive:
+			continue
+		var away := Vector3(global_position.x - other.global_position.x, 0, global_position.z - other.global_position.z)
+		var d: float = away.length()
+		if d < T.dude_separation_radius and d > 0.01:
+			push += away / d * (1.0 - d / T.dude_separation_radius)
+	return push * T.dude_separation_push
+
+
+func _nav_ready() -> bool:
+	var map: RID = agent.get_navigation_map()
+	return map.is_valid() and NavigationServer3D.map_get_iteration_id(map) > 0
+
+
+## The spot this dude heads for: its own place on a ring around the player. Once it is
+## about that close it goes straight for the player so it always ends up with a line of sight.
+func approach_point() -> Vector3:
+	var target: Vector3 = player_position()
+	if dist_to_player <= ring_distance + 1.5 or not _nav_ready():
+		return target
+	var wish: Vector3 = target + Vector3(cos(flank_angle), 0, sin(flank_angle)) * ring_distance
+	return NavigationServer3D.map_get_closest_point(agent.get_navigation_map(), wish)
+
+
 func set_nav_target(point: Vector3) -> void:
 	agent.target_position = point
 
@@ -213,12 +254,39 @@ func face_toward(point: Vector3, wd: float) -> void:
 	rotation.y = lerp_angle(rotation.y, target_yaw, minf(1.0, TURN_RATE * wd))
 
 
+## Between shots: run to the nearest spot the player cannot see. If there is none, sidestep.
 func pick_reposition_target() -> void:
+	hiding = false
+	var p: Player = get_player()
+	if seeks_cover() and p != null and _nav_ready():
+		var map: RID = agent.get_navigation_map()
+		var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+		var best := Vector3.INF
+		var best_dist: float = INF
+		# Three rings of sixteen. A pillar's shadow is only a metre or two wide, so sparse
+		# random samples kept missing it.
+		var jitter: float = randf() * TAU
+		for i: int in 48:
+			var angle: float = TAU * (i % 16) / 16.0 + jitter
+			var radius: float = T.dude_cover_search_radius * (1.0 + i / 16) / 3.0
+			var spot: Vector3 = NavigationServer3D.map_get_closest_point(map,
+				global_position + Vector3(cos(angle), 0, sin(angle)) * radius)
+			if absf(spot.y - global_position.y) > 1.0:
+				continue  # the top of a desk or pillar
+			if Sight.is_clear(space, spot + Vector3(0, 1.55 * body_scale, 0), p.chest_position()):
+				continue
+			var d: float = spot.distance_to(global_position)
+			if d < best_dist:
+				best_dist = d
+				best = spot
+		if best.is_finite():
+			hiding = true
+			set_nav_target(best)
+			return
 	var side: Vector3 = global_transform.basis.x * (1.0 if randf() < 0.5 else -1.0)
 	var wish: Vector3 = global_position + side * randf_range(1.5, 3.0) - global_transform.basis.z * randf_range(-1.0, 1.5)
-	var map: RID = agent.get_navigation_map()
-	if map.is_valid() and NavigationServer3D.map_get_iteration_id(map) > 0:
-		wish = NavigationServer3D.map_get_closest_point(map, wish)
+	if _nav_ready():
+		wish = NavigationServer3D.map_get_closest_point(agent.get_navigation_map(), wish)
 	set_nav_target(wish)
 
 

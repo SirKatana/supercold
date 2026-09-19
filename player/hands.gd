@@ -20,7 +20,7 @@ var _punch_left_next: bool = false
 var _arm_tween: Tween
 
 const ARM_REST_R := Vector3(0.31, -0.43, -0.26)
-const ARM_HOLD_R := Vector3(0.27, -0.27, -0.30)
+const ARM_HOLD_R := Vector3(0.23, -0.25, -0.16)
 const ARM_REST_L := Vector3(-0.31, -0.43, -0.26)
 
 
@@ -30,7 +30,7 @@ func _ready() -> void:
 	# Whatever is held sits in the right fist.
 	_hold_point = Node3D.new()
 	_hold_point.name = "HoldPoint"
-	_hold_point.position = Vector3(0, 0.07, -0.30)
+	_hold_point.position = Vector3(0, 0.05, -0.30)
 	_arm_r.add_child(_hold_point)
 
 

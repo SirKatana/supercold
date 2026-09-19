@@ -39,6 +39,8 @@ func _ready() -> void:
 	_mesh_root = Node3D.new()
 	add_child(_mesh_root)
 	_build_mesh(_mesh_root)
+	if state == State.HELD:
+		_mesh_root.rotation = Vector3.ZERO
 	_apply_layer()
 
 
@@ -47,13 +49,14 @@ func _build_mesh(_root: Node3D) -> void:
 	pass
 
 
-func add_box(root: Node3D, size: Vector3, at: Vector3) -> MeshInstance3D:
+func add_box(root: Node3D, size: Vector3, at: Vector3, material: Material = null) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
 	mesh.size = size
-	mesh.material = Mats.black()
+	mesh.material = material if material != null else Mats.black()
 	mi.mesh = mesh
 	mi.position = at
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(mi)
 	return mi
 
@@ -82,6 +85,9 @@ func attach_to(holder: Node3D) -> void:
 	else:
 		holder.add_child(self)
 	transform = Transform3D.IDENTITY
+	# Flight leaves the mesh tumbled. In a hand it must sit straight.
+	if _mesh_root != null:
+		_mesh_root.rotation = Vector3.ZERO
 	_apply_layer()
 
 

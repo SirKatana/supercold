@@ -46,3 +46,10 @@ One line per call made in auto mode, with why.
 - M8: tuning values were left at the plan's numbers. No human has played a full run yet, so a real balance pass is still owed.
 - Playtest 1 (user): bullets felt too fast at both speeds and shooting killed the time-shooter feel. Bullet speed 30 to 12 m/s. Action bursts now carry a strength instead of forcing scale 1.0: a shot only lifts time to 0.22 for 0.12 s, so the bullet visibly crawls out of the barrel.
 - Playtest 1: the player's bullet now starts at the pistol muzzle and aims at the point under the crosshair. Fired from the eye, the player looked straight down its tail and saw a pink square covering the target.
+- Playtest 2 (user): no cover, enemies bunched up, enemies strolled in the open and died at once, held gun sat at a weird angle, gun was two blocks.
+- Playtest 2: new prop `o`, a full-height 1.1 m pillar. `Grid.pillars()` in the generator lays them on a lattice in every room and keeps clear of doors and spawn cells. A test demands at least 4 per floor.
+- Playtest 2: the generator and a test both enforce at least 4 cells between enemy spawns and 6 from the player start.
+- Playtest 2: each dude owns a random spot on a 6 to 11 m ring around the player and approaches that, so a squad surrounds instead of queueing down one line. A separation push keeps them 2.2 m apart. Waves use a different wave point per dude.
+- Playtest 2: between shots a dude samples 48 navmesh spots within 6 m, runs (4.3 m/s) to the nearest one the player cannot see, waits 0.5 to 1.3 s, then peeks out again. It is a target only while it aims. The Director never hides.
+- Playtest 2: the held-gun angle was the mesh keeping its tumble from flight. `attach_to` now zeroes the mesh rotation.
+- Playtest 2: the pistol is about 45 primitives: slide, serrations, ejection port, sights, barrel, frame and rail, trigger and guard, raked grip with teal panels and grooves, magazine plate, hammer, cyan accent line and front sight.

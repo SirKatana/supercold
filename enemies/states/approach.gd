@@ -16,6 +16,6 @@ func update(wd: float) -> StringName:
 	_repath -= wd
 	if _repath <= 0.0:
 		_repath = 0.3
-		dude.set_nav_target(dude.player_position())
+		dude.set_nav_target(dude.approach_point())
 	dude.move_along_path(wd)
 	return &""

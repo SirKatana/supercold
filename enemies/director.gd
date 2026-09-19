@@ -25,6 +25,11 @@ func _ready() -> void:
 	off_hand_weapon.attach_to(off_hand)
 
 
+## The boss does not hide. He keeps coming.
+func seeks_cover() -> bool:
+	return false
+
+
 func aim_time() -> float:
 	return T.director_cadence * 0.65
 

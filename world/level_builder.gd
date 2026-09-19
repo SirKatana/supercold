@@ -181,7 +181,11 @@ static func _build_walls(data: LevelData, parent: Node3D) -> void:
 static func _build_props(data: LevelData, parent: Node3D) -> void:
 	for prop: Dictionary in data.props:
 		var kind: StringName = prop["kind"]
-		var size := Vector3(1.7, 1.0, 0.9) if kind == &"desk" else Vector3(1.0, 2.4, 1.7)
+		var size := Vector3(1.0, 2.4, 1.7)
+		if kind == &"desk":
+			size = Vector3(1.7, 1.0, 0.9)
+		elif kind == &"pillar":
+			size = Vector3(1.1, T.wall_height, 1.1)
 		var body: StaticBody3D = make_box(size, Mats.prop())
 		body.name = String(kind).capitalize()
 		body.position = data.cell_center(prop["cell"], size.y * 0.5)

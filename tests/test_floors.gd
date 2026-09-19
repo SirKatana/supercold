@@ -51,3 +51,19 @@ func test_floors_advance_in_order() -> void:
 	check_eq(Game.level_name, "f1_lobby", "starts in the lobby")
 	Game.next_floor()
 	check_eq(Game.level_name, "f2_offices", "then offices")
+
+
+func test_every_floor_has_cover_and_spread_out_enemies() -> void:
+	for floor_name: String in Game.FLOORS:
+		var d: LevelData = LevelParser.load_level(floor_name)
+		var pillars: int = 0
+		for prop: Dictionary in d.props:
+			if prop["kind"] == &"pillar":
+				pillars += 1
+		check(pillars >= 4, "%s has only %d pillars to hide behind" % [floor_name, pillars])
+		for i: int in d.spawns.size():
+			var a: Vector2i = d.spawns[i]["cell"]
+			check(Vector2(a - d.player_start).length() >= 6.0, "%s: enemy at %s starts too close to the player" % [floor_name, a])
+			for j: int in range(i + 1, d.spawns.size()):
+				var b: Vector2i = d.spawns[j]["cell"]
+				check(Vector2(a - b).length() >= 4.0, "%s: enemies at %s and %s start too close together" % [floor_name, a, b])

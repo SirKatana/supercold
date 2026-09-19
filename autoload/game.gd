@@ -180,9 +180,12 @@ func _register(dude: PinkDude, at: Vector3) -> void:
 func spawn_wave(count: int, armed: int) -> void:
 	if data == null or data.wave_points.is_empty():
 		return
+	# Start at a random wave point and take a different one for each dude, so a wave
+	# comes in from several sides instead of as one clump.
+	var first: int = randi() % data.wave_points.size()
 	for i: int in count:
-		var cell: Vector2i = data.wave_points[i % data.wave_points.size()]
-		var jitter := Vector3(randf_range(-0.5, 0.5), 0, randf_range(-0.5, 0.5))
+		var cell: Vector2i = data.wave_points[(first + i) % data.wave_points.size()]
+		var jitter := Vector3(randf_range(-0.7, 0.7), 0, randf_range(-0.7, 0.7))
 		var dude: PinkDude = spawn_dude(data.cell_center(cell, 0.05) + jitter, i < armed)
 		dude.alerted = true
 

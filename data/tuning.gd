@@ -45,7 +45,18 @@ extends Resource
 
 @export_group("Pink dude")
 @export var dude_speed: float = 3.2
+@export var dude_run_speed: float = 4.3
 @export var dude_hp: int = 3
+## Each dude picks its own spot on a ring around the player, so they surround instead of queueing.
+@export var dude_ring_min: float = 6.0
+@export var dude_ring_max: float = 11.0
+@export var dude_separation_radius: float = 2.2
+@export var dude_separation_push: float = 2.0
+## Between shots a dude runs for cover and stays hidden this long (world seconds).
+@export var dude_cover_search_radius: float = 6.0
+@export var dude_hide_min: float = 0.5
+@export var dude_hide_max: float = 1.3
+@export var dude_reposition_max: float = 3.0
 @export var dude_reaction: float = 0.3
 @export var dude_aim_time: float = 0.7
 @export var dude_cadence: float = 1.4

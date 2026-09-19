@@ -46,6 +46,40 @@ static func black() -> StandardMaterial3D:
 		return m)
 
 
+static func gunmetal() -> StandardMaterial3D:
+	return _cached(&"gunmetal", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.42, 0.46, 0.53)
+		m.metallic = 0.35
+		m.roughness = 0.38
+		return m)
+
+
+static func steel() -> StandardMaterial3D:
+	return _cached(&"steel", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.80, 0.83, 0.88)
+		m.metallic = 0.4
+		m.roughness = 0.3
+		return m)
+
+
+static func polymer() -> StandardMaterial3D:
+	return _cached(&"polymer", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.11, 0.11, 0.14)
+		m.roughness = 0.75
+		return m)
+
+
+static func grip_panel() -> StandardMaterial3D:
+	return _cached(&"grip_panel", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.12, 0.42, 0.52)
+		m.roughness = 0.55
+		return m)
+
+
 static func arm() -> StandardMaterial3D:
 	return _cached(&"arm", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()
