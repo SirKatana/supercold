@@ -10,21 +10,42 @@ func after_each() -> void:
 
 
 func test_target_is_min_when_idle() -> void:
-	check_near(TimeManager.compute_target(0.0, 0.0, false, T), T.min_scale, 0.0001, "idle target")
+	check_near(TimeManager.compute_target(0.0, 0.0, 0.0, T), T.min_scale, 0.0001, "idle target")
 
 
 func test_target_is_one_at_walk_speed() -> void:
-	check_near(TimeManager.compute_target(T.walk_speed, 0.0, false, T), 1.0, 0.0001, "walking target")
-	check_near(TimeManager.compute_target(T.walk_speed * 3.0, 0.0, false, T), 1.0, 0.0001, "clamped above walk speed")
+	check_near(TimeManager.compute_target(T.walk_speed, 0.0, 0.0, T), 1.0, 0.0001, "walking target")
+	check_near(TimeManager.compute_target(T.walk_speed * 3.0, 0.0, 0.0, T), 1.0, 0.0001, "clamped above walk speed")
 
 
 func test_look_is_capped_by_weight() -> void:
-	check_near(TimeManager.compute_target(0.0, 9999.0, false, T), T.look_weight, 0.0001, "fast look")
-	check_near(TimeManager.compute_target(0.0, T.look_full_deg_per_sec * 0.5, false, T), T.look_weight * 0.5, 0.0001, "half look")
+	check_near(TimeManager.compute_target(0.0, 9999.0, 0.0, T), T.look_weight, 0.0001, "fast look")
+	check_near(TimeManager.compute_target(0.0, T.look_full_deg_per_sec * 0.5, 0.0, T), T.look_weight * 0.5, 0.0001, "half look")
 
 
-func test_burst_forces_full_speed() -> void:
-	check_near(TimeManager.compute_target(0.0, 0.0, true, T), 1.0, 0.0001, "burst target")
+func test_burst_nudges_time_by_its_strength() -> void:
+	check_near(TimeManager.compute_target(0.0, 0.0, 0.22, T), 0.22, 0.0001, "burst sets the floor to its strength")
+	check_near(TimeManager.compute_target(0.0, 0.0, 0.01, T), T.min_scale, 0.0001, "never below min scale")
+	check_near(TimeManager.compute_target(T.walk_speed, 0.0, 0.22, T), 1.0, 0.0001, "moving still wins")
+
+
+func test_shooting_keeps_the_world_in_slow_motion() -> void:
+	check(T.burst_strength_shot <= 0.3, "a shot must not snap time to full speed")
+	Game.god_mode = true
+	check(Game.load_level("test_room"), "level loads")
+	await wait_physics(90)
+	var pistol: Pistol = Pistol.create()
+	Game.entities_root(self).add_child(pistol)
+	Game.player.hands.pick_up(pistol)
+	await wait_physics(60)
+	Game.player.hands.primary()
+	var peak: float = 0.0
+	for i: int in 30:
+		await wait_physics(1)
+		peak = maxf(peak, TimeManager.world_scale)
+	check(peak <= T.burst_strength_shot + 0.01, "peak scale after a shot was %.2f" % peak)
+	check(peak > T.min_scale, "but time did move a little")
+	check_eq(BulletPool.for_node(Game.player).active_count(), 1, "the bullet is still in the air, crawling")
 
 
 func test_rise_is_faster_than_fall() -> void:

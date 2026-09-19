@@ -7,7 +7,7 @@ signal hit(collider: Object, point: Vector3)
 
 const T: Tuning = preload("res://data/tuning.tres")
 const MASK: int = 1 | 2 | 4 | 32 | 64  # world, player, enemies, breakables, flying items
-const TRAIL_LENGTH: float = 1.1
+const TRAIL_LENGTH: float = 1.8
 
 var active: bool = false
 var direction: Vector3 = Vector3.FORWARD
@@ -25,10 +25,10 @@ func _ready() -> void:
 	# One mesh shared by every bullet, so spawning one costs a node and nothing else.
 	if _core_mesh == null:
 		_core_mesh = BoxMesh.new()
-		_core_mesh.size = Vector3(0.05, 0.05, 0.22)
+		_core_mesh.size = Vector3(0.07, 0.07, 0.26)
 		_core_mesh.material = Mats.pink_bright()
 		_trail_mesh = BoxMesh.new()
-		_trail_mesh.size = Vector3(0.03, 0.03, 1.0)
+		_trail_mesh.size = Vector3(0.04, 0.04, 1.0)
 		_trail_mesh.material = Mats.pink_trail()
 	var core := MeshInstance3D.new()
 	core.mesh = _core_mesh

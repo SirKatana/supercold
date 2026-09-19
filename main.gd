@@ -62,6 +62,13 @@ func _arg(arg_name: String, fallback: String) -> String:
 ## Debug aid: `godot4 --path . -- --shot=/tmp/f.png --shot-after=1.5` saves one frame and quits.
 func _capture(path: String, after: float) -> void:
 	await get_tree().create_timer(after, true, false, true).timeout
+	if _arg("do", "") == "shoot" and Game.player != null:
+		var gun: Pistol = Pistol.create()
+		Game.entities_root(self).add_child(gun)
+		Game.player.hands.pick_up(gun)
+		await get_tree().create_timer(0.6, true, false, true).timeout
+		Game.player.hands.primary()
+		await get_tree().create_timer(1.2, true, false, true).timeout
 	if _arg("do", "") == "hold" and Game.player != null:
 		var pistol: Pistol = Pistol.create()
 		Game.entities_root(self).add_child(pistol)

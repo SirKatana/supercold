@@ -74,14 +74,33 @@ func _physics_process(delta: float) -> void:
 func primary() -> void:
 	if held is Pistol:
 		var pistol: Pistol = held
-		if pistol.fire(player.aim_origin() + player.aim_direction() * 0.35, player.aim_direction(), player):
-			TimeManager.burst(T.burst_action)
+		var shot: Array[Vector3] = _shot_from_muzzle(pistol)
+		if pistol.fire(shot[0], shot[1], player):
+			TimeManager.burst(T.burst_action, T.burst_strength_shot)
 			player.fx.kick(0.05)
 			_kick()
 	elif held != null:
 		throw_held()
 	else:
 		punch()
+
+
+## The bullet leaves the gun, not the eye, and flies to whatever the crosshair is on.
+## Seen from the side it reads as a tracer; fired from the eye it was a square blocking the target.
+func _shot_from_muzzle(pistol: Pistol) -> Array[Vector3]:
+	var eye: Vector3 = player.aim_origin()
+	var forward: Vector3 = player.aim_direction()
+	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var aim_query := PhysicsRayQueryParameters3D.create(eye, eye + forward * 120.0, 1 | 4 | 32)
+	aim_query.exclude = [player.get_rid()]
+	var aim_hit: Dictionary = space.intersect_ray(aim_query)
+	var aim_point: Vector3 = aim_hit["position"] if not aim_hit.is_empty() else eye + forward * 120.0
+	var muzzle: Vector3 = pistol.muzzle_position()
+	# Hugging a wall can put the muzzle inside it. Fall back to the eye then.
+	var clear_query := PhysicsRayQueryParameters3D.create(eye, muzzle, 1 | 32)
+	if not space.intersect_ray(clear_query).is_empty() or aim_point.distance_to(eye) < 1.2:
+		return [eye + forward * 0.35, forward]
+	return [muzzle, (aim_point - muzzle).normalized()]
 
 
 func secondary() -> void:
@@ -105,7 +124,7 @@ func punch() -> bool:
 	if punch_cooldown_left > 0.0:
 		return false
 	punch_cooldown_left = T.punch_cooldown
-	TimeManager.burst(T.burst_action)
+	TimeManager.burst(T.burst_action, T.burst_strength_punch)
 	Sfx.play(&"punch")
 	_animate_jab()
 	var from: Vector3 = player.aim_origin()
@@ -128,7 +147,7 @@ func throw_held() -> void:
 	_set_held(null)
 	var dir: Vector3 = player.aim_direction()
 	item.throw_from(player.aim_origin() + dir * 0.45, dir * T.throw_speed + Vector3.UP * 0.8, player)
-	TimeManager.burst(T.burst_action)
+	TimeManager.burst(T.burst_action, T.burst_strength_throw)
 	Sfx.play(&"throw")
 
 
@@ -137,7 +156,7 @@ func pick_up(item: Pickup) -> bool:
 		return false
 	item.attach_to(_hold_point)
 	_set_held(item)
-	TimeManager.burst(T.burst_pickup)
+	TimeManager.burst(T.burst_pickup, T.burst_strength_pickup)
 	Sfx.play(&"pickup")
 	return true
 

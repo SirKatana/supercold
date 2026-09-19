@@ -7,8 +7,15 @@ extends Resource
 @export var min_scale: float = 0.06
 @export var look_weight: float = 0.30
 @export var look_full_deg_per_sec: float = 360.0
-@export var burst_action: float = 0.15
+## Acting nudges time forward instead of snapping it to full speed, so you watch
+## your own bullet leave the barrel. Each burst has a length (real seconds) and a strength (scale).
+@export var burst_action: float = 0.12
 @export var burst_pickup: float = 0.08
+@export var burst_strength_shot: float = 0.22
+@export var burst_strength_throw: float = 0.30
+@export var burst_strength_punch: float = 0.55
+@export var burst_strength_pickup: float = 0.15
+@export var burst_strength_break: float = 0.40
 @export var scale_rise_rate: float = 12.0
 @export var scale_fall_rate: float = 5.0
 @export var pitch_floor: float = 0.35
@@ -29,8 +36,8 @@ extends Resource
 @export var pistol_ammo: int = 6
 @export var pistol_cooldown: float = 0.35
 @export var enemy_drop_ammo: int = 4
-@export var bullet_speed: float = 30.0
-@export var bullet_life: float = 6.0
+@export var bullet_speed: float = 12.0
+@export var bullet_life: float = 8.0
 @export var throw_speed: float = 16.0
 @export var throw_gravity: float = 9.8
 @export var throw_stun: float = 1.2

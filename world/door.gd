@@ -116,6 +116,6 @@ func shatter(direction: Vector3) -> void:
 		if to_dude.length() <= T.door_shard_stun_radius and (flat == Vector3.ZERO or to_dude.normalized().dot(flat) > -0.1):
 			dude.stun(T.throw_stun)
 	Sfx.play(&"door_break", global_position)
-	TimeManager.burst(T.burst_action)
+	TimeManager.burst(T.burst_action, T.burst_strength_break)
 	broken.emit(self)
 	queue_free()

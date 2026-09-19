@@ -14,14 +14,15 @@ var override_scale: float = -1.0
 var _move_speed: float = 0.0
 var _look_deg_per_sec: float = 0.0
 var _burst_left: float = 0.0
+var _burst_strength: float = 0.0
 var _hit_pause_left: float = 0.0
 
 
-static func compute_target(move_speed: float, look_deg_per_sec: float, bursting: bool, t: Tuning) -> float:
+## `burst` is the strength of any action burst in progress, 0 when there is none.
+static func compute_target(move_speed: float, look_deg_per_sec: float, burst: float, t: Tuning) -> float:
 	var move: float = clampf(move_speed / t.walk_speed, 0.0, 1.0)
 	var look: float = clampf(look_deg_per_sec / t.look_full_deg_per_sec, 0.0, 1.0) * t.look_weight
-	var burst: float = 1.0 if bursting else 0.0
-	return maxf(t.min_scale, maxf(move, maxf(look, burst)))
+	return maxf(t.min_scale, maxf(move, maxf(look, clampf(burst, 0.0, 1.0))))
 
 
 static func step_scale(current: float, target: float, delta: float, t: Tuning) -> float:
@@ -37,8 +38,11 @@ func report_look(deg_per_sec: float) -> void:
 	_look_deg_per_sec = deg_per_sec
 
 
-func burst(seconds: float) -> void:
+func burst(seconds: float, strength: float) -> void:
+	if _burst_left <= 0.0:
+		_burst_strength = 0.0
 	_burst_left = maxf(_burst_left, seconds)
+	_burst_strength = maxf(_burst_strength, strength)
 
 
 ## Freezes the world for a few real milliseconds. Used for kill feedback.
@@ -56,6 +60,7 @@ func reset() -> void:
 	_move_speed = 0.0
 	_look_deg_per_sec = 0.0
 	_burst_left = 0.0
+	_burst_strength = 0.0
 	_hit_pause_left = 0.0
 	world_scale = 1.0
 
@@ -66,7 +71,7 @@ func _process(delta: float) -> void:
 	if override_scale >= 0.0:
 		world_scale = override_scale
 	else:
-		var target: float = compute_target(_move_speed, _look_deg_per_sec, _burst_left > 0.0, T)
+		var target: float = compute_target(_move_speed, _look_deg_per_sec, _burst_strength if _burst_left > 0.0 else 0.0, T)
 		world_scale = step_scale(world_scale, target, delta, T)
 	_burst_left = maxf(0.0, _burst_left - delta)
 	if not is_equal_approx(previous, world_scale):

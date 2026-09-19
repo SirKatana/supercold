@@ -106,7 +106,7 @@ func test_glass_breaks_on_bullet() -> void:
 	pane.global_position = Vector3(0, 0, -3)
 	await wait_physics(2)
 	BulletPool.for_node(world).fire(Vector3(0, 1.5, 0), Vector3.FORWARD, null)
-	await wait_physics(20)
+	await wait_physics(40)
 	check(not is_instance_valid(pane), "glass is gone")
 
 

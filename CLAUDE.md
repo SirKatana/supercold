@@ -167,16 +167,16 @@ Scale formula, evaluated every frame:
 ```
 move   = clamp(horizontal_speed / WALK_SPEED, 0, 1)          # moving  -> 1.0
 look   = clamp(mouse_deg_per_sec / 360, 0, 1) * LOOK_WEIGHT  # looking -> up to 0.30
-burst  = 1.0 while action_timer > 0                          # shoot / throw / punch
+burst  = strength of the action while its timer runs       # shot 0.22, throw 0.30, punch 0.55
 target = max(MIN_SCALE, move, look, burst)
 world_scale moves toward target: rise rate 12/s, fall rate 5/s
 ```
 
 | Tunable | Value | Note |
 |---|---|---|
-| `MIN_SCALE` | 0.06 | Never 0. Bullet at 30 m/s crawls at 1.8 m/s, dodgeable |
+| `MIN_SCALE` | 0.06 | Never 0. Bullet at 12 m/s crawls at 0.7 m/s, dodgeable |
 | `LOOK_WEIGHT` | 0.30 | Looking around leaks a little time |
-| Action burst | 0.15 s real | Shoot, throw, punch. Pickup gives 0.08 s |
+| Action burst | 0.12 s real | A nudge, never a snap to 1.0: shot 0.22, throw 0.30, break 0.40, punch 0.55, pickup 0.15. You must see your own bullet leave in slow motion |
 | Rise / fall | 12 / 5 per s | Snappy start, soft settle |
 
 All tunables live in one resource: `res://data/tuning.tres` (script `tuning.gd`). No magic numbers in entity scripts.
@@ -200,8 +200,9 @@ Walk 5 m/s, accel 40, jump 4.5, gravity 12. **One hit kills.** `R` restarts floo
 
 ## 4. Bullets
 
-Not physics bodies. Each frame: `step = dir * 30 * world_delta`, raycast from old to new position.
-Radius 0.05, life 6 s world time, pink emissive tracer with trail mesh.
+Not physics bodies. Each frame: `step = dir * 12 * world_delta`, raycast from old to new position.
+The player's bullet leaves the pistol muzzle and flies to the point under the crosshair, never from the eye.
+Radius 0.05, life 8 s world time, pink emissive tracer with trail mesh.
 One bullet kills player or any pink dude (friendly fire on). Bullets are blocked by thrown items and doors,
 and deal 1 damage to breakables.
 

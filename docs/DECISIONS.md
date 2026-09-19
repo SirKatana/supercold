@@ -44,3 +44,5 @@ One line per call made in auto mode, with why.
 - M8: installed export templates are 4.7.0 while the editor is 4.7.2, so the preset names the 4.7.0 release template explicitly through `custom_template/release`. The build boots and loads floors.
 - M8: `export_presets.cfg` is committed (it holds no secrets) and `include_filter` carries `levels/*.txt` and `*.json`, which are not resources and would otherwise be left out of the pack.
 - M8: tuning values were left at the plan's numbers. No human has played a full run yet, so a real balance pass is still owed.
+- Playtest 1 (user): bullets felt too fast at both speeds and shooting killed the time-shooter feel. Bullet speed 30 to 12 m/s. Action bursts now carry a strength instead of forcing scale 1.0: a shot only lifts time to 0.22 for 0.12 s, so the bullet visibly crawls out of the barrel.
+- Playtest 1: the player's bullet now starts at the pistol muzzle and aims at the point under the crosshair. Fired from the eye, the player looked straight down its tail and saw a pink square covering the target.

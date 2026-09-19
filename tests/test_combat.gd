@@ -92,7 +92,7 @@ func test_cooldown_runs_on_world_time() -> void:
 func test_thrown_item_blocks_bullet() -> void:
 	var item: Throwable = Throwable.create(&"keyboard")
 	world.add_child(item)
-	item.throw_from(Vector3(0, 0, -3), Vector3.ZERO, null)
+	item.throw_from(Vector3(0, 0.1, -1.5), Vector3.ZERO, null)
 	await wait_physics(2)
 	var state: Dictionary = {"hit": null}
 	var bullet: Bullet = BulletPool.for_node(world).fire(Vector3.ZERO, Vector3.FORWARD, null)
@@ -110,7 +110,7 @@ func test_resting_item_does_not_block_bullet() -> void:
 	item.global_position = Vector3(0, 0, -3)
 	await wait_physics(2)
 	var bullet: Bullet = BulletPool.for_node(world).fire(Vector3.ZERO, Vector3.FORWARD, null)
-	await wait_physics(20)
+	await wait_physics(40)
 	check(bullet.active and bullet.global_position.z < -5.0, "bullet flies over a resting item")
 	bullet.deactivate()
 
