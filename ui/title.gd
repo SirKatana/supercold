@@ -24,7 +24,7 @@ func _ready() -> void:
 	box.add_child(_label("TIME CRAWLS WHEN YOU STAND STILL", 24, Color(0.04, 0.04, 0.05)))
 	box.add_child(_label("", 10, Color.BLACK))
 	box.add_child(_label("CLICK TO START", 30, Color(0.04, 0.04, 0.05)))
-	box.add_child(_label("WASD move   MOUSE look   LMB punch / shoot   RMB grab / throw   E swap   R restart   ESC pause",
+	box.add_child(_label("WASD move   MOUSE look   LMB punch / shoot   RMB grab / throw   E swap   F shield   R restart   ESC pause",
 		16, Color(0.3, 0.32, 0.36)))
 
 

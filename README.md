@@ -21,6 +21,7 @@ godot4 --path .                 # or run from source with Godot 4.7
 | Left click | Punch | Shoot a pistol, throw anything else |
 | Right click | Grab what you are looking at | Throw it |
 | E | Grab | Swap for what you are looking at |
+| F | Wear a dropped SWAT shield, or drop the one you wear | |
 | R | Restart the floor | |
 | Esc | Pause: sensitivity, field of view, volume | |
 | F3 | Debug readout (source runs only) | |
@@ -32,6 +33,11 @@ Things worth knowing:
 - Three punches kill. The first one disarms.
 - Doors break to two punches, two bullets, or one thrown object. The panels stun whoever stood behind.
 - Dudes aim where you are, not where you will be. Keep moving sideways.
+- Shield troopers only die to a bullet through the glass slit in their shield, or to an explosion. Take the shield with F afterwards.
+- One bullet in three ricochets off a shield. It can come back at you.
+- Red barrels explode when shot or thrown. Walls block the blast, so use them. Do not stand next to one.
+- The wall breaker opens doors in one bash and interior walls in two. It has five hits.
+- The AK-47 is automatic: hold the trigger. The shotgun throws eight pellets.
 - The Director takes three bullets and calls a wave each time he is hit.
 
 ## Develop

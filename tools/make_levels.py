@@ -38,7 +38,7 @@ class Grid:
 
     def check_spacing(self, name, between=4.0, from_player=6.0):
         import math
-        enemies = self.cells("auBRS")
+        enemies = self.cells("auBRSH")
         player = self.cells("P")[0]
         for i, a in enumerate(enemies):
             assert math.dist(a, player) >= from_player, f"{name}: enemy {a} is {math.dist(a, player):.1f} cells from the player"
@@ -72,6 +72,7 @@ def f1_lobby():
     g.put("b", (6, 10))
     g.put("m", (13, 10))
     g.put("X", (12, 12))
+    g.put("g", (11, 9))
     g.put("o", (3, 6), (7, 3), (12, 3), (16, 6), (4, 10), (15, 10), (7, 12))
     save("f1_lobby", g, {"intro": "LOBBY\nSTAND STILL. TIME CRAWLS."})
 
@@ -97,6 +98,7 @@ def f2_offices():
     g.put("l", (19, 10))
     g.put("p", (27, 2))
     g.put("r", (6, 4))
+    g.put("g", (16, 5), (24, 11), (10, 18))
     g.pillars(10, 1, 28, 14, step=5, ox=4, oy=1)
     g.pillars(1, 7, 8, 14, step=3, ox=2, oy=2)
     g.pillars(1, 16, 13, 20, step=4, ox=3, oy=2)
@@ -119,6 +121,7 @@ def f3_servers():
     g.put("X", (26, 16))
     g.put("a", (12, 3), (16, 10), (20, 4), (24, 9), (8, 16), (18, 16))
     g.put("S", (4, 9))
+    g.put("g", (12, 6), (20, 9), (12, 15))
     g.put("T", (9, 10))
     g.put("u", (14, 16))
     g.put("b", (5, 2))
@@ -143,7 +146,9 @@ def f4_labs():
     g.put("P", (1, 12))
     g.put("X", (34, 18))
     g.put("a", (14, 11), (5, 4), (17, 5), (29, 4), (5, 18), (17, 18), (29, 17))
-    g.put("R", (24, 12), (32, 11))
+    g.put("R", (24, 12))
+    g.put("H", (32, 11))
+    g.put("g", (18, 12), (28, 11), (8, 5), (20, 19))
     g.put("K", (8, 3))
     g.put("u", (9, 21))
     g.put("w", (34, 11), (34, 12), (13, 1), (22, 22), (1, 1), (1, 22))
@@ -179,9 +184,11 @@ def f5_executive():
         g.put("c", (x, 7), (x, 8))
     g.put("P", (1, 2))
     g.put("X", (38, 23))
-    g.put("a", (9, 6), (17, 3), (31, 3), (28, 11), (4, 13), (5, 23), (33, 23))
+    g.put("a", (9, 6), (31, 3), (4, 13), (5, 23), (33, 23))
+    g.put("S", (30, 12))
     g.put("R", (24, 4), (36, 10))
-    g.put("S", (26, 17))
+    g.put("H", (26, 17), (24, 11))
+    g.put("g", (22, 5), (30, 9), (20, 17), (34, 17), (8, 14))
     g.put("K", (10, 7))
     g.put("T", (16, 17))
     g.put("u", (9, 15), (18, 23))
@@ -219,8 +226,9 @@ def roof():
     g.put("P", (4, 23))
     g.put("B", (15, 7))
     g.put("X", (15, 15))
-    g.put("a", (10, 6))
+    g.put("H", (10, 6))
     g.put("R", (20, 6))
+    g.put("g", (7, 9), (22, 11), (12, 21), (19, 22))
     g.put("p", (7, 15))
     g.put("K", (23, 15))
     g.put("T", (15, 20))

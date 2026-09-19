@@ -80,6 +80,8 @@ func _process(delta: float) -> void:
 	_slowmo_material.set_shader_parameter(&"amount", _amount)
 	if Input.is_action_just_pressed(&"debug_overlay"):
 		_debug.visible = not _debug.visible
+	if Game.player != null and is_instance_valid(Game.player) and Game.player.alive:
+		_prompt_shield()
 	if _debug.visible:
 		_debug.text = "world_scale %.2f   fps %d" % [TimeManager.world_scale, Engine.get_frames_per_second()]
 
@@ -136,3 +138,13 @@ func _show_intro(text: String) -> void:
 	var tween: Tween = create_tween()
 	tween.tween_interval(2.4)
 	tween.tween_property(_intro, ^"modulate:a", 0.0, 0.8)
+
+
+## "F  TAKE SHIELD" while one lies in reach, "F  DROP SHIELD" is never nagged.
+func _prompt_shield() -> void:
+	var wants: bool = Game.state == Game.State.PLAYING and Game.player.shield == null \
+		and Game.player.hands.nearest_shield() != null
+	if wants and _hint.text == "":
+		_hint.text = "F  TAKE SHIELD"
+	elif not wants and _hint.text == "F  TAKE SHIELD":
+		_hint.text = ""

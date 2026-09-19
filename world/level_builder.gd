@@ -96,12 +96,20 @@ static func create_pickup(kind: StringName) -> Pickup:
 		return Rifle.create()
 	if kind == &"shotgun":
 		return Shotgun.create()
+	if kind == &"barrel":
+		return GasBarrel.create()
 	return Throwable.create(kind)
 
 
 ## Items sit on a small pedestal so they read at hand height against the white floor.
 static func _place_pickups(data: LevelData, geometry: Node3D, entities: Node3D) -> void:
 	for entry: Dictionary in data.pickups:
+		if entry["kind"] == &"barrel":
+			# Barrels stand on the floor, not on a pedestal.
+			var barrel: Pickup = create_pickup(&"barrel")
+			barrel.position = data.cell_center(entry["cell"], 0.0)
+			entities.add_child(barrel)
+			continue
 		var pedestal: StaticBody3D = make_box(Vector3(0.7, 0.9, 0.7), Mats.prop())
 		pedestal.name = "Pedestal"
 		pedestal.position = data.cell_center(entry["cell"], 0.45)

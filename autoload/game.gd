@@ -175,9 +175,14 @@ func load_level(name_of_level: String) -> bool:
 # ---------------------------------------------------------------- enemies
 
 func spawn_dude(at: Vector3, armed: bool, weapon_kind: StringName = &"pistol") -> PinkDude:
-	var dude: PinkDude = DUDE_SCENE.instantiate()
-	dude.armed_at_spawn = armed
-	dude.weapon_kind = weapon_kind
+	var dude: PinkDude
+	if weapon_kind == &"shield":
+		dude = ShieldDude.new()
+		dude.name = "ShieldDude"
+	else:
+		dude = DUDE_SCENE.instantiate()
+		dude.armed_at_spawn = armed
+		dude.weapon_kind = weapon_kind
 	_register(dude, at)
 	return dude
 

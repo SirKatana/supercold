@@ -79,6 +79,8 @@ func _physics_process(delta: float) -> void:
 		secondary()
 	if Input.is_action_just_pressed(&"interact"):
 		interact()
+	if Input.is_action_just_pressed(&"use_shield"):
+		toggle_shield()
 
 
 func primary() -> void:
@@ -134,6 +136,37 @@ func interact() -> void:
 	pick_up(target)
 
 
+## F: take the nearest shield off the floor and wear it, or drop the one being worn.
+func toggle_shield() -> bool:
+	if player.shield != null and is_instance_valid(player.shield):
+		player.shield.release_to_floor(player.global_position - player.global_transform.basis.z * 0.9)
+		player.shield = null
+		_pose_support_arm(_supporting)
+		return true
+	var found: Shield = nearest_shield()
+	if found == null:
+		return false
+	found.wear(player.head)
+	player.shield = found
+	_arm_l.visible = false      # that arm is behind the shield now
+	TimeManager.burst(T.burst_pickup, T.burst_strength_pickup)
+	return true
+
+
+func nearest_shield() -> Shield:
+	var best: Shield = null
+	var best_dist: float = T.shield_pickup_range
+	for node: Node in get_tree().get_nodes_in_group(&"shields"):
+		var s: Shield = node as Shield
+		if s == null or s.state != Pickup.State.RESTING:
+			continue
+		var d: float = s.grab_point().distance_to(player.global_position + Vector3.UP * 0.5)
+		if d < best_dist:
+			best_dist = d
+			best = s
+	return best
+
+
 func punch() -> bool:
 	if punch_cooldown_left > 0.0:
 		return false
@@ -160,7 +193,7 @@ func throw_held() -> void:
 	var item: Pickup = held
 	_set_held(null)
 	var dir: Vector3 = player.aim_direction()
-	item.throw_from(player.aim_origin() + dir * 0.45, dir * T.throw_speed + Vector3.UP * 0.8, player)
+	item.throw_from(player.aim_origin() + dir * 0.45, dir * T.throw_speed * item.throw_speed_scale + Vector3.UP * 0.8, player)
 	TimeManager.burst(T.burst_action, T.burst_strength_throw)
 	Sfx.play(&"throw")
 
@@ -184,7 +217,7 @@ func find_target() -> Pickup:
 	var cos_limit: float = cos(deg_to_rad(T.pickup_cone_deg))
 	for node: Node in get_tree().get_nodes_in_group(&"pickups"):
 		var item: Pickup = node as Pickup
-		if item == null or not item.is_available():
+		if item == null or not item.is_available() or item is Shield:
 			continue
 		var to_item: Vector3 = item.global_position - origin
 		var distance: float = to_item.length()
@@ -235,6 +268,7 @@ func _on_ammo_changed(ammo: int) -> void:
 ## A long gun gets the off hand under its fore-end.
 func _pose_support_arm(supporting: bool) -> void:
 	_supporting = supporting
+	_arm_l.visible = player.shield == null
 	if supporting:
 		_arm_l.position = ARM_SUPPORT_L
 		_arm_l.rotation = Vector3(0.36, -0.36, 0.0)

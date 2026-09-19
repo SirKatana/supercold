@@ -26,6 +26,8 @@ var dangerous: bool = false
 var blunt_damage: int = 1
 ## Where the item sits relative to the fist when held.
 var hold_offset: Vector3 = Vector3.ZERO
+## Heavy things do not fly as fast.
+var throw_speed_scale: float = 1.0
 
 var _mesh_root: Node3D
 
@@ -36,9 +38,8 @@ func _ready() -> void:
 	monitoring = false
 	monitorable = true
 	var shape := CollisionShape3D.new()
-	var sphere := SphereShape3D.new()
-	sphere.radius = 0.25
-	shape.shape = sphere
+	shape.shape = _make_shape()
+	shape.position = _shape_offset()
 	add_child(shape)
 	_mesh_root = Node3D.new()
 	add_child(_mesh_root)
@@ -46,6 +47,17 @@ func _ready() -> void:
 	if state == State.HELD:
 		_mesh_root.rotation = Vector3.ZERO
 	_apply_layer()
+
+
+## The volume hands and bullets find. Big items override it.
+func _make_shape() -> Shape3D:
+	var sphere := SphereShape3D.new()
+	sphere.radius = 0.25
+	return sphere
+
+
+func _shape_offset() -> Vector3:
+	return Vector3.ZERO
 
 
 ## Overridden by subclasses to add MeshInstance3D children.

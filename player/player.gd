@@ -17,6 +17,8 @@ var input_enabled: bool = true
 var _look_accum_deg: float = 0.0
 var _look_rate: float = 0.0
 var ragdoll: Ragdoll
+## The SWAT shield on the left arm, or null.
+var shield: Shield
 ## The player's own body: same rig as the dudes. Head and arms are hidden in first person,
 ## so looking down shows a chest, hips and walking legs.
 var body: Humanoid
@@ -128,6 +130,16 @@ func _physics_process(delta: float) -> void:
 	TimeManager.report_look(_look_rate if alive else 0.0)
 
 
+func bullet_excludes() -> Array[RID]:
+	return shield.collider_rids() if shield != null and is_instance_valid(shield) else []
+
+
+## Killed by something with a direction: a blast, a shove. The body is thrown that way.
+func hit_from(direction: Vector3) -> void:
+	_last_hit_direction = direction.normalized()
+	die()
+
+
 func _on_enemy_killed(_remaining: int) -> void:
 	fx.punch_fov(4.0)
 
@@ -146,6 +158,9 @@ func die() -> void:
 	if hands.held != null and is_instance_valid(hands.held):
 		hands.held.drop(aim_origin() + aim_direction() * 0.4)
 	hands.visible = false
+	if shield != null and is_instance_valid(shield):
+		shield.release_to_floor(global_position - global_transform.basis.z * 0.7)
+		shield = null
 
 	# The body the player never sees while alive goes limp where they stood.
 	var push: Vector3 = _last_hit_direction

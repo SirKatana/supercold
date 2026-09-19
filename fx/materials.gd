@@ -139,6 +139,53 @@ static func bullet_black() -> StandardMaterial3D:
 		return m)
 
 
+static func barrel_red() -> StandardMaterial3D:
+	return _cached(&"barrel_red", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.78, 0.07, 0.05)
+		m.metallic = 0.25
+		m.roughness = 0.45
+		return m)
+
+
+static func hazard_yellow() -> StandardMaterial3D:
+	return _cached(&"hazard_yellow", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(1.0, 0.80, 0.05)
+		m.roughness = 0.6
+		return m)
+
+
+static func white_paint() -> StandardMaterial3D:
+	return _cached(&"white_paint", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.95, 0.95, 0.95)
+		m.roughness = 0.7
+		return m)
+
+
+static func visor_glass() -> StandardMaterial3D:
+	return _cached(&"visor_glass", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(0.55, 0.92, 1.0, 0.42)
+		m.emission_enabled = true
+		m.emission = ACCENT
+		m.emission_energy_multiplier = 0.5
+		m.roughness = 0.05
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		return m)
+
+
+static func scorch() -> StandardMaterial3D:
+	return _cached(&"scorch", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(0.05, 0.04, 0.04, 0.72)
+		return m)
+
+
 static func arm() -> StandardMaterial3D:
 	return _cached(&"arm", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

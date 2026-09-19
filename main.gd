@@ -126,6 +126,43 @@ func _capture(path: String, after: float) -> void:
 				dude._animate(1.0 / 60.0)
 		Game.player.hands.visible = false
 		await get_tree().create_timer(0.2, true, false, true).timeout
+	if (_arg("do", "") == "barrel" or _arg("do", "").begins_with("boom")) and Game.player != null:
+		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
+		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))
+		Game.player.head.rotation.x = -0.08
+		Game.player.hands.visible = false
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			node.queue_free()
+		for node: Node in get_tree().get_nodes_in_group(&"barrels"):
+			node.queue_free()
+		var ahead: Vector3 = -Game.player.global_transform.basis.z
+		var barrel: GasBarrel = GasBarrel.create()
+		Game.entities_root(self).add_child(barrel)
+		var near: float = 2.2 if _arg("do", "") == "barrel" else 7.0
+		barrel.global_position = Game.player.global_position * Vector3(1, 0, 1) + ahead * near
+		barrel.rotation.y = 0.5
+		if _arg("do", "").begins_with("boom"):
+			for i: int in 3:
+				var d: PinkDude = Game.spawn_dude(barrel.global_position + Vector3(cos(i * 2.1), 0, sin(i * 2.1)) * 2.4 + Vector3(0, 0.05, 0), true)
+				d.sense_override = true
+			await get_tree().create_timer(0.15, true, false, true).timeout
+			TimeManager.override_scale = 1.0
+			barrel.explode()
+			await get_tree().create_timer(float(_arg("do", "").trim_prefix("boom:")) if _arg("do", "").contains(":") else 0.3, true, false, true).timeout
+		else:
+			await get_tree().create_timer(0.2, true, false, true).timeout
+	if _arg("do", "") == "shieldworn" and Game.player != null:
+		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
+		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))
+		Game.player.head.rotation.x = 0.0
+		var worn: Shield = Shield.create()
+		Game.entities_root(self).add_child(worn)
+		worn.release_to_floor(Game.player.global_position + Vector3(0.5, 0, 0))
+		Game.player.hands.toggle_shield()
+		var sidearm: Pistol = Pistol.create()
+		Game.entities_root(self).add_child(sidearm)
+		Game.player.hands.pick_up(sidearm)
+		await get_tree().create_timer(0.2, true, false, true).timeout
 	if _arg("do", "") == "bullet" and Game.player != null:
 		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
 		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))

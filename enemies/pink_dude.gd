@@ -409,11 +409,19 @@ func stun(duration: float) -> void:
 	change_state(&"stunned")
 
 
-func on_bullet_hit(_bullet: Node, point: Vector3, _normal: Vector3) -> void:
+## Returns true only if the bullet bounced off instead of stopping. A plain dude never deflects.
+func on_bullet_hit(_bullet: Node, point: Vector3, _normal: Vector3) -> bool:
 	var from_dir: Vector3 = Vector3.ZERO
 	if _bullet is Bullet:
 		from_dir = (_bullet as Bullet).direction
 	die(point, from_dir)
+	return false
+
+
+## Caught in a blast. Thrown clear of it and killed.
+func on_explosion(centre: Vector3) -> void:
+	var away: Vector3 = global_position - centre
+	die(global_position + Vector3.UP, Vector3(away.x, 0, away.z).normalized() * 1.6)
 
 
 func on_thrown_hit(item: Pickup) -> void:

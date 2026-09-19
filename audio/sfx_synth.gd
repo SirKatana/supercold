@@ -25,6 +25,13 @@ static func build_all() -> Dictionary[StringName, AudioStream]:
 		&"ding": _render(0.8, func(t: float, _n: float) -> float:
 			var second: float = sin(TAU * 1318.5 * (t - 0.18)) * exp(-(t - 0.18) * 5.0) if t > 0.18 else 0.0
 			return (sin(TAU * 1046.5 * t) * exp(-t * 5.0) + second) * 0.4),
+		&"ricochet": _render(0.35, func(t: float, n: float) -> float:
+			return sin(TAU * (2600.0 - t * 4200.0) * t) * exp(-t * 9.0) * 0.5 + n * exp(-t * 70.0) * 0.5),
+		&"explosion": _render(0.98, func(t: float, n: float) -> float:
+			var thump: float = sin(TAU * (70.0 - t * 45.0) * t) * exp(-t * 3.2)
+			var crack: float = n * exp(-t * 28.0) * 1.2
+			var rumble: float = n * sin(TAU * 38.0 * t) * exp(-t * 4.5) * 0.7
+			return clampf((thump * 1.1 + crack + rumble) * 0.9, -1.0, 1.0)),
 		&"death": _render(0.8, func(t: float, n: float) -> float:
 			return sin(TAU * (300.0 - t * 280.0) * t) * exp(-t * 3.0) * 0.6 + n * exp(-t * 12.0) * 0.3),
 	}

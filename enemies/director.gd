@@ -48,18 +48,24 @@ func disarm() -> void:
 	pass
 
 
-func on_bullet_hit(bullet: Node, point: Vector3, _normal: Vector3) -> void:
+func on_bullet_hit(bullet: Node, point: Vector3, _normal: Vector3) -> bool:
 	if not alive:
-		return
+		return false
 	bullets_left -= 1
 	if bullets_left <= 0:
 		die(point, (bullet as Bullet).direction if bullet is Bullet else Vector3.ZERO)
-		return
+		return false
 	Shatter.burst(Game.entities_root(self), point, 6, Mats.pink(), Vector3.ONE * 0.1, Vector3.UP, 0.12)
 	Sfx.play(&"shatter", global_position)
 	stun(T.director_flinch)
 	flinched.emit(bullets_left)
 	Game.spawn_wave(T.director_wave_size, T.director_wave_size - 1)
+	return false
+
+
+## A blast hurts him as much as one bullet does.
+func on_explosion(_centre: Vector3) -> void:
+	on_bullet_hit(null, global_position + Vector3.UP, Vector3.UP)
 
 
 func _take_blunt(_damage: int, stun_time: float, _push: Vector3) -> void:

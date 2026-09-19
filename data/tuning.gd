@@ -67,6 +67,19 @@ extends Resource
 @export var ram_range: float = 2.3
 @export var ram_throw_damage: int = 3
 
+@export_group("Shield and barrels")
+## A bullet that strikes a ballistic shield ricochets this often. Otherwise it just stops.
+@export var shield_deflect_chance: float = 0.3333
+@export var shield_dude_speed: float = 2.1
+@export var shield_dude_cadence: float = 1.9
+@export var shield_pickup_range: float = 2.8
+## Gas barrel: dudes inside the radius die, the player dies inside the inner radius.
+## Walls block the blast.
+@export var barrel_radius: float = 5.5
+@export var barrel_player_radius: float = 3.6
+@export var barrel_chain_delay: float = 0.12
+@export var barrel_throw_speed: float = 11.0
+
 @export_group("Pink dude")
 @export var dude_speed: float = 3.2
 @export var dude_run_speed: float = 4.3

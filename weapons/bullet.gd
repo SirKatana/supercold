@@ -4,9 +4,10 @@ extends Node3D
 ## the distance covered, so it cannot tunnel at any speed or time scale.
 
 signal hit(collider: Object, point: Vector3)
+signal deflected(by: Object)
 
 const T: Tuning = preload("res://data/tuning.tres")
-const MASK: int = 1 | 2 | 4 | 32 | 64  # world, player, enemies, breakables, flying items
+const MASK: int = 1 | 2 | 4 | 32 | 64 | 128  # world, player, enemies, breakables, flying items, shields
 const TRAIL_LENGTH: float = 1.8
 
 var active: bool = false
@@ -104,7 +105,11 @@ func step(wd: float) -> void:
 	query.collide_with_areas = true
 	query.hit_from_inside = false
 	if is_instance_valid(shooter) and shooter is CollisionObject3D:
-		query.exclude = [(shooter as CollisionObject3D).get_rid()]
+		var skip: Array[RID] = [(shooter as CollisionObject3D).get_rid()]
+		# Whoever fired it must not hit the shield they are standing behind.
+		if shooter.has_method(&"bullet_excludes"):
+			skip.append_array(shooter.call(&"bullet_excludes"))
+		query.exclude = skip
 	var result: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 	if result.is_empty():
 		global_position = to
@@ -113,15 +118,30 @@ func step(wd: float) -> void:
 		return
 	var collider: Object = result["collider"]
 	var point: Vector3 = result["position"]
+	var normal: Vector3 = result["normal"]
 	global_position = point
+	var bounced: bool = false
 	if collider.has_method(&"on_bullet_hit"):
-		collider.call(&"on_bullet_hit", self, point, result["normal"])
+		# A handler that returns true has turned the bullet away instead of stopping it.
+		var answer: Variant = collider.call(&"on_bullet_hit", self, point, normal)
+		bounced = answer is bool and answer
 	else:
-		var normal: Vector3 = result["normal"]
 		Shatter.burst(Game.entities_root(self), point + normal * 0.05, 4, Mats.pink_bright(),
 			Vector3.ONE * 0.02, normal * 1.5, 0.05)
 	hit.emit(collider, point)
-	deactivate()
+	if not bounced:
+		deactivate()
+		return
+	# Ricochet: it now belongs to nobody and can kill whoever fired it.
+	direction = Gun.scatter(direction.bounce(normal).normalized(), deg_to_rad(9.0))
+	shooter = null
+	global_position = point + normal * 0.08
+	var up: Vector3 = Vector3.UP if absf(direction.y) < 0.99 else Vector3.RIGHT
+	look_at(global_position + direction, up)
+	_travelled = 0.0
+	_update_trail()
+	Sfx.play(&"ricochet", point)
+	deflected.emit(collider)
 
 
 func _update_trail() -> void:
