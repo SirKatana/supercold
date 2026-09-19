@@ -17,6 +17,11 @@ var input_enabled: bool = true
 var _look_accum_deg: float = 0.0
 var _look_rate: float = 0.0
 var ragdoll: Ragdoll
+## The player's own body: same rig as the dudes. Head and arms are hidden in first person,
+## so looking down shows a chest, hips and walking legs.
+var body: Humanoid
+var body_joints: PackedVector3Array = []
+var _walk_phase: float = 0.0
 var _death_cam_t: float = 0.0
 var _death_cam_from: Transform3D
 var _last_hit_direction: Vector3 = Vector3.ZERO
@@ -48,6 +53,11 @@ func _ready() -> void:
 	camera.current = true
 	head.add_child(camera)
 
+	body = Humanoid.create(self, Mats.arm())
+	body.set_group_visible(&"head", false)
+	body.set_group_visible(&"arms", false)
+	_pose_body(0.0)
+
 	fx = CameraFx.new()
 	fx.name = "CameraFx"
 	fx.camera = camera
@@ -58,6 +68,16 @@ func _ready() -> void:
 	hands.name = "Hands"
 	hands.player = self
 	camera.add_child(hands)
+
+
+func _pose_body(delta: float) -> void:
+	var real: Vector3 = get_real_velocity()
+	var moving: float = clampf(Vector2(real.x, real.z).length() / T.walk_speed, 0.0, 1.0)
+	_walk_phase += delta * 9.5 * moving
+	# Set back a little so the camera sits in front of the chest, not inside it.
+	var at := Transform3D(global_transform.basis, global_position + global_transform.basis.z * 0.16)
+	body_joints = Humanoid.to_world(Humanoid.pose(_walk_phase, moving, 0.0, 0.0, 0.0), at, 1.0)
+	body.apply(body_joints)
 
 
 func chest_position() -> Vector3:
@@ -102,6 +122,8 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	var real: Vector3 = get_real_velocity()
+	if alive:
+		_pose_body(delta)
 	TimeManager.report_move(Vector2(real.x, real.z).length() if alive else 0.0)
 	TimeManager.report_look(_look_rate if alive else 0.0)
 
@@ -130,7 +152,8 @@ func die() -> void:
 	if push == Vector3.ZERO:
 		push = global_transform.basis.z      # punched from the front: fall backwards
 	push = Vector3(push.x, 0.0, push.z).normalized() * 4.6 + Vector3.UP * 1.4
-	ragdoll = Ragdoll.spawn(Game.entities_root(self), global_transform, push, Mats.arm(), T.ragdoll_speed)
+	body.visible = false
+	ragdoll = Ragdoll.spawn(Game.entities_root(self), body_joints, 1.0, push, Mats.arm(), T.ragdoll_speed)
 
 	# The camera lets go of the head and pulls back to watch.
 	_death_cam_from = camera.global_transform

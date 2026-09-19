@@ -22,6 +22,9 @@ var _arm_tween: Tween
 const ARM_REST_R := Vector3(0.31, -0.43, -0.26)
 const ARM_HOLD_R := Vector3(0.23, -0.25, -0.16)
 const ARM_REST_L := Vector3(-0.31, -0.43, -0.26)
+const ARM_SUPPORT_L := Vector3(0.05, -0.385, -0.30)
+
+var _supporting: bool = false
 
 
 func _ready() -> void:
@@ -41,8 +44,13 @@ func _build_arm(rest: Vector3, inward: float) -> Node3D:
 	arm.position = rest
 	arm.rotation = Vector3(0.12, 0.10 * inward, 0.0)
 	add_child(arm)
-	_add_arm_box(arm, Vector3(0.075, 0.075, 0.46), Vector3(0, 0, 0.02))
-	_add_arm_box(arm, Vector3(0.10, 0.10, 0.12), Vector3(0, 0, -0.26))
+	_add_arm_box(arm, Vector3(0.078, 0.074, 0.30), Vector3(0, 0, 0.10))          # forearm
+	_add_arm_box(arm, Vector3(0.066, 0.062, 0.10), Vector3(0, 0, -0.10))         # wrist, narrower
+	_add_arm_box(arm, Vector3(0.092, 0.046, 0.095), Vector3(0, 0.012, -0.195))   # back of the hand
+	for i: int in 4:                                                             # four curled fingers
+		_add_arm_box(arm, Vector3(0.0205, 0.050, 0.050), Vector3(-0.0345 + i * 0.023, -0.016, -0.262))
+		_add_arm_box(arm, Vector3(0.0205, 0.030, 0.030), Vector3(-0.0345 + i * 0.023, -0.040, -0.235))
+	_add_arm_box(arm, Vector3(0.026, 0.030, 0.075), Vector3(0.052 * inward * -1.0, -0.006, -0.225))   # thumb
 	return arm
 
 
@@ -65,6 +73,8 @@ func _physics_process(delta: float) -> void:
 		return
 	if Input.is_action_just_pressed(&"primary"):
 		primary()
+	elif Input.is_action_pressed(&"primary") and held is Gun and (held as Gun).automatic:
+		primary()      # hold the trigger on an automatic
 	if Input.is_action_just_pressed(&"secondary"):
 		secondary()
 	if Input.is_action_just_pressed(&"interact"):
@@ -72,12 +82,12 @@ func _physics_process(delta: float) -> void:
 
 
 func primary() -> void:
-	if held is Pistol:
-		var pistol: Pistol = held
-		var shot: Array[Vector3] = _shot_from_muzzle(pistol)
-		if pistol.fire(shot[0], shot[1], player):
-			TimeManager.burst(T.burst_action, T.burst_strength_shot)
-			player.fx.kick(0.05)
+	if held is Gun:
+		var gun: Gun = held
+		var shot: Array[Vector3] = _shot_from_muzzle(gun)
+		if gun.fire(shot[0], shot[1], player):
+			TimeManager.burst(T.burst_action, gun.burst_strength)
+			player.fx.kick(gun.kick)
 			_kick()
 	elif held is Ram:
 		if (held as Ram).bash(player):
@@ -91,7 +101,7 @@ func primary() -> void:
 
 ## The bullet leaves the gun, not the eye, and flies to whatever the crosshair is on.
 ## Seen from the side it reads as a tracer; fired from the eye it was a square blocking the target.
-func _shot_from_muzzle(pistol: Pistol) -> Array[Vector3]:
+func _shot_from_muzzle(pistol: Gun) -> Array[Vector3]:
 	var eye: Vector3 = player.aim_origin()
 	var forward: Vector3 = player.aim_direction()
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
@@ -197,17 +207,18 @@ func find_target() -> Pickup:
 
 
 func _set_held(item: Pickup) -> void:
-	if held is Pistol and is_instance_valid(held):
-		var old: Pistol = held
+	if held is Gun and is_instance_valid(held):
+		var old: Gun = held
 		if old.ammo_changed.is_connected(_on_ammo_changed):
 			old.ammo_changed.disconnect(_on_ammo_changed)
 	held = item
 	held_changed.emit(item)
 	_arm_r.position = ARM_HOLD_R if item != null else ARM_REST_R
-	if item is Pistol:
-		var pistol: Pistol = item
+	_pose_support_arm(item is Gun and (item as Gun).two_handed)
+	if item is Gun:
+		var pistol: Gun = item
 		pistol.ammo_changed.connect(_on_ammo_changed)
-		ammo_changed.emit(pistol.ammo, T.pistol_ammo)
+		ammo_changed.emit(pistol.ammo, pistol.capacity)
 	elif item is Ram:
 		var ram: Ram = item
 		# The pips show bashes left, same as rounds for a pistol.
@@ -218,7 +229,18 @@ func _set_held(item: Pickup) -> void:
 
 
 func _on_ammo_changed(ammo: int) -> void:
-	ammo_changed.emit(ammo, T.pistol_ammo)
+	ammo_changed.emit(ammo, (held as Gun).capacity if held is Gun else T.pistol_ammo)
+
+
+## A long gun gets the off hand under its fore-end.
+func _pose_support_arm(supporting: bool) -> void:
+	_supporting = supporting
+	if supporting:
+		_arm_l.position = ARM_SUPPORT_L
+		_arm_l.rotation = Vector3(0.36, -0.36, 0.0)
+	else:
+		_arm_l.position = ARM_REST_L
+		_arm_l.rotation = Vector3(0.12, 0.10, 0.0)
 
 
 func _kick() -> void:
@@ -248,7 +270,7 @@ func _animate_jab() -> void:
 	_punch_left_next = not _punch_left_next
 	if _arm_tween != null and _arm_tween.is_valid():
 		_arm_tween.kill()
-		_arm_l.position = ARM_REST_L
+		_arm_l.position = ARM_SUPPORT_L if _supporting else ARM_REST_L
 		_arm_r.position = ARM_REST_R
 	_arm_tween = create_tween()
 	_arm_tween.tween_property(arm, ^"position", Vector3(0.11 * side, -0.20, -0.58), 0.07) \

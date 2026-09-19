@@ -11,7 +11,7 @@ func enter() -> void:
 func update(wd: float) -> StringName:
 	if not dude.has_weapon():
 		return &"disarmed"
-	if dude.can_see_player and dude.dist_to_player <= T.dude_engage_dist:
+	if dude.can_see_player and dude.dist_to_player <= dude.engage_distance():
 		return &"aim"
 	_repath -= wd
 	if _repath <= 0.0:

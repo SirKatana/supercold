@@ -80,6 +80,65 @@ static func grip_panel() -> StandardMaterial3D:
 		return m)
 
 
+static func wood() -> StandardMaterial3D:
+	return _cached(&"wood", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.62, 0.30, 0.13)
+		m.roughness = 0.55
+		return m)
+
+
+static func wood_dark() -> StandardMaterial3D:
+	return _cached(&"wood_dark", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.36, 0.16, 0.07)
+		m.roughness = 0.6
+		return m)
+
+
+static func bakelite() -> StandardMaterial3D:
+	return _cached(&"bakelite", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.50, 0.17, 0.08)
+		m.roughness = 0.35
+		return m)
+
+
+static func parkerized() -> StandardMaterial3D:
+	return _cached(&"parkerized", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.20, 0.21, 0.23)
+		m.metallic = 0.3
+		m.roughness = 0.55
+		return m)
+
+
+static func rubber() -> StandardMaterial3D:
+	return _cached(&"rubber", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.06, 0.06, 0.06)
+		m.roughness = 1.0
+		return m)
+
+
+static func brass() -> StandardMaterial3D:
+	return _cached(&"brass", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.78, 0.60, 0.25)
+		m.metallic = 0.6
+		m.roughness = 0.3
+		return m)
+
+
+static func bullet_black() -> StandardMaterial3D:
+	return _cached(&"bullet_black", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.03, 0.03, 0.04)
+		m.metallic = 0.5
+		m.roughness = 0.25
+		return m)
+
+
 static func arm() -> StandardMaterial3D:
 	return _cached(&"arm", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()
@@ -115,7 +174,10 @@ static func pink_trail() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		m.albedo_color = Color(PINK, 0.35)
+		m.albedo_color = Color(1.0, 0.18, 0.58, 0.55)
+		m.emission_enabled = true
+		m.emission = PINK
+		m.emission_energy_multiplier = 1.6
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED
 		return m)
 

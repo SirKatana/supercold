@@ -92,6 +92,10 @@ static func create_pickup(kind: StringName) -> Pickup:
 		return Pistol.create()
 	if kind == &"ram":
 		return Ram.create()
+	if kind == &"rifle":
+		return Rifle.create()
+	if kind == &"shotgun":
+		return Shotgun.create()
 	return Throwable.create(kind)
 
 

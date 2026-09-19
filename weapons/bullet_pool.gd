@@ -5,7 +5,7 @@ extends Node3D
 var _bullets: Array[Bullet] = []
 
 
-const PREWARM: int = 48
+const PREWARM: int = 72
 
 
 func _ready() -> void:
@@ -27,7 +27,7 @@ static func for_node(node: Node) -> BulletPool:
 	return pool
 
 
-func fire(from: Vector3, direction: Vector3, shooter: Node) -> Bullet:
+func fire(from: Vector3, direction: Vector3, shooter: Node, size: float = 1.0) -> Bullet:
 	var bullet: Bullet = null
 	for b: Bullet in _bullets:
 		if not b.active:
@@ -37,7 +37,7 @@ func fire(from: Vector3, direction: Vector3, shooter: Node) -> Bullet:
 		bullet = Bullet.new()
 		add_child(bullet)
 		_bullets.append(bullet)
-	bullet.launch(from, direction, shooter)
+	bullet.launch(from, direction, shooter, size)
 	return bullet
 
 

@@ -69,3 +69,14 @@ One line per call made in auto mode, with why.
 - First ragdoll build ran floor collision after the constraint solver. Limbs stretched 51 percent and the body never settled. The ground height is now sampled once per joint per step and clamped inside every solver iteration.
 - Knee, elbow and hip limits were tightened after the first render, where the body folded into a small heap instead of sprawling.
 - `death_restart_delay` went from 0.6 to 2.4 s so the fall can be seen. R still restarts at once.
+- Playtest 4 (user): wanted a very detailed AK-47, a shotgun that throws many bullets, black bullets that look like bullets with a pink trail, and humanoid bodies for the enemies as well as the player.
+- `Gun` is now the base class and `Pistol` a subclass, so hands, HUD, dudes and pickups all work with any gun. Hold-to-fire lives in `Hands` and only applies when `gun.automatic`.
+- `MeshKit` merges primitives on the CPU with `PrimitiveMesh.get_mesh_arrays()`, which works headless, instead of `SurfaceTool.append_from`, which reads back from the rendering server and returns nothing under `--headless`.
+- The AK was modelled 1.03 m long. `kit.root` scales the whole model to 0.85 on Z so it is 87 cm, and `muzzle_local` uses the same factor. A test checks the length.
+- Both stocks first sloped upward: rotating about +X by a negative angle lifts +Z. Stocks need a positive angle, grips a negative one. Noted in CLAUDE.md because it is easy to get backwards.
+- Enemy shotguns fire 5 pellets and only inside 10 m, enemy rifles fire 3-round bursts. Full player numbers in a dude's hands were not dodgeable on paper.
+- `BodyBuilder` is gone. `Humanoid` draws any body from 21 joint positions, so a living dude (FK pose) and a dead one (Verlet ragdoll) share one skin and the body does not change shape when it dies.
+- Dudes now ragdoll on world time and shatter 2 s later, instead of shattering at once. The plan's "shatter on death" is kept, with the fall in front of it.
+- The player has the same body with head and arms hidden, set 16 cm behind the camera, so looking down shows chest, hips and striding legs. The first-person arms stay a viewmodel because a camera-space hold pose aims better than a world-space arm.
+- `pose()` built joint names with string concatenation every call. With 12 dudes that was thousands of allocations a second, so names now come from constant tables and `apply()` uses cached index arrays. All six floors, 3,600 frames, run in 10.9 s headless.
+- One full-suite run failed once and then passed five times in a row with no change, so there is a rare flaky test and I do not know which. `tests/run.sh` now saves its full output to `build/last_test.log` so the next occurrence names itself. Likely suspects are the tests that depend on random spread or on a ragdoll settling.

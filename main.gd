@@ -104,6 +104,59 @@ func _capture(path: String, after: float) -> void:
 		await get_tree().create_timer(0.6, true, false, true).timeout
 		Game.player.hands.primary()
 		await get_tree().create_timer(1.2, true, false, true).timeout
+	if _arg("do", "").begins_with("dude:") and Game.player != null:
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			node.queue_free()
+		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
+		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))
+		Game.player.head.rotation.x = 0.0
+		var cam_at: Vector3 = Game.player.global_position
+		var ahead: Vector3 = -Game.player.global_transform.basis.z
+		var side: Vector3 = Game.player.global_transform.basis.x
+		var kinds: PackedStringArray = _arg("do", "").trim_prefix("dude:").split(",")
+		for i: int in kinds.size():
+			var dude: PinkDude = Game.spawn_dude(cam_at + ahead * 3.4 + side * (i - (kinds.size() - 1) * 0.5) * 1.5, kinds[i] != "none", StringName(kinds[i]))
+			dude.sense_override = true
+			dude.look_at(Vector3(cam_at.x, dude.global_position.y, cam_at.z) + side * 3.0)
+			dude.aiming = i % 2 == 0
+			dude.desired_velocity = Vector3.ZERO if i % 2 == 0 else -dude.global_transform.basis.z * 3.0
+			dude._walk_phase = 1.3
+			dude.set_physics_process(false)
+			for f: int in 30:
+				dude._animate(1.0 / 60.0)
+		Game.player.hands.visible = false
+		await get_tree().create_timer(0.2, true, false, true).timeout
+	if _arg("do", "") == "bullet" and Game.player != null:
+		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
+		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))
+		Game.player.head.rotation.x = 0.0
+		Game.player.hands.visible = false
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			node.queue_free()
+		var eye: Vector3 = Game.player.aim_origin()
+		var ahead: Vector3 = Game.player.aim_direction()
+		var side: Vector3 = Game.player.global_transform.basis.x
+		TimeManager.override_scale = 0.3
+		var pool: BulletPool = BulletPool.for_node(Game.player)
+		pool.fire(eye + ahead * 1.1 - side * 1.2, (side + ahead * 0.15).normalized(), null)
+		pool.fire(eye + ahead * 1.5 - side * 1.0 + Vector3.UP * 0.2, (side + ahead * 0.1).normalized(), null, 0.6)
+		await get_tree().create_timer(0.30, true, false, true).timeout
+	if _arg("do", "").begins_with("gun:") and Game.player != null:
+		var gun: Gun = PinkDude.create_gun(StringName(_arg("do", "").trim_prefix("gun:")))
+		Game.entities_root(self).add_child(gun)
+		Game.player.hands.pick_up(gun)
+		await get_tree().create_timer(0.2, true, false, true).timeout
+	if _arg("do", "").begins_with("model:") and Game.player != null:
+		# A turntable view: the gun floats side-on in front of the camera.
+		var show: Gun = PinkDude.create_gun(StringName(_arg("do", "").trim_prefix("model:")))
+		Game.entities_root(self).add_child(show)
+		show.state = Pickup.State.HELD
+		var cam: Camera3D = Game.player.camera
+		show.global_transform = Transform3D(Basis(Vector3.UP, PI * 0.5) * Basis(Vector3.RIGHT, 0.0),
+			cam.global_position - cam.global_transform.basis.z * 0.75 - cam.global_transform.basis.x * 0.12)
+		show.global_transform.basis = cam.global_transform.basis * Basis(Vector3.UP, -PI * 0.5 + 0.35) * Basis(Vector3.FORWARD, 0.12)
+		Game.player.hands.visible = false
+		await get_tree().create_timer(0.2, true, false, true).timeout
 	if _arg("do", "") == "hold" and Game.player != null:
 		var pistol: Pistol = Pistol.create()
 		Game.entities_root(self).add_child(pistol)

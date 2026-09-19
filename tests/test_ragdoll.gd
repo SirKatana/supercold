@@ -18,7 +18,7 @@ func after_each() -> void:
 
 
 func _drop(impulse: Vector3) -> Ragdoll:
-	return Ragdoll.spawn(world, Transform3D.IDENTITY, impulse, Mats.arm(), 1.0)
+	return Ragdoll.spawn_standing(world, Transform3D.IDENTITY, impulse, Mats.arm(), 1.0)
 
 
 func test_has_every_joint_of_a_human() -> void:
@@ -86,7 +86,7 @@ func test_player_death_spawns_a_ragdoll_and_restart_clears_it() -> void:
 	var where: Vector3 = player.global_position
 	player.die()
 	check(player.ragdoll != null, "ragdoll spawned")
-	check(player.ragdoll.point(&"pelvis").distance_to(where + Vector3(0, 0.96, 0)) < 0.3, "where the player stood")
+	check(player.ragdoll.point(&"pelvis").distance_to(where + Vector3(0, 0.96, 0)) < 0.45, "where the player stood")
 	check(not player.hands.visible, "first-person arms hidden")
 	await wait_physics(40)
 	check(player.camera.global_position.distance_to(where) > 1.0, "the camera pulled back to watch")

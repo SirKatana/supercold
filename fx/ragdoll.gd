@@ -1,10 +1,9 @@
 class_name Ragdoll
 extends Node3D
-## A full humanoid that goes limp: head, neck, spine, shoulders, elbows, wrists, hips,
-## knees and ankles. It is a position-based (Verlet) simulation, not RigidBody3D: joints
-## are points, bones are distance constraints, and joint limits are minimum and maximum
-## distances between the points either side of a joint. That keeps it deterministic,
-## testable headless, and free to run on whatever clock we hand it.
+## A Humanoid gone limp. It is a position-based (Verlet) simulation, not RigidBody3D: the 21
+## joints are points, bones are distance constraints, and joint limits are minimum and maximum
+## distances across each joint. Deterministic, testable headless, and it runs on whichever
+## clock it is told to: real time for the player, world time for dudes.
 
 const POINT_RADIUS: float = 0.07
 const ITERATIONS: int = 8
@@ -13,30 +12,15 @@ const DAMPING: float = 0.992
 const FRICTION: float = 0.55
 const WORLD_MASK: int = 1 | 32
 
-## Joint name -> standing position in metres, for a 1.8 m human facing -Z.
-const REST: Dictionary[StringName, Vector3] = {
-	&"head": Vector3(0, 1.70, 0), &"neck": Vector3(0, 1.53, 0), &"chest": Vector3(0, 1.36, 0),
-	&"spine": Vector3(0, 1.15, 0), &"pelvis": Vector3(0, 0.96, 0),
-	&"shoulder_l": Vector3(-0.20, 1.46, 0), &"shoulder_r": Vector3(0.20, 1.46, 0),
-	&"elbow_l": Vector3(-0.25, 1.17, 0.02), &"elbow_r": Vector3(0.25, 1.17, 0.02),
-	&"wrist_l": Vector3(-0.27, 0.91, -0.03), &"wrist_r": Vector3(0.27, 0.91, -0.03),
-	&"hand_l": Vector3(-0.27, 0.78, -0.05), &"hand_r": Vector3(0.27, 0.78, -0.05),
-	&"hip_l": Vector3(-0.10, 0.93, 0), &"hip_r": Vector3(0.10, 0.93, 0),
-	&"knee_l": Vector3(-0.11, 0.50, -0.02), &"knee_r": Vector3(0.11, 0.50, -0.02),
-	&"ankle_l": Vector3(-0.11, 0.08, 0.02), &"ankle_r": Vector3(0.11, 0.08, 0.02),
-	&"toe_l": Vector3(-0.11, 0.05, -0.20), &"toe_r": Vector3(0.11, 0.05, -0.20),
-}
-
-## Visible bones: [from, to, thickness]. The joint between two bones is the point they share.
 const BONES: Array = [
-	[&"neck", &"head", 0.10], [&"chest", &"neck", 0.11],
-	[&"shoulder_l", &"elbow_l", 0.095], [&"elbow_l", &"wrist_l", 0.08], [&"wrist_l", &"hand_l", 0.085],
-	[&"shoulder_r", &"elbow_r", 0.095], [&"elbow_r", &"wrist_r", 0.08], [&"wrist_r", &"hand_r", 0.085],
-	[&"hip_l", &"knee_l", 0.135], [&"knee_l", &"ankle_l", 0.105], [&"ankle_l", &"toe_l", 0.09],
-	[&"hip_r", &"knee_r", 0.135], [&"knee_r", &"ankle_r", 0.105], [&"ankle_r", &"toe_r", 0.09],
+	[&"neck", &"head"], [&"chest", &"neck"],
+	[&"shoulder_l", &"elbow_l"], [&"elbow_l", &"wrist_l"], [&"wrist_l", &"hand_l"],
+	[&"shoulder_r", &"elbow_r"], [&"elbow_r", &"wrist_r"], [&"wrist_r", &"hand_r"],
+	[&"hip_l", &"knee_l"], [&"knee_l", &"ankle_l"], [&"ankle_l", &"toe_l"],
+	[&"hip_r", &"knee_r"], [&"knee_r", &"ankle_r"], [&"ankle_r", &"toe_r"],
 ]
 
-## Rigid links that hold the torso together but are not drawn as limbs.
+## Rigid links that hold the torso together.
 const BRACES: Array = [
 	[&"chest", &"spine"], [&"spine", &"pelvis"],
 	[&"chest", &"shoulder_l"], [&"chest", &"shoulder_r"], [&"shoulder_l", &"shoulder_r"],
@@ -45,9 +29,7 @@ const BRACES: Array = [
 	[&"spine", &"hip_l"], [&"spine", &"hip_r"],
 ]
 
-## Joint limits as [a, b, min fraction, max fraction] of the rest distance between a and b.
-## A knee cannot fold flat or bend backwards past straight, a neck cannot fold onto the chest,
-## and the spine bends but does not jack-knife.
+## Joint limits as [a, b, min fraction, max fraction] of the standing distance between a and b.
 const LIMITS: Array = [
 	[&"hip_l", &"ankle_l", 0.62, 1.0], [&"hip_r", &"ankle_r", 0.62, 1.0],            # knees
 	[&"shoulder_l", &"wrist_l", 0.50, 1.0], [&"shoulder_r", &"wrist_r", 0.50, 1.0],  # elbows
@@ -55,57 +37,68 @@ const LIMITS: Array = [
 	[&"knee_l", &"toe_l", 0.78, 1.02], [&"knee_r", &"toe_r", 0.78, 1.02],            # ankles
 	[&"head", &"chest", 0.82, 1.0],                                                   # neck
 	[&"chest", &"pelvis", 0.80, 1.0],                                                 # spine
-	[&"knee_l", &"knee_r", 0.35, 3.2], [&"ankle_l", &"ankle_r", 0.30, 5.0],          # legs do not pass through each other
+	[&"knee_l", &"knee_r", 0.35, 3.2], [&"ankle_l", &"ankle_r", 0.30, 5.0],          # legs do not cross
 	[&"head", &"pelvis", 0.45, 1.0],                                                  # no folding in half
 	[&"elbow_l", &"spine", 0.45, 2.2], [&"elbow_r", &"spine", 0.45, 2.2],            # arms stay outside the ribs
-	[&"chest", &"knee_l", 0.62, 1.05], [&"chest", &"knee_r", 0.62, 1.05],            # hips: the torso cannot fold onto the thighs
-	[&"wrist_l", &"pelvis", 0.5, 4.0], [&"wrist_r", &"pelvis", 0.5, 4.0],            # arms sprawl instead of tucking under
+	[&"chest", &"knee_l", 0.62, 1.05], [&"chest", &"knee_r", 0.62, 1.05],            # hips
+	[&"wrist_l", &"pelvis", 0.5, 4.0], [&"wrist_r", &"pelvis", 0.5, 4.0],            # arms sprawl
 ]
 
-## Seconds of simulated time per real second. Set by whoever spawns it.
+signal shattered
+
+## Simulated seconds per second of whichever clock drives it.
 var speed: float = 0.75
+## Dudes fall in slow motion with the rest of the world. The player's body does not.
+var use_world_time: bool = false
+## World or real seconds until the body bursts into shards. Negative: it stays.
+var shatter_after: float = -1.0
+var body_scale: float = 1.0
 var material: Material
 
-var names: Array[StringName] = []
+var names: Array[StringName] = Humanoid.JOINTS
 var pos: PackedVector3Array = []
 var prev: PackedVector3Array = []
 
-var _index: Dictionary[StringName, int] = {}
-var _links: Array = []          # [ia, ib, min, max]
-var _bone_nodes: Array[MeshInstance3D] = []
-var _torso_upper: MeshInstance3D
-var _torso_lower: MeshInstance3D
-var _head: MeshInstance3D
+var _links: Array = []
+var _skin: Humanoid
 var _ground: PackedFloat32Array = []
 var _touching: PackedByteArray = []
 var _still_frames: int = 0
+var _age: float = 0.0
+var _last_dt: float = 0.0
 
 
-## Builds a limp body standing at `at`, then throws it with `impulse` (metres per second).
-static func spawn(parent: Node, at: Transform3D, impulse: Vector3, body_material: Material, sim_speed: float) -> Ragdoll:
+## `joints` are world positions in Humanoid.JOINTS order: the pose the body was in when it died.
+static func spawn(parent: Node, joints: PackedVector3Array, scale_factor: float, impulse: Vector3,
+		body_material: Material, sim_speed: float) -> Ragdoll:
 	var r := Ragdoll.new()
 	r.material = body_material
 	r.speed = sim_speed
+	r.body_scale = scale_factor
 	parent.add_child(r)
 	r.add_to_group(&"ragdolls")
-	r.setup(at, impulse)
+	r.setup(joints, impulse)
 	return r
 
 
-func setup(at: Transform3D, impulse: Vector3) -> void:
+## Convenience: a body standing upright at `at`.
+static func spawn_standing(parent: Node, at: Transform3D, impulse: Vector3, body_material: Material,
+		sim_speed: float) -> Ragdoll:
+	return spawn(parent, Humanoid.to_world(Humanoid.rest_local(), at, 1.0), 1.0, impulse, body_material, sim_speed)
+
+
+func setup(joints: PackedVector3Array, impulse: Vector3) -> void:
 	top_level = true
 	global_transform = Transform3D.IDENTITY
+	pos = joints.duplicate()
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	for joint: StringName in REST:
-		_index[joint] = names.size()
-		names.append(joint)
-		pos.append(at * REST[joint])
 	var dt: float = 1.0 / 60.0
-	for i: int in names.size():
-		# The hit lands high, so the upper body leads and the feet trail. A little noise
-		# per joint keeps the fall from looking like a statue tipping over.
-		var height: float = clampf(REST[names[i]].y / 1.7, 0.0, 1.0)
+	var feet: float = minf(pos[Humanoid.index_of(&"ankle_l")].y, pos[Humanoid.index_of(&"ankle_r")].y)
+	for i: int in pos.size():
+		# The hit lands high, so the upper body leads and the feet trail. A little noise per
+		# joint keeps the fall from looking like a statue tipping over.
+		var height: float = clampf((pos[i].y - feet) / (1.7 * body_scale), 0.0, 1.0)
 		var kick: Vector3 = impulse * (0.35 + 0.65 * height)
 		kick += Vector3(rng.randf_range(-0.6, 0.6), rng.randf_range(-0.2, 0.5), rng.randf_range(-0.6, 0.6))
 		prev.append(pos[i] - kick * dt)
@@ -116,17 +109,17 @@ func setup(at: Transform3D, impulse: Vector3) -> void:
 		_add_link(brace[0], brace[1], 1.0, 1.0)
 	for limit: Array in LIMITS:
 		_add_link(limit[0], limit[1], limit[2], limit[3])
-	_build_meshes()
-	_pose_meshes()
+	_skin = Humanoid.create(self, material, body_scale)
+	_skin.apply(pos)
 
 
 func _add_link(a: StringName, b: StringName, low: float, high: float) -> void:
-	var rest: float = REST[a].distance_to(REST[b])
-	_links.append([_index[a], _index[b], rest * low, rest * high])
+	var rest: float = rest_length(a, b)
+	_links.append([Humanoid.index_of(a), Humanoid.index_of(b), rest * low, rest * high])
 
 
 func point(joint: StringName) -> Vector3:
-	return pos[_index[joint]]
+	return pos[Humanoid.index_of(joint)]
 
 
 func bone_length(from: StringName, to: StringName) -> float:
@@ -134,10 +127,10 @@ func bone_length(from: StringName, to: StringName) -> float:
 
 
 func rest_length(from: StringName, to: StringName) -> float:
-	return REST[from].distance_to(REST[to])
+	return Humanoid.REST[from].distance_to(Humanoid.REST[to]) * body_scale
 
 
-## Total speed of all joints, for "has it settled" checks.
+## Average joint speed in metres per simulated second, for "has it settled" checks.
 func motion() -> float:
 	var total: float = 0.0
 	for i: int in pos.size():
@@ -146,11 +139,27 @@ func motion() -> float:
 
 
 func _physics_process(delta: float) -> void:
-	step(delta * speed)
-	# Once it lies still, stop simulating. It stays where it fell.
-	_still_frames = _still_frames + 1 if motion() < 0.06 else 0
+	var dt: float = (TimeManager.world_delta(delta) if use_world_time else delta) * speed
+	if dt <= 0.0:
+		return
+	_age += dt / speed
+	if shatter_after >= 0.0 and _age >= shatter_after:
+		shatter()
+		return
 	if _still_frames > 45:
-		set_physics_process(false)
+		return    # lying still: stop simulating, keep counting toward the shatter
+	step(dt)
+	_still_frames = _still_frames + 1 if motion() < 0.06 else 0
+
+
+## Bursts the body into shards of its own colour at the big joints, and removes it.
+func shatter() -> void:
+	var world: Node = get_parent()
+	for joint: StringName in [&"head", &"chest", &"pelvis", &"knee_l", &"knee_r", &"elbow_l", &"elbow_r"]:
+		Shatter.burst(world, point(joint), 4, material, Vector3.ONE * 0.12 * body_scale, Vector3.UP * 0.5, 0.17 * body_scale)
+	Sfx.play(&"shatter", point(&"chest"))
+	shattered.emit()
+	queue_free()
 
 
 func step(dt: float) -> void:
@@ -158,8 +167,12 @@ func step(dt: float) -> void:
 		return
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var count: int = pos.size()
+	# Verlet keeps velocity as (pos - prev), which assumes a constant step. World time does
+	# not give one, so the carried velocity is rescaled by how this step compares to the last.
+	var ratio: float = dt / _last_dt if _last_dt > 0.0 else 1.0
+	_last_dt = dt
 	for i: int in count:
-		var velocity: Vector3 = (pos[i] - prev[i]) * DAMPING
+		var velocity: Vector3 = (pos[i] - prev[i]) * DAMPING * ratio
 		prev[i] = pos[i]
 		pos[i] += velocity + Vector3.DOWN * GRAVITY * dt * dt
 
@@ -184,7 +197,7 @@ func step(dt: float) -> void:
 			# Scrape along the ground instead of sliding forever.
 			var slide: Vector3 = pos[i] - prev[i]
 			prev[i] = pos[i] - Vector3(slide.x * (1.0 - FRICTION), minf(slide.y, 0.0) * 0.2, slide.z * (1.0 - FRICTION))
-	_pose_meshes()
+	_skin.apply(pos)
 
 
 func _solve(iterations: int) -> void:
@@ -208,7 +221,7 @@ func _solve(iterations: int) -> void:
 				_touching[i] = 1
 
 
-## Sweeps the joint sideways from where it was to where it wants to be and stops it on walls.
+## Sweeps the joint from where it was to where it wants to be and stops it on walls.
 ## Floors are the ground clamp's job, so near-horizontal surfaces are ignored here.
 func _hit_walls(space: PhysicsDirectSpaceState3D, i: int) -> void:
 	var from: Vector3 = prev[i]
@@ -225,58 +238,3 @@ func _hit_walls(space: PhysicsDirectSpaceState3D, i: int) -> void:
 	pos[i] = (hit["position"] as Vector3) + normal * POINT_RADIUS
 	var v: Vector3 = pos[i] - prev[i]
 	prev[i] = pos[i] - (v - normal * v.dot(normal)) * (1.0 - FRICTION)
-
-
-# ---------------------------------------------------------------- looks
-
-func _box(size: Vector3) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	mesh.material = material
-	mi.mesh = mesh
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mi)
-	return mi
-
-
-func _build_meshes() -> void:
-	for bone: Array in BONES:
-		var thickness: float = bone[2]
-		_bone_nodes.append(_box(Vector3(thickness, thickness, 1.0)))
-	_torso_upper = _box(Vector3(0.40, 0.22, 1.0))
-	_torso_lower = _box(Vector3(0.32, 0.20, 1.0))
-	_head = MeshInstance3D.new()
-	var skull := SphereMesh.new()
-	skull.radius = 0.12
-	skull.height = 0.27
-	skull.radial_segments = 10
-	skull.rings = 6
-	skull.material = material
-	_head.mesh = skull
-	add_child(_head)
-
-
-func _pose_meshes() -> void:
-	for i: int in BONES.size():
-		_stretch(_bone_nodes[i], point(BONES[i][0]), point(BONES[i][1]), Vector3.UP)
-	var across: Vector3 = point(&"shoulder_r") - point(&"shoulder_l")
-	_stretch(_torso_upper, point(&"spine"), point(&"neck"), across)
-	_stretch(_torso_lower, point(&"pelvis") + (point(&"pelvis") - point(&"spine")) * 0.35, point(&"spine"),
-		point(&"hip_r") - point(&"hip_l"))
-	_head.global_position = point(&"head") + (point(&"head") - point(&"neck")).normalized() * 0.03
-
-
-## Lays a unit-length box from `a` to `b`. `side` fixes the roll, which matters for the torso.
-func _stretch(node: MeshInstance3D, a: Vector3, b: Vector3, side: Vector3) -> void:
-	var along: Vector3 = b - a
-	var length: float = along.length()
-	if length < 0.001:
-		return
-	var z: Vector3 = along / length
-	var x: Vector3 = side - z * side.dot(z)
-	if x.length() < 0.001:
-		x = z.cross(Vector3.RIGHT if absf(z.x) < 0.9 else Vector3.FORWARD)
-	x = x.normalized()
-	var y: Vector3 = z.cross(x).normalized()
-	node.global_transform = Transform3D(Basis(x, y, z * length), (a + b) * 0.5)

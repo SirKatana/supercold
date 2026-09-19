@@ -4,7 +4,7 @@ extends DudeState
 
 var _repath: float = 0.0
 var _windup: float = -1.0
-var _target_weapon: Pistol = null
+var _target_weapon: Gun = null
 
 
 func enter() -> void:
@@ -34,7 +34,7 @@ func update(wd: float) -> StringName:
 	_repath -= wd
 	if _repath <= 0.0:
 		_repath = 0.3
-		_target_weapon = dude.find_free_pistol() if dude.seeks_weapons else null
+		_target_weapon = dude.find_free_gun() if dude.seeks_weapons else null
 		if _target_weapon != null:
 			dude.set_nav_target(_target_weapon.global_position)
 		else:

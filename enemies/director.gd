@@ -16,13 +16,8 @@ func _ready() -> void:
 	bullets_left = T.director_hp
 	armed_at_spawn = true
 	super()
-	var off_hand := Node3D.new()
-	off_hand.name = "OffHand"
-	off_hand.position = Vector3(0, -0.66, 0)
-	off_hand.rotation.x = -PI * 0.5
-	parts[&"arm_l"].add_child(off_hand)
 	off_hand_weapon = Pistol.create()
-	off_hand_weapon.attach_to(off_hand)
+	off_hand_weapon.attach_to(off_hand_anchor)
 
 
 ## The boss does not hide. He keeps coming.
@@ -81,7 +76,6 @@ func die(at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO) -> void:
 	super(at, push)
 
 
-func _animate(wd: float) -> void:
-	super(wd)
-	# Both arms come up when he aims.
-	parts[&"arm_l"].rotation.x = parts[&"arm_r"].rotation.x if (aiming or winding_up) else parts[&"arm_l"].rotation.x
+## Both arms come up when he aims: one pistol each.
+func aim_left_amount() -> float:
+	return _aim_raise

@@ -3,15 +3,16 @@ extends RefCounted
 ## Turns an ASCII grid plus optional JSON sidecar into LevelData.
 ##
 ## `#` wall  `.` floor  ` ` void  `D` door  `G` glass  `P` player  `X` exit
-## `a` armed dude  `u` unarmed dude  `B` boss  `w` wave point  `t` trigger
+## `a` pistol dude  `R` rifle dude  `S` shotgun dude  `u` unarmed dude  `K` AK-47  `T` shotgun
+##  `B` boss  `w` wave point  `t` trigger
 ## `r` wall breaker  `p` pistol  `b` bottle  `m` mug  `k` keyboard  `l` stapler
 ## `c` desk  `s` server rack  `o` pillar (full height cover)
 
 const PICKUP_KINDS: Dictionary[String, StringName] = {
-	"p": &"pistol", "b": &"bottle", "m": &"mug", "k": &"keyboard", "l": &"stapler", "r": &"ram",
+	"p": &"pistol", "b": &"bottle", "m": &"mug", "k": &"keyboard", "l": &"stapler", "r": &"ram", "K": &"rifle", "T": &"shotgun",
 }
 const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar"}
-const KNOWN: String = "#. DGPXauBwtpbmklcsor"
+const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKT"
 
 
 static func load_level(level_name: String) -> LevelData:
@@ -55,8 +56,9 @@ static func parse(text: String, json_text: String = "") -> LevelData:
 				data.exit_cell = cell
 			elif c == "B":
 				data.boss_cell = cell
-			elif c == "a" or c == "u":
-				data.spawns.append({"cell": cell, "armed": c == "a"})
+			elif c == "a" or c == "u" or c == "R" or c == "S":
+				var gun: StringName = &"rifle" if c == "R" else (&"shotgun" if c == "S" else &"pistol")
+				data.spawns.append({"cell": cell, "armed": c != "u", "weapon": gun})
 			elif c == "w":
 				data.wave_points.append(cell)
 			elif c == "t":

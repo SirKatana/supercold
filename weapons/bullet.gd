@@ -15,35 +15,59 @@ var shooter: Node = null
 var age: float = 0.0
 
 var _trail: MeshInstance3D
+var _body: Node3D
 var _travelled: float = 0.0
+var _size: float = 1.0
 
-static var _core_mesh: BoxMesh
-static var _trail_mesh: BoxMesh
+static var _round_mesh: ArrayMesh
+static var _trail_mesh: CylinderMesh
 
 
 func _ready() -> void:
-	# One mesh shared by every bullet, so spawning one costs a node and nothing else.
-	if _core_mesh == null:
-		_core_mesh = BoxMesh.new()
-		_core_mesh.size = Vector3(0.07, 0.07, 0.26)
-		_core_mesh.material = Mats.pink_bright()
-		_trail_mesh = BoxMesh.new()
-		_trail_mesh.size = Vector3(0.04, 0.04, 1.0)
+	# One mesh pair shared by every bullet, so spawning one costs two nodes and nothing else.
+	if _round_mesh == null:
+		_round_mesh = MeshKit.cached(&"bullet", _model_round)
+		_trail_mesh = CylinderMesh.new()
+		_trail_mesh.top_radius = 0.022     # wide at the bullet
+		_trail_mesh.bottom_radius = 0.0    # tapering to nothing behind it
+		_trail_mesh.height = 1.0
+		_trail_mesh.radial_segments = 6
+		_trail_mesh.rings = 0
+		_trail_mesh.cap_top = false
+		_trail_mesh.cap_bottom = false
 		_trail_mesh.material = Mats.pink_trail()
-	var core := MeshInstance3D.new()
-	core.mesh = _core_mesh
-	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(core)
+	_body = Node3D.new()
+	add_child(_body)
+	var round_instance := MeshInstance3D.new()
+	round_instance.mesh = _round_mesh
+	round_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_body.add_child(round_instance)
 
 	_trail = MeshInstance3D.new()
 	_trail.mesh = _trail_mesh
+	# The cylinder's top (+Y, the wide end) points at -Z, toward the bullet.
+	_trail.rotation.x = -PI * 0.5
 	_trail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_trail)
 	deactivate()
 
 
-func launch(from: Vector3, dir: Vector3, by: Node) -> void:
+## A black round that reads as a bullet: ogive nose, bearing surface, crimp groove, boat tail.
+## Drawn about three times life size so it can be seen crawling across a room.
+static func _model_round(kit: MeshKit) -> void:
+	var black: Material = Mats.bullet_black()
+	var band: Material = Mats.brass()
+	kit.tube(0.0, 0.012, 0.026, Vector3(0, 0, -0.072), black, true, 12)      # tip
+	kit.tube(0.012, 0.021, 0.034, Vector3(0, 0, -0.042), black, true, 12)    # ogive
+	kit.tube(0.021, 0.021, 0.050, Vector3(0, 0, 0.000), black, true, 12)     # bearing surface
+	kit.tube(0.0215, 0.0215, 0.005, Vector3(0, 0, 0.004), band, true, 12)    # driving band
+	kit.tube(0.021, 0.016, 0.018, Vector3(0, 0, 0.034), black, true, 12)     # boat tail
+
+
+func launch(from: Vector3, dir: Vector3, by: Node, size: float = 1.0) -> void:
 	active = true
+	_size = size
+	_body.scale = Vector3.ONE * size
 	visible = true
 	age = 0.0
 	_travelled = 0.0
@@ -101,6 +125,6 @@ func step(wd: float) -> void:
 
 
 func _update_trail() -> void:
-	var length: float = clampf(_travelled, 0.01, TRAIL_LENGTH)
-	_trail.scale = Vector3(1, 1, length)
-	_trail.position = Vector3(0, 0, length * 0.5 + 0.1)
+	var length: float = clampf(_travelled, 0.01, TRAIL_LENGTH * _size)
+	_trail.scale = Vector3(_size, length, _size)
+	_trail.position = Vector3(0, 0, length * 0.5 + 0.04 * _size)

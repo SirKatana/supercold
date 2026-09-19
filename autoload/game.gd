@@ -160,7 +160,7 @@ func load_level(name_of_level: String) -> bool:
 	player.died.connect(_on_player_died)
 
 	for spawn: Dictionary in data.spawns:
-		spawn_dude(data.cell_center(spawn["cell"], 0.05), spawn["armed"])
+		spawn_dude(data.cell_center(spawn["cell"], 0.05), spawn["armed"], spawn.get("weapon", &"pistol"))
 	if data.boss_cell.x >= 0:
 		spawn_boss(data.cell_center(data.boss_cell, 0.05))
 	for wave: Dictionary in data.waves:
@@ -174,9 +174,10 @@ func load_level(name_of_level: String) -> bool:
 
 # ---------------------------------------------------------------- enemies
 
-func spawn_dude(at: Vector3, armed: bool) -> PinkDude:
+func spawn_dude(at: Vector3, armed: bool, weapon_kind: StringName = &"pistol") -> PinkDude:
 	var dude: PinkDude = DUDE_SCENE.instantiate()
 	dude.armed_at_spawn = armed
+	dude.weapon_kind = weapon_kind
 	_register(dude, at)
 	return dude
 

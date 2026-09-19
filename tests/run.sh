@@ -6,5 +6,7 @@ args=()
 [ -n "$1" ] && args=(-- "--only=$1")
 out=$(godot4 --headless --fixed-fps 60 --path . -s tests/run_tests.gd "${args[@]}" 2>&1)
 code=$?
+# Keep the full output of the last run. A flaky failure is otherwise gone by the time anyone looks.
+mkdir -p build && echo "$out" > build/last_test.log
 echo "$out" | grep -E "^(FAIL|TESTS)|SCRIPT ERROR|Parse Error" | head -40
 exit $code

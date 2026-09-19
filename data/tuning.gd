@@ -37,6 +37,20 @@ extends Resource
 @export var pistol_ammo: int = 6
 @export var pistol_cooldown: float = 0.35
 @export var enemy_drop_ammo: int = 4
+## AK-47: hold the trigger. The cooldown is world time, so standing still it fires slowly too.
+@export var rifle_ammo: int = 30
+@export var rifle_cooldown: float = 0.10
+@export var rifle_spread_deg: float = 1.1
+@export var rifle_enemy_burst: int = 3
+@export var rifle_drop_ammo: int = 12
+## Pump shotgun: one pull throws a cone of pellets, then it has to be racked.
+@export var shotgun_ammo: int = 5
+@export var shotgun_pellets: int = 8
+@export var shotgun_spread_deg: float = 5.5
+@export var shotgun_cooldown: float = 0.85
+@export var shotgun_enemy_pellets: int = 5
+@export var shotgun_enemy_range: float = 10.0
+@export var shotgun_drop_ammo: int = 3
 @export var bullet_speed: float = 12.0
 @export var bullet_life: float = 8.0
 @export var throw_speed: float = 16.0
@@ -67,6 +81,8 @@ extends Resource
 @export var dude_hide_min: float = 0.5
 @export var dude_hide_max: float = 1.3
 @export var dude_reposition_max: float = 3.0
+## A dead dude falls as a ragdoll on world time, then bursts into shards after this long.
+@export var dude_ragdoll_shatter: float = 2.0
 @export var dude_reaction: float = 0.3
 @export var dude_aim_time: float = 0.7
 @export var dude_cadence: float = 1.4

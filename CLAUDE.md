@@ -208,7 +208,7 @@ and deal 1 damage to breakables.
 
 ## 5. Enemies: Pink Dudes
 
-Low-poly humanoid built in code from capsules and boxes, emissive pink, no texture.
+Jointed `Humanoid` rig (see section 6), emissive pink, no texture.
 CharacterBody3D plus NavigationAgent3D. Move 3.2 m/s times `world_scale`. HP 3 versus punches and throws, any bullet kills.
 
 FSM, one script per state under `enemies/states/`:
@@ -218,7 +218,7 @@ FSM, one script per state under `enemies/states/`:
 - Fire cadence 1.4 s world time. Needs line of sight, checked by raycast against layer 1 and 6.
 - Disarmed: runs to nearest free pistol within 12 m, otherwise rushes to punch. Enemy punch kills player, 0.5 s world windup.
 - Unarmed variant spawns without pistol and goes straight to rush.
-- Dead: body swaps to 24 shard pieces in one MultiMeshInstance3D, custom ballistic scaled by world time, fades after 3 s world. Drops pistol.
+- Dead: drops its gun and goes limp as a pink Ragdoll on world time, then shatters into shards.
 
 Boss, **The Director**: 1.3x scale, dual pistols, 3 bullet hits to kill, alternates hands at 0.7 s cadence,
 flinches 1 s after each hit and calls a wave of 4 dudes through rooftop doors.
@@ -229,7 +229,11 @@ flinches 1 s after each hit and calls a wave of 4 dudes through rooftop doors.
 - **Glass wall**: HP 1, blocks movement, not sight.
 - **Elevator** (`world/elevator.gd`): a real cabin with steel frame, two sliding doors, a call button and digital floor screens outside and inside. Locked (screen shows enemies left) until the floor is clear. Then the button opens it, and the button reacts to a punch, a bullet or a thrown object. Step in, doors close, synthesized lift music plays for `elevator_ride_seconds`, next floor loads. The player starts every floor inside an arrival cabin, and stepping out flashes `LEVEL N` plus the intro text. Lifts run on **real time**, never world time. `P` and `X` sit against a wall so the cabin reads as built in. The roof exit is a `Helipad` (`"exit": "helipad"` in the sidecar).
 - **Wall breaker** `r` (`weapons/ram.gd`, `world/wall_breach.gd`): black cylinder with two handles, held under the arm, LMB bashes. `ram_hits` = 5 bashes, then it cracks in half. A door costs 1, a wall cell costs `ram_wall_hits` = 2 (first cracks, second opens), a dude dies to one bash. Thrown at a dude it kills him and cracks in half. Outer walls and walls beside the void never break and cost nothing. A breach swaps the merged wall body for up to four smaller ones (`split_rect`), edits `data.rows`, and rebakes the navmesh on a thread. One ram each on F2 to F5.
-- **Ragdoll** (`fx/ragdoll.gd`): the player's body on death. 21 joints (head, neck, chest, spine, pelvis, shoulders, elbows, wrists, hands, hips, knees, ankles, toes). It is a Verlet point-and-constraint simulation, **not** RigidBody3D, so the no-RigidBody rule still holds. Joint limits are min and max distances across each joint. The ground clamp must stay inside the solver loop or limbs stretch. Runs on real time times `ragdoll_speed`, the camera detaches and pulls back to watch, restart comes after `death_restart_delay` or R.
+- **Guns** (`weapons/gun.gd` base, `pistol.gd`, `rifle.gd`, `shotgun.gd`): every gun is a `Gun` with ammo, capacity, world-time cooldown, `automatic`, `pellets`, `spread_deg`, `two_handed`, `muzzle_local`. AK-47 `K`: 30 rounds, hold the trigger, 0.10 s cycle. Shotgun `T`: 5 shells, 8 pellets in a 5.5 degree cone, 0.85 s pump. Dudes `R` (rifle, 3-round bursts) and `S` (shotgun, 5 pellets, must close to 10 m) use `set_enemy_held(true)` for gentler numbers; the gun goes back to player numbers when it leaves their hands.
+- **Gun models** are built in `_model(kit: MeshKit)`. `MeshKit` (`fx/mesh_kit.gd`) transforms every primitive on the CPU and merges them per material into one cached `ArrayMesh`, so the 150-part AK is one MeshInstance3D. Never add per-part MeshInstance3D nodes to a gun. -Z is the muzzle, stocks drop with a **positive** X rotation, grips rake with a negative one.
+- **Bullets** are a black modelled round (tip, ogive, bearing surface, brass band, boat tail) with a tapered pink emissive trail. Pellets are the same mesh at scale 0.6.
+- **Humanoid** (`fx/humanoid.gd`): one 21-joint body for dudes, the player and every ragdoll. Tapered limbs plus a visible ball at each joint. `Humanoid.pose(walk_phase, walk_amount, aim_right, aim_left, stagger)` is forward kinematics (knees only bend backwards, lower foot planted, limb lengths exact), `apply(joints)` lays the parts between world joint positions. Dudes hold guns on a `hand_anchor` placed in the palm each frame. The player's own body hides its head and arms; the first-person arms stay a separate viewmodel.
+- **Ragdoll** (`fx/ragdoll.gd`): what any Humanoid becomes when it dies, seeded from the exact pose it died in. The player's runs on real time; a dude's runs on **world time** (it hangs mid-fall while you stand still) and bursts into shards after `dude_ragdoll_shatter` seconds. 21 joints (head, neck, chest, spine, pelvis, shoulders, elbows, wrists, hands, hips, knees, ankles, toes). It is a Verlet point-and-constraint simulation, **not** RigidBody3D, so the no-RigidBody rule still holds. Joint limits are min and max distances across each joint. The ground clamp must stay inside the solver loop or limbs stretch. Runs on real time times `ragdoll_speed`, the camera detaches and pulls back to watch, restart comes after `death_restart_delay` or R.
 - **Pillar** `o`: full-height 1.1 m cover. Every floor needs at least 4, enemy spawns stay 4 cells apart and 6 from the player. Tests enforce both.
 - Collision layers: 1 world, 2 player, 3 enemies, 4 pickups, 5 bullets (raycast mask only), 6 breakables.
 
