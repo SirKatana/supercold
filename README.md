@@ -34,7 +34,8 @@ Things worth knowing:
 - Throw anything at a dude to stun him and knock his gun into the air. Catch it.
 - Three punches kill. The first one disarms.
 - Doors break to two punches, two bullets, or one thrown object. The panels stun whoever stood behind.
-- Dudes aim where you are, not where you will be. Keep moving sideways.
+- Dudes aim where you are going to be. Run in a straight line and the bullet meets you. Stop, let it crawl, and step out of its way.
+- Killing a dude brings another from somewhere you cannot see, until the floor runs out of them. The elevator screen counts everyone still to come.
 - Shield troopers only die to a bullet through the glass slit in their shield, or to an explosion. Take the shield with F afterwards.
 - One bullet in three ricochets off a shield. It can come back at you.
 - Red barrels explode when shot or thrown. Walls block the blast, so use them. Do not stand next to one.

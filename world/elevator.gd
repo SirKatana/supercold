@@ -335,7 +335,7 @@ func _refresh_screens() -> void:
 	var status: String = ""
 	match phase:
 		Phase.LOCKED:
-			status = "LOCKED" if _flash_left > 0.0 else "%d LEFT" % maxi(Game.alive_enemies, 0)
+			status = "LOCKED" if _flash_left > 0.0 else "%d LEFT" % maxi(Game.enemies_left(), 0)
 		Phase.READY:
 			status = "HIT THE BUTTON"
 		Phase.OPENING, Phase.OPEN, Phase.CLOSING:

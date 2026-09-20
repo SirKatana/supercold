@@ -35,6 +35,13 @@ var floor_index: int = 0
 var level_name: String = ""
 var kills: int = 0
 var alive_enemies: int = 0
+## Lots of guys. Off by default so tests count exactly what a grid holds; main.gd turns it on.
+var reinforcements_enabled: bool = false
+var reinforcements_left: int = 0
+var alarm: bool = false
+var _reinforce_clock: float = 0.0
+var _floor_strength: int = 0
+var _reinforce_misses: int = 0
 ## Debug and test aid: the player cannot die.
 var god_mode: bool = false
 var deaths: int = 0
@@ -117,6 +124,11 @@ func _process(delta: float) -> void:
 		helper_time_left = maxf(0.0, helper_time_left - delta)
 		if helper_time_left <= 0.0:
 			dismiss_helper()
+	if reinforcements_left > 0 and alarm and state == State.PLAYING and not get_tree().paused:
+		_reinforce_clock -= TimeManager.world_delta(delta)
+		if _reinforce_clock <= 0.0 and alive_enemies < _floor_strength:
+			_reinforce_clock = T.reinforce_interval
+			_send_reinforcement()
 
 
 func load_floor(index: int) -> bool:
@@ -186,6 +198,8 @@ func unload_level() -> void:
 	helper = null
 	guard = null
 	alive_enemies = 0
+	reinforcements_left = 0
+	alarm = false
 	_pending_waves.clear()
 
 
@@ -224,6 +238,12 @@ func load_level(name_of_level: String) -> bool:
 		spawn_boss(data.cell_center(data.boss_cell, 0.05))
 	for wave: Dictionary in data.waves:
 		_pending_waves.append(wave.duplicate())
+
+	_floor_strength = alive_enemies
+	_reinforce_clock = T.reinforce_interval
+	if reinforcements_enabled and data.boss_cell.x < 0:
+		var ratio: float = T.reinforce_ratio_early if FLOORS.find(level_name) < 2 else T.reinforce_ratio
+		reinforcements_left = int(ceilf(_floor_strength * ratio))
 
 	_hand_back_what_was_carried()
 	_arm_player_with_super_gun()
@@ -458,7 +478,51 @@ func trigger_fired() -> void:
 			return
 
 
+## How many are still to come, for the HUD and the lift screen.
+func enemies_left() -> int:
+	return alive_enemies + reinforcements_left
+
+
+## One more dude, somewhere the player cannot see, already coming for him. He is the same
+## kind as one of the dudes the floor started with.
+func _send_reinforcement() -> void:
+	if data == null or player == null or not is_instance_valid(player):
+		return
+	var cells: Array[Vector2i] = data.wave_points.duplicate()
+	for spawn: Dictionary in data.spawns:
+		cells.append(spawn["cell"])
+	if cells.is_empty():
+		reinforcements_left = 0      # nowhere to come from: never hold the floor hostage
+		return
+	cells.shuffle()
+	var space: PhysicsDirectSpaceState3D = player.get_world_3d().direct_space_state
+	# After a few tries with the player watching every way in, the farthest one will do.
+	var desperate: bool = _reinforce_misses >= 3
+	if desperate:
+		cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			return data.cell_center(a, 0.0).distance_to(player.global_position) > data.cell_center(b, 0.0).distance_to(player.global_position))
+	for cell: Vector2i in cells:
+		var at: Vector3 = data.cell_center(cell, 0.05)
+		if not desperate and at.distance_to(player.global_position) < T.reinforce_min_distance:
+			continue
+		if not desperate and Sight.is_clear(space, at + Vector3(0, 1.5, 0), player.chest_position()):
+			continue
+		_reinforce_misses = 0
+		var kinds: Array[Dictionary] = []
+		for spawn: Dictionary in data.spawns:
+			if not spawn.get("weapon", &"pistol") in [&"zombie", &"shield"]:
+				kinds.append(spawn)
+		var like: Dictionary = kinds.pick_random() if not kinds.is_empty() else {"armed": true, "weapon": &"pistol"}
+		var dude: PinkDude = spawn_dude(at, like["armed"], like.get("weapon", &"pistol"))
+		dude.alerted = true
+		reinforcements_left -= 1
+		return
+	_reinforce_misses += 1
+	_reinforce_clock = 0.8
+
+
 func emit_noise(at: Vector3, radius: float) -> void:
+	alarm = true
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		var dude: PinkDude = node as PinkDude
 		if dude != null and dude.alive and dude.global_position.distance_to(at) <= radius:
@@ -466,12 +530,15 @@ func emit_noise(at: Vector3, radius: float) -> void:
 
 
 func is_floor_clear() -> bool:
-	return alive_enemies <= 0 and _pending_waves.is_empty()
+	return alive_enemies <= 0 and _pending_waves.is_empty() and reinforcements_left <= 0
 
 
 func _on_dude_died(_dude: PinkDude) -> void:
 	kills += 1
+	alarm = true
 	alive_enemies -= 1
+	if alive_enemies <= 0 and reinforcements_left > 0:
+		_reinforce_clock = minf(_reinforce_clock, 0.6)      # nobody left: the next one hurries
 	enemy_killed.emit(alive_enemies)
 	for wave: Dictionary in _pending_waves.duplicate():
 		if not wave["on_trigger"] and wave["after_kills"] >= 0 and kills >= wave["after_kills"]:

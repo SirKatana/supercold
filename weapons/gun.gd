@@ -39,7 +39,7 @@ var enemy_pellets: int = 1
 ## Dudes open fire inside this range.
 var enemy_range: float = 16.0
 ## How long a dude holds his aim on you before firing it. A sniper takes his time.
-var enemy_aim_time: float = 0.7
+var enemy_aim_time: float = T.dude_aim_time
 
 
 func is_weapon() -> bool:
@@ -104,7 +104,7 @@ func fire(origin: Vector3, direction: Vector3, shooter: Node, spend: bool = true
 		pool.fire(origin, scatter(direction, cone), shooter, bullet_scale, pierce, bullet_speed_scale)
 	Sfx.play(sound, origin)
 	if spend:
-		Game.emit_noise(origin, T.dude_hearing)
+		Game.emit_noise(origin, T.gunshot_hearing)
 	return true
 
 
