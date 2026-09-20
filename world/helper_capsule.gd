@@ -2,7 +2,7 @@ class_name HelperCapsule
 extends Node3D
 ## A glass capsule with a red figure turning slowly inside. It waits outside the lift after
 ## the third death on a floor. Shoot, punch or hit its button to watch an ad; watch enough
-## of it and the figure steps out to help for three minutes.
+## of it and the figure steps out to help for four minutes.
 
 signal hired
 

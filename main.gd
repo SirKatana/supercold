@@ -345,6 +345,24 @@ func _capture(path: String, after: float) -> void:
 		pool.fire(eye + ahead * 1.1 - side * 1.2, (side + ahead * 0.15).normalized(), null)
 		pool.fire(eye + ahead * 1.5 - side * 1.0 + Vector3.UP * 0.2, (side + ahead * 0.1).normalized(), null, 0.6)
 		await get_tree().create_timer(0.30, true, false, true).timeout
+	if _arg("do", "") == "pour" and Game.player != null:
+		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
+		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))
+		Game.player.head.rotation.x = -0.28
+		for group: StringName in [&"enemies", &"barrels"]:
+			for node: Node in get_tree().get_nodes_in_group(group):
+				node.queue_free()
+		var ahead: Vector3 = -Game.player.global_transform.basis.z
+		for i: int in 2:
+			var d: PinkDude = Game.spawn_dude(Game.player.global_position + ahead * 3.2 + Game.player.global_transform.basis.x * (i - 0.5) * 1.6, true, &"rifle" if i == 0 else &"pistol")
+			d.sense_override = true
+		var pail: WaterBucket = WaterBucket.create()
+		Game.entities_root(self).add_child(pail)
+		Game.player.hands.pick_up(pail)
+		await get_tree().create_timer(0.3, true, false, true).timeout
+		TimeManager.override_scale = 1.0
+		Game.player.hands.primary()
+		await get_tree().create_timer(1.3, true, false, true).timeout
 	if _arg("do", "").begins_with("item:") and Game.player != null:
 		var thing: Pickup = LevelBuilder.create_pickup(StringName(_arg("do", "").trim_prefix("item:")))
 		Game.entities_root(self).add_child(thing)

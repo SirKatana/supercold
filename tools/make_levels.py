@@ -188,6 +188,7 @@ def f1_lobby():
     g.put("a", (16, 2), (2, 11), (17, 11), (9, 12))
     g.put("b", (6, 10))
     g.put("m", (13, 10))
+    g.put("j", (7, 1))
     g.put("X", (12, 12))
     g.put("g", (11, 9))
     g.put("o", (3, 6), (7, 3), (12, 3), (16, 6), (4, 10), (15, 10), (7, 12))
@@ -366,7 +367,7 @@ def roof():
 
 import random
 
-SOLID = set("# GWcso" + "pbmklrKTgnFMVYf")      # walls, glass, deep water, furniture, pedestals, barrels
+SOLID = set("# GWcso" + "pbmklrKTgnFMVYfj")      # walls, glass, deep water, furniture, pedestals, barrels
 
 
 def _door_between(g, rng, cells):
@@ -666,20 +667,20 @@ def build_floor(spec):
 SPECS = [
     dict(name="f6_cafeteria", size=(40, 25), style="spine", seed=6, theme="cream", title="CAFETERIA",
          intro="CAFETERIA\\nWET FLOOR. THEY SLIP. YOU DON'T.", furnish=["tables", "tables", "counters"], wet=5, start=["p"],
-         enemies={"a": 5, "q": 2, "u": 2}, items={"n": 3, "b": 2, "m": 3, "l": 1, "g": 2}),
+         enemies={"a": 5, "q": 2, "u": 2}, items={"j": 3, "n": 3, "b": 2, "m": 3, "l": 1, "g": 2}),
     dict(name="f7_garage", size=(44, 27), style="double", seed=7, theme="concrete", title="PARKING",
          intro="PARKING LEVEL\\nSTORE ROOMS, PLANT ROOMS, AND BARRELS IN ALL OF THEM.", furnish=["columns", "racks", "tables"], start=["V"],
          enemies={"a": 6, "R": 2, "S": 2, "q": 2}, items={"g": 6, "M": 1, "r": 1, "k": 2},
          waves=[{"after_kills": 7, "count": 4, "armed": 3}]),
     dict(name="f8_archive", size=(40, 25), style="spine", seed=8, theme="paper", title="ARCHIVE",
          intro="ARCHIVE\\nFAST ONES IN THE STACKS. KEEP A KNIFE.", furnish=["racks", "racks", "office"], start=["n", "p"],
-         layout={"min_w": 7, "max_w": 11}, enemies={"a": 5, "q": 4, "u": 1}, items={"n": 2, "F": 1, "k": 2, "g": 1}),
+         layout={"min_w": 7, "max_w": 11}, enemies={"a": 5, "q": 4, "u": 1}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
     dict(name="f11_sewers", size=(42, 25), style="double", seed=11, theme="sewer", title="SEWERS",
          intro="SEWERS\\nSOMETHING IS UNDER THE FLOOR.", furnish=["columns", "racks"], furnished=0.5, wet=6, wet_corridor=True, start=["p", "n"],
-         enemies={"Z": 6, "a": 4, "S": 1}, items={"T": 1, "F": 1, "g": 3, "b": 2}),
+         enemies={"Z": 6, "a": 4, "S": 1}, items={"j": 2, "T": 1, "F": 1, "g": 3, "b": 2}),
     dict(name="f12_kitchen", size=(42, 25), style="spine", seed=12, theme="stainless", title="KITCHEN",
          intro="KITCHEN\\nKNIVES EVERYWHERE. SO IS THE GAS.", furnish=["counters", "counters", "tables"], wet=3, ice_rooms=1, start=["M"],
-         enemies={"a": 6, "U": 2, "q": 2}, items={"n": 5, "g": 6, "F": 1, "m": 2}),
+         enemies={"a": 6, "U": 2, "q": 2}, items={"j": 3, "n": 5, "g": 6, "F": 1, "m": 2}),
     dict(name="f13_coldstore", size=(40, 25), style="spine", seed=13, theme="frost", title="COLD STORE",
          intro="COLD STORE\\nEVERY ROOM IS ICE.", furnish=["racks", "racks", "columns"], ice_rooms=7, ice_corridor=True, start=["p"],
          enemies={"a": 6, "R": 2, "q": 3}, items={"F": 3, "K": 1, "n": 1, "g": 2}),
@@ -688,19 +689,19 @@ SPECS = [
          layout={"min_w": 7, "max_w": 12}, enemies={"N": 3, "a": 5, "S": 1}, items={"V": 1, "b": 2, "g": 2, "F": 1}),
     dict(name="f15_restrooms", size=(40, 25), style="double", seed=15, theme="mint", title="RESTROOMS",
          intro="RESTROOMS\\nSTINK GRENADES. THROW ONE INTO A ROOM AND SHUT THE DOOR.", furnish=["stalls", "stalls", "tables"], wet=4, fart=5, start=["f", "p"],
-         layout={"min_w": 5, "max_w": 8}, enemies={"a": 7, "u": 3, "q": 2}, items={"T": 1, "m": 3, "b": 2}),
+         layout={"min_w": 5, "max_w": 8}, enemies={"a": 7, "u": 3, "q": 2}, items={"j": 2, "T": 1, "m": 3, "b": 2}),
     dict(name="f16_armoury", size=(42, 25), style="bsp", seed=16, theme="olive", title="ARMOURY",
          intro="ARMOURY\\nTAKE WHAT YOU LIKE. THEY DID.", furnish=["racks", "office", "columns"], start=["K", "T"],
          enemies={"H": 2, "R": 3, "S": 2, "U": 2, "a": 3}, items={"M": 1, "V": 1, "Y": 1, "F": 2, "r": 1, "n": 1, "g": 4}),
     dict(name="f17_greenhouse", size=(42, 27), style="double", seed=17, theme="leaf", title="GREENHOUSE",
          intro="GREENHOUSE\\nTHEY GROW THEM HERE.", furnish=["counters", "tables"], glass=8, wet=4, fart=2, start=["p", "n"],
-         enemies={"Z": 8, "a": 4}, items={"K": 1, "F": 1, "b": 2, "g": 2}),
+         enemies={"Z": 8, "a": 4}, items={"j": 3, "K": 1, "F": 1, "b": 2, "g": 2}),
     dict(name="f18_beanworks", size=(44, 27), style="spine", seed=18, theme="bean", title="BEANWORKS",
          intro="BEAN CANNERY\\nIT IS EXACTLY AS BAD AS IT SMELLS.", furnish=["vats", "vats", "counters"], fart=7, start=["f", "p"],
          layout={"min_w": 8, "max_w": 12}, enemies={"a": 6, "S": 2, "q": 3, "H": 1}, items={"g": 5, "M": 1, "n": 1}),
     dict(name="f19_tradingfloor", size=(50, 31), style="double", seed=19, theme="navy", title="TRADING FLOOR",
          intro="TRADING FLOOR\\nEVERYONE IS AT THEIR DESK.", furnish=["office", "office", "tables"], furnished=1.0, start=["K", "M"],
-         layout={"min_w": 9, "max_w": 14}, enemies={"a": 8, "R": 3, "U": 3, "q": 4}, items={"F": 1, "g": 4, "k": 3},
+         layout={"min_w": 9, "max_w": 14}, enemies={"a": 8, "R": 3, "U": 3, "q": 4}, items={"j": 3, "F": 1, "g": 4, "k": 3},
          waves=[{"after_kills": 8, "count": 5, "armed": 4}, {"after_kills": 16, "count": 6, "armed": 4}], wave_points=6),
     dict(name="f20_generators", size=(42, 27), style="bsp", seed=20, theme="amber", title="GENERATORS",
          intro="GENERATOR HALL\\nONE SPARK.", furnish=["vats", "racks", "columns"], start=["V", "Y"],
@@ -719,17 +720,17 @@ SPECS = [
          layout={"min_side": 8, "max_side": 14}, enemies={"N": 3, "R": 3, "a": 5, "q": 3}, items={"F": 1, "g": 3}),
     dict(name="f26_morgue", size=(46, 29), style="double", seed=26, theme="morgue", title="MORGUE",
          intro="MORGUE\\nNOT ALL OF THEM STAYED DEAD.", furnish=["slabs", "slabs", "racks"], ice_rooms=1, start=["T", "n"],
-         enemies={"Z": 12, "a": 3, "H": 1}, items={"n": 2, "F": 2, "p": 1}),
+         enemies={"Z": 12, "a": 3, "H": 1}, items={"j": 2, "n": 2, "F": 2, "p": 1}),
     dict(name="f27_furnace", size=(44, 27), style="bsp", seed=27, theme="furnace", title="FURNACE",
          intro="FURNACE ROOMS\\nTWELVE BARRELS. COUNT THEM.", furnish=["vats", "columns", "racks"], start=["K", "F"],
          enemies={"S": 3, "R": 3, "U": 3, "a": 4, "H": 2}, items={"g": 12, "V": 1, "r": 1}),
     dict(name="f28_waterworks", size=(46, 27), style="double", seed=28, theme="harbour", title="WATERWORKS",
          intro="WATERWORKS\\nEVERY CORRIDOR IS FLOODED. LET THEM RUN.", furnish=["vats", "columns", "counters"], wet=8, wet_corridor=True, start=["M", "n"],
-         enemies={"q": 6, "a": 6, "R": 2, "Z": 3}, items={"F": 2, "T": 1, "g": 3}),
+         enemies={"q": 6, "a": 6, "R": 2, "Z": 3}, items={"j": 3, "F": 2, "T": 1, "g": 3}),
     dict(name="f29_penthouse", size=(52, 31), style="double", seed=29, theme="gold", title="PENTHOUSE",
          intro="PENTHOUSE\\nEVERYTHING THEY HAVE LEFT.", furnish=["office", "tables", "columns", "counters"], wet=3, ice_rooms=1, glass=5, fart=2,
          start=["K", "T"], layout={"min_w": 8, "max_w": 12},
-         enemies={"a": 6, "R": 3, "S": 2, "U": 2, "N": 2, "H": 3, "q": 3, "Z": 3}, items={"Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5},
+         enemies={"a": 6, "R": 3, "S": 2, "U": 2, "N": 2, "H": 3, "q": 3, "Z": 3}, items={"j": 2, "Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5},
          waves=[{"after_kills": 9, "count": 5, "armed": 4}, {"after_kills": 18, "count": 6, "armed": 5}], wave_points=5),
 ]
 
@@ -752,6 +753,7 @@ def f9_pool():
     g.put("#", (10, 5), (22, 7), (31, 5))
     g.put("P", (1, 6)); g.put("X", (40, 27))
     g.put("p", (6, 5)); g.put("F", (8, 7)); g.put("T", (3, 27)); g.put("b", (19, 1)); g.put("n", (27, 1))
+    g.put("j", (12, 7), (3, 10), (38, 10))
     g.scatter({"a": 6, "S": 2, "q": 3}, [(1, 1, 40, 3), (8, 5, 40, 7), (1, 9, 40, 28)], 91, floor=".~")
     assert walkable_from_lift(g), "pool: somebody cannot be reached"
     save("f9_pool", g, {"title": "POOL", "intro": "POOL\\nFREEZE THEM, OR LET THEM RUN ON THE WET DECK.", "theme": theme("aqua")})

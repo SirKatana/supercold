@@ -74,8 +74,8 @@ func test_button_works_by_bullet_and_shows_the_ad_then_hires() -> void:
 	check_eq(AdService.requests, before + 1, "shooting the button asked for an ad")
 	check(capsule.used, "capsule opened")
 	check(Game.helper != null and is_instance_valid(Game.helper), "the helper stepped out")
-	check_near(Game.helper_time_left, T.helper_seconds, 2.0, "with three minutes on the clock")
-	check_eq(T.helper_seconds, 180.0, "three minutes")
+	check_near(Game.helper_time_left, T.helper_seconds, 2.0, "with four minutes on the clock")
+	check_eq(T.helper_seconds, 240.0, "four minutes")
 
 
 func test_closing_the_ad_early_hires_nobody_and_you_can_try_again() -> void:
@@ -240,7 +240,7 @@ func test_free_helper_for_testing_needs_no_deaths_and_no_ad() -> void:
 	check_eq(Game.deaths_this_floor, 0, "nobody died")
 	var helper: Helper = Game.give_free_helper()
 	check(helper != null and is_instance_valid(helper), "helper is here")
-	check_near(Game.helper_time_left, T.helper_seconds, 1.0, "with the full three minutes")
+	check_near(Game.helper_time_left, T.helper_seconds, 1.0, "with the full four minutes")
 	check_eq(AdService.requests, ads_before, "and no ad was shown")
 	var front: Vector3 = Game.data.cell_center(Game.data.front_cell(Game.data.player_start))
 	check(helper.global_position.distance_to(front) < 3.0, "standing just outside the lift")

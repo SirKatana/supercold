@@ -88,6 +88,10 @@ extends Resource
 @export var slip_speed: float = 1.6
 @export var slip_seconds: float = 2.4
 @export var slip_again_after: float = 4.0
+## Water bucket: one pour. The spill is this wide and dries up after this many real seconds.
+@export var spill_radius: float = 2.4
+@export var spill_seconds: float = 90.0
+@export var pour_reach: float = 3.2
 ## Deep water: how far down the pool goes, and how the player moves in it.
 @export var pool_depth: float = 2.2
 @export var swim_speed: float = 3.0
@@ -146,7 +150,7 @@ extends Resource
 ## Die this many times on one floor and the helper capsule is waiting outside the lift.
 @export var helper_deaths_needed: int = 3
 ## Real seconds of help. It also ends the moment the floor is clear.
-@export var helper_seconds: float = 180.0
+@export var helper_seconds: float = 240.0
 @export var helper_speed: float = 4.4
 @export var helper_follow_distance: float = 3.5
 @export var helper_aim_time: float = 0.35

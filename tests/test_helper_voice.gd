@@ -43,7 +43,7 @@ func test_greeting_is_what_was_asked_for() -> void:
 	check(Game.load_level("test_room"), "level loads")
 	await wait_physics(2)
 	var helper: Helper = Game.hire_helper(Game.data.cell_center(Vector2i(6, 8), 0.05), Basis.IDENTITY)
-	check_eq(helper.voice.last_line, "Hey! I'm your helper for three minutes!", "the greeting")
+	check_eq(helper.voice.last_line, "Hey! I'm your helper for four minutes!", "the greeting")
 	check(helper.voice.is_talking(), "bubble is up")
 	check(helper.voice._label.visible and helper.voice._panel.visible, "text on a white panel")
 	check_eq(helper.voice._label.text, helper.voice.last_line, "bubble shows the line")

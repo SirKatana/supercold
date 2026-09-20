@@ -98,6 +98,12 @@ func primary() -> void:
 			TimeManager.burst(T.burst_action, gun.burst_strength)
 			player.fx.kick(gun.kick)
 			_kick()
+	elif held is WaterBucket:
+		if (held as WaterBucket).pour(player):
+			TimeManager.burst(T.burst_action, T.burst_strength_throw)
+			_animate_thrust()
+		else:
+			throw_held()      # empty: it is just a bucket now
 	elif held is Knife:
 		if (held as Knife).stab(player):
 			TimeManager.burst(T.burst_action, T.burst_strength_punch)

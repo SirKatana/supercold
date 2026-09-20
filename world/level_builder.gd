@@ -136,6 +136,8 @@ static func create_pickup(kind: StringName) -> Pickup:
 		return FreezeBomb.create()
 	if kind == &"fart":
 		return FartGrenade.create()
+	if kind == &"bucket":
+		return WaterBucket.create()
 	if kind == &"smg" or kind == &"revolver" or kind == &"sniper" or kind == &"super":
 		return PinkDude.create_gun(kind)
 	return Throwable.create(kind)
