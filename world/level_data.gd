@@ -90,9 +90,23 @@ func capsule_cell() -> Vector2i:
 	var dir: Vector2i = door_direction(player_start)
 	var side := Vector2i(dir.y, -dir.x)
 	var front: Vector2i = front_cell(player_start)
-	for offset: Vector2i in [dir + side, dir - side, dir * 2 + side, dir * 2 - side, side, -side, dir * 2 + side * 2, dir * 2 - side * 2]:
+	var offsets: Array[Vector2i] = []
+	for along: int in [1, 2, 3, 4, 5]:
+		offsets.append(dir * along + side)
+		offsets.append(dir * along - side)
+	offsets.append(side)
+	offsets.append(-side)
+	for offset: Vector2i in offsets:
 		var cell: Vector2i = front + offset
-		if char_at(cell) == ".":
+		# Plain, wet or icy floor will do. Never beside a door: the capsule is wide enough to block one.
+		if not ".~i".contains(char_at(cell)):
+			continue
+		var by_a_door: bool = false
+		for dy: int in [-1, 0, 1]:
+			for dx: int in [-1, 0, 1]:
+				if char_at(cell + Vector2i(dx, dy)) == "D":
+					by_a_door = true
+		if not by_a_door:
 			return cell
 	return Vector2i(-1, -1)
 

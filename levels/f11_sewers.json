@@ -1,6 +1,6 @@
 {
   "title": "SEWERS",
-  "intro": "SEWERS\nSOMETHING IS UNDER THE FLOOR.",
+  "intro": "SEWERS\\nSOMETHING IS UNDER THE FLOOR.",
   "theme": {
     "wall": "6f7a63",
     "floor": "3a4234",

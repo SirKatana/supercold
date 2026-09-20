@@ -1,6 +1,6 @@
 {
   "title": "THE VAULT",
-  "intro": "THE VAULT\nTHE BRUTE. TWELVE HITS. DO NOT LET HIM REACH YOU.",
+  "intro": "THE VAULT\\nTHE BRUTE. TWELVE HITS. DO NOT LET HIM REACH YOU.",
   "boss": "brute",
   "theme": {
     "wall": "aab4c2",

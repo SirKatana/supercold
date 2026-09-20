@@ -1,7 +1,6 @@
 {
   "title": "SKY GARDEN",
-  "intro": "SKY GARDEN\nLONG SIGHTLINES. THEIRS TOO.",
-  "open_sky": true,
+  "intro": "SKY GARDEN\\nWALLED GARDENS. LONG SIGHTLINES. THEIRS TOO.",
   "theme": {
     "wall": "f0f4f6",
     "floor": "7fa66a",
@@ -10,5 +9,6 @@
     "sky": "bfe0f7",
     "energy": 0.66,
     "sun": 0.6
-  }
+  },
+  "open_sky": true
 }

@@ -358,389 +358,457 @@ def roof():
 
 
 # ---------------------------------------------------------------- floors 6 to 29
+#
+# These are buildings, like the first five floors: corridors, rooms off them, doors between.
+# A floor is a layout (where the walls and doors go) plus dressing (furniture inside rooms,
+# hazards, who and what is in there). Every candidate floor is flood-filled from the lift to
+# make sure each enemy and the exit can be walked to; if not, the next seed is tried.
 
-def f6_cafeteria():
-    g = Grid(34, 22)
-    g.room(1, 1, 24, 20)      # dining hall
-    g.room(26, 1, 32, 9)      # kitchen
-    g.room(26, 11, 32, 20)    # store
-    g.put("D", (25, 5), (25, 15), (29, 10))
-    for y in (4, 8, 12, 16):
-        for x in (5, 10, 15, 20):
-            g.put("c", (x, y), (x + 1, y))
-    g.put("P", (1, 10)); g.put("X", (32, 18))
-    g.fill("~", 7, 5, 9, 7); g.fill("~", 16, 13, 19, 15); g.fill("~", 12, 9, 13, 11)
-    g.put("o", (3, 3), (3, 18), (13, 2), (13, 19), (23, 3), (23, 18), (22, 10))
-    g.put("n", (27, 2), (31, 2), (27, 8))
-    g.put("p", (3, 10)); g.put("g", (31, 8), (28, 19))
-    g.scatter({"a": 5, "q": 2, "u": 2}, [(8, 1, 24, 20), (26, 1, 32, 20)], 61)
-    g.scatter({"b": 2, "m": 3, "l": 1}, [(2, 1, 24, 20)], 62, margin=True)
-    save("f6_cafeteria", g, {"title": "CAFETERIA", "intro": "CAFETERIA\nWET FLOOR. THEY SLIP. YOU DON'T.", "theme": theme("cream")})
+import random
+
+SOLID = set("# GWcso" + "pbmklrKTgnFMVY")      # walls, glass, deep water, furniture, pedestals, barrels
 
 
-def f7_garage():
-    g = Grid(44, 26)
-    g.room(1, 1, 42, 24)
-    g.pillars(1, 1, 42, 24, step=5, ox=4, oy=3)
-    g.put("P", (1, 12)); g.put("X", (42, 13))
-    for (x, y) in ((8, 5), (8, 19), (17, 9), (17, 15), (27, 5), (27, 19), (35, 10), (35, 15)):   # parked cars
-        g.put("c", (x, y), (x + 1, y), (x + 2, y))
-    g.put("g", (12, 12), (22, 4), (22, 20), (31, 12), (38, 4), (38, 21))
-    g.put("V", (5, 12)); g.put("M", (20, 12)); g.put("r", (3, 3))
-    g.put("w", (42, 2), (42, 23), (21, 1), (21, 24))
-    g.scatter({"a": 6, "R": 2, "S": 2, "q": 2}, [(9, 1, 42, 24)], 71)
-    save("f7_garage", g, {"title": "PARKING", "intro": "PARKING LEVEL\nLOTS OF PILLARS. LOTS OF BARRELS.", "theme": theme("concrete"),
-                          "waves": [{"after_kills": 7, "count": 4, "armed": 3}]})
+def _door_between(g, rng, cells):
+    """Puts one door on a wall line, choosing among `cells` whose two sides are both floor."""
+    options = []
+    for (x, y, dx, dy) in cells:
+        if g.c[y][x] == "#" and g.c[y - dy][x - dx] == "." and g.c[y + dy][x + dx] == ".":
+            options.append((x, y))
+    if options:
+        x, y = rng.choice(options)
+        g.c[y][x] = "D"
+        return True
+    return False
 
 
-def f8_archive():
-    g = Grid(36, 24)
-    g.room(1, 1, 8, 22)       # reading room
-    g.room(10, 1, 34, 22)     # stacks
-    g.put("D", (9, 4), (9, 19))
-    for x in range(12, 34, 3):
-        for y in list(range(2, 10)) + list(range(14, 22)):
-            g.put("s", (x, y))
-    g.put("P", (1, 11)); g.put("X", (34, 12))
-    g.put("o", (4, 4), (4, 18), (7, 11), (10, 11), (22, 11), (33, 2), (33, 21))
-    g.put("n", (3, 9), (3, 14)); g.put("p", (6, 3)); g.put("k", (6, 20)); g.put("F", (20, 12))
-    g.scatter({"a": 5, "q": 4, "u": 1}, [(10, 1, 34, 22)], 81)
-    save("f8_archive", g, {"title": "ARCHIVE", "intro": "ARCHIVE\nFAST ONES IN THE STACKS. KEEP A KNIFE.", "theme": theme("paper")})
+def _band(g, rng, y0, y1, door_row, toward, min_w, max_w, rooms, split_deep=True):
+    """One row of rooms along a corridor. `door_row` is the wall between them and the corridor,
+    `toward` is +1 if the corridor is below the band and -1 if above."""
+    x = 1
+    previous = None
+    while x <= g.w - 2:
+        w = rng.randint(min_w, max_w)
+        if (g.w - 2) - (x + w) < min_w:
+            w = (g.w - 2) - x + 1
+        x1 = x + w - 1
+        depth = y1 - y0 + 1
+        front = (x, y0, x1, y1)
+        if split_deep and depth >= 9 and w >= 6 and rng.random() < 0.65:
+            # A back room behind the front one, reached through it.
+            mid = y0 + depth // 2 if toward > 0 else y1 - depth // 2
+            back = (x, y0, x1, mid - 1) if toward > 0 else (x, mid + 1, x1, y1)
+            front = (x, mid + 1, x1, y1) if toward > 0 else (x, y0, x1, mid - 1)
+            g.room(*back)
+            g.room(*front)
+            _door_between(g, rng, [(cx, mid, 0, 1) for cx in range(x + 1, x1)])
+            rooms.append({"rect": back, "kind": "back"})
+        else:
+            g.room(*front)
+        rooms.append({"rect": front, "kind": "front"})
+        _door_between(g, rng, [(cx, door_row, 0, 1) for cx in range(x + 1, x1)])
+        if previous is not None and rng.random() < 0.5:
+            _door_between(g, rng, [(x - 1, cy, 1, 0) for cy in range(y0 + 1, y1)])
+        previous = front
+        x = x1 + 2
+
+
+def _buttresses(g, rng, x0, x1, rows, every=6):
+    """Short wall stubs on alternating sides of a corridor. Cover that looks like architecture."""
+    side = 0
+    for x in range(x0 + 5, x1 - 3, every):
+        y = rows[side % len(rows)]
+        near = [g.c[y + dy][x + dx] for dy in (-1, 0, 1) for dx in (-1, 0, 1)]
+        if g.c[y][x] == "." and "D" not in near:
+            g.c[y][x] = "#"
+        side += 1
+
+
+def layout_spine(g, rng, corridor=3, min_w=6, max_w=10):
+    """One corridor west to east, rooms north and south of it."""
+    cy0 = (g.h - corridor) // 2
+    cy1 = cy0 + corridor - 1
+    g.room(1, cy0, g.w - 2, cy1)
+    rooms = []
+    _band(g, rng, 1, cy0 - 2, cy0 - 1, +1, min_w, max_w, rooms)
+    _band(g, rng, cy1 + 2, g.h - 2, cy1 + 1, -1, min_w, max_w, rooms)
+    _buttresses(g, rng, 1, g.w - 2, [cy0, cy1])
+    g.put("P", (1, cy0 + corridor // 2))
+    return rooms, [(1, cy0, g.w - 2, cy1)]
+
+
+def layout_double(g, rng, corridor=3, min_w=6, max_w=10):
+    """Two corridors with a band of rooms between them and one outside each. A cross passage joins them."""
+    third = g.h // 3
+    a0 = third - 1
+    a1 = a0 + corridor - 1
+    b0 = g.h - third - 1
+    b1 = b0 + corridor - 1
+    g.room(1, a0, g.w - 2, a1)
+    g.room(1, b0, g.w - 2, b1)
+    rooms = []
+    _band(g, rng, 1, a0 - 2, a0 - 1, +1, min_w, max_w, rooms, split_deep=False)
+    _band(g, rng, a1 + 2, b0 - 2, a1 + 1, -1, min_w, max_w, rooms, split_deep=False)
+    _band(g, rng, b1 + 2, g.h - 2, b1 + 1, -1, min_w, max_w, rooms, split_deep=False)
+    # The middle rooms open onto the second corridor too, and one passage cuts straight through.
+    for room in rooms:
+        x0, y0, x1, y1 = room["rect"]
+        if y0 > a1 and y1 < b0:
+            _door_between(g, rng, [(cx, b0 - 1, 0, 1) for cx in range(x0 + 1, x1)])
+    cross = rng.randint(g.w // 3, 2 * g.w // 3)
+    for y in range(a1 + 1, b0):
+        for x in (cross, cross + 1):
+            g.c[y][x] = "."
+    _buttresses(g, rng, 1, g.w - 2, [a0, a1])
+    _buttresses(g, rng, 1, g.w - 2, [b0, b1])
+    g.put("P", (1, a0 + corridor // 2))
+    return rooms, [(1, a0, g.w - 2, a1), (1, b0, g.w - 2, b1)]
+
+
+def layout_bsp(g, rng, min_side=6, max_side=11):
+    """No corridor: the whole floor is cut into rooms, each wall with a door or two."""
+    rooms = []
+
+    def cut(x0, y0, x1, y1):
+        w, h = x1 - x0 + 1, y1 - y0 + 1
+        # A side can only be cut if both halves, plus the wall between them, still fit.
+        wide = w > max_side and w >= 2 * min_side + 1
+        tall = h > max_side and h >= 2 * min_side + 1
+        if not wide and not tall:
+            g.room(x0, y0, x1, y1)
+            rooms.append({"rect": (x0, y0, x1, y1), "kind": "front"})
+            return
+        if wide and (not tall or w >= h):
+            sx = rng.randint(x0 + min_side, x1 - min_side)
+            cut(x0, y0, sx - 1, y1)
+            cut(sx + 1, y0, x1, y1)
+            line = [(sx, cy, 1, 0) for cy in range(y0 + 1, y1)]
+        else:
+            sy = rng.randint(y0 + min_side, y1 - min_side)
+            cut(x0, y0, x1, sy - 1)
+            cut(x0, sy + 1, x1, y1)
+            line = [(cx, sy, 0, 1) for cx in range(x0 + 1, x1)]
+        _door_between(g, rng, line)
+        if len(line) > 12:
+            _door_between(g, rng, line)      # a long wall gets a second door, so there are loops
+
+    cut(1, 1, g.w - 2, g.h - 2)
+    first = min(rooms, key=lambda r: (r["rect"][0], r["rect"][1]))
+    x0, y0, x1, y1 = first["rect"]
+    g.put("P", (1, (y0 + y1) // 2))
+    return rooms, []
+
+
+LAYOUTS = {"spine": layout_spine, "double": layout_double, "bsp": layout_bsp}
+
+
+def furnish(g, rng, rect, kind):
+    """Furniture inside a room. It never touches the ring of floor along the walls, so a room can
+    always be walked round and no door is ever blocked."""
+    x0, y0, x1, y1 = rect
+    ix0, iy0, ix1, iy1 = x0 + 1, y0 + 1, x1 - 1, y1 - 1
+    if ix1 - ix0 < 2 or iy1 - iy0 < 2:
+        return
+
+    def put(ch, x, y):
+        if ix0 <= x <= ix1 and iy0 <= y <= iy1 and g.c[y][x] == ".":
+            g.c[y][x] = ch
+
+    if kind == "office":                                   # desks in pairs, in rows
+        for y in range(iy0 + (iy1 - iy0) % 3 // 2, iy1 + 1, 3):
+            for x in range(ix0, ix1, 4):
+                put("c", x, y); put("c", x + 1, y)
+    elif kind == "racks":                                  # shelving in aisles with a cross gap
+        gap = (iy0 + iy1) // 2
+        for x in range(ix0, ix1 + 1, 3):
+            for y in range(iy0, iy1 + 1):
+                if y != gap:
+                    put("s", x, y)
+    elif kind == "tables":                                 # single tables, staggered
+        for n, y in enumerate(range(iy0, iy1 + 1, 2)):
+            for x in range(ix0 + (n % 2) * 2, ix1 + 1, 4):
+                put("c", x, y)
+    elif kind == "counters":                               # long worktops with a break in them
+        for y in range(iy0, iy1 + 1, 3):
+            for x in range(ix0, ix1 + 1):
+                if (x - ix0) % 5 != 4:
+                    put("c", x, y)
+    elif kind == "stalls":                                 # dividers along one wall
+        for x in range(ix0, ix1 + 1, 2):
+            put("c", x, iy0); put("c", x, iy0 + 1)
+    elif kind == "vats":                                   # 2 by 2 blocks of full-height tank
+        for y in range(iy0, iy1, 4):
+            for x in range(ix0, ix1, 4):
+                for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+                    put("o", x + dx, y + dy)
+    elif kind == "slabs":                                  # rows of tables end to end, morgue style
+        for y in range(iy0, iy1 + 1, 2):
+            for x in range(ix0, ix1 + 1, 3):
+                put("c", x, y)
+    elif kind == "columns":                                # a pair of columns in a big room
+        if ix1 - ix0 >= 4 and iy1 - iy0 >= 3:
+            put("o", ix0 + 1, (iy0 + iy1) // 2); put("o", ix1 - 1, (iy0 + iy1) // 2)
+
+
+def patch(g, rng, rect, ch, whole=False):
+    """Wet or icy floor in a room: the whole room, or a puddle-sized rectangle of it."""
+    x0, y0, x1, y1 = rect
+    if whole:
+        g.fill(ch, x0, y0, x1, y1)
+        return
+    w, h = rng.randint(2, max(2, (x1 - x0) // 2)), rng.randint(2, max(2, (y1 - y0) // 2))
+    px, py = rng.randint(x0, max(x0, x1 - w)), rng.randint(y0, max(y0, y1 - h))
+    g.fill(ch, px, py, px + w, py + h)
+
+
+def glass_front(g, rect):
+    """Swaps the wall between a room and the corridor for glass, keeping the door and the corners."""
+    x0, y0, x1, y1 = rect
+    for wy in (y0 - 1, y1 + 1):
+        if not (0 < wy < g.h - 1):
+            continue
+        beyond = wy - 1 if wy < y0 else wy + 1
+        run = [x for x in range(x0 + 1, x1) if g.c[wy][x] == "#" and g.c[beyond][x] == "."]
+        if len(run) >= 3 and any(g.c[wy][x] == "D" for x in range(x0, x1 + 1)):
+            for x in run:
+                g.c[wy][x] = "G"
+            return True
+    return False
+
+
+def walkable_from_lift(g):
+    """Every enemy, wave point and the exit must be reachable on foot from the lift. Doors count as
+    open; glass, water deep enough to swim in, furniture, pedestals and barrels do not."""
+    start = g.cells("P")[0]
+    seen = {start}
+    stack = [start]
+    while stack:
+        x, y = stack.pop()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < g.w and 0 <= ny < g.h and (nx, ny) not in seen and g.c[ny][nx] not in SOLID:
+                seen.add((nx, ny))
+                stack.append((nx, ny))
+    # The exit lift itself is solid on three sides; what matters is the cell at its doors.
+    targets = g.cells(ENEMIES + "w")
+    for ex, ey in g.cells("X"):
+        if not any((ex + dx, ey + dy) in seen for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            return False
+    return all(t in seen for t in targets)
+
+
+def place_exit(g, rng, rooms):
+    """Against the east wall, inside the room furthest from the lift."""
+    east = [r for r in rooms if r["rect"][2] == g.w - 2]
+    room = rng.choice(east) if east else max(rooms, key=lambda r: r["rect"][2])
+    x0, y0, x1, y1 = room["rect"]
+    ys = [y for y in range(y0 + 1, y1) if g.c[y][x1] == "." and g.c[y][x1 - 1] == "."]
+    assert ys, "no room for the exit lift"
+    g.c[rng.choice(ys)][x1] = "X"
+
+
+def build_floor(spec):
+    for attempt in range(60):
+        rng = random.Random(spec["seed"] * 1000 + attempt)
+        g = Grid(*spec["size"])
+        try:
+            rooms, corridors = LAYOUTS[spec["style"]](g, rng, **spec.get("layout", {}))
+            place_exit(g, rng, rooms)
+            rects = [r["rect"] for r in rooms]
+            start = g.cells("P")[0]
+            # Things to grab by the lift, clear of where the helper capsule goes.
+            for i, ch in enumerate(spec.get("start", [])):
+                for dx in range(5, 12):
+                    x, y = start[0] + dx, start[1] + (-1 if i % 2 == 0 else 1)
+                    near = [g.c[y + dy][x + ddx] for dy in (-1, 0, 1) for ddx in (-1, 0, 1)]
+                    if g.c[y][x] == "." and "D" not in near and all(n in ".#" for n in near):
+                        g.c[y][x] = ch
+                        break
+            for n in range(spec.get("glass", 0)):
+                glass_front(g, rng.choice(rects))
+            kinds = spec.get("furnish", ["office"])
+            for rect in rects:
+                if rng.random() < spec.get("furnished", 0.8):
+                    furnish(g, rng, rect, rng.choice(kinds))
+            for n in range(spec.get("wet", 0)):
+                patch(g, rng, rng.choice(rects + corridors), "~")
+            for n in range(spec.get("ice_rooms", 0)):
+                patch(g, rng, rng.choice(rects), "i", whole=True)
+            if spec.get("ice_corridor"):
+                for c in corridors:
+                    g.fill("i", *c)
+            if spec.get("wet_corridor"):
+                for c in corridors:
+                    g.fill("~", c[0], c[1] + 1, c[2], c[3] - 1)
+            everywhere = rects + corridors
+            g.scatter(spec["enemies"], everywhere, spec["seed"] + attempt, floor=".~i")
+            if spec.get("waves"):
+                g.scatter({"w": spec.get("wave_points", 4)}, rects, spec["seed"] + attempt + 7, floor=".")
+            if spec.get("fart"):
+                g.scatter({"f": spec["fart"]}, everywhere, spec["seed"] + attempt + 3, floor=".")
+            g.scatter(spec.get("items", {}), rects, spec["seed"] + attempt + 5, floor=".", margin=True)
+            assert walkable_from_lift(g), "somebody cannot be reached"
+            cover = len(g.cells("cso"))
+            assert cover >= 12, f"only {cover} pieces of cover"
+        except AssertionError:
+            continue
+        meta = {"title": spec["title"], "intro": spec["intro"], "theme": theme(spec["theme"])}
+        if spec.get("waves"):
+            meta["waves"] = spec["waves"]
+        if spec.get("open_sky"):
+            meta["open_sky"] = True
+        save(spec["name"], g, meta)
+        return
+    raise SystemExit(f"{spec['name']}: no seed in 60 produced a valid floor")
+
+
+SPECS = [
+    dict(name="f6_cafeteria", size=(40, 25), style="spine", seed=6, theme="cream", title="CAFETERIA",
+         intro="CAFETERIA\\nWET FLOOR. THEY SLIP. YOU DON'T.", furnish=["tables", "tables", "counters"], wet=5, start=["p"],
+         enemies={"a": 5, "q": 2, "u": 2}, items={"n": 3, "b": 2, "m": 3, "l": 1, "g": 2}),
+    dict(name="f7_garage", size=(44, 27), style="double", seed=7, theme="concrete", title="PARKING",
+         intro="PARKING LEVEL\\nSTORE ROOMS, PLANT ROOMS, AND BARRELS IN ALL OF THEM.", furnish=["columns", "racks", "tables"], start=["V"],
+         enemies={"a": 6, "R": 2, "S": 2, "q": 2}, items={"g": 6, "M": 1, "r": 1, "k": 2},
+         waves=[{"after_kills": 7, "count": 4, "armed": 3}]),
+    dict(name="f8_archive", size=(40, 25), style="spine", seed=8, theme="paper", title="ARCHIVE",
+         intro="ARCHIVE\\nFAST ONES IN THE STACKS. KEEP A KNIFE.", furnish=["racks", "racks", "office"], start=["n", "p"],
+         layout={"min_w": 7, "max_w": 11}, enemies={"a": 5, "q": 4, "u": 1}, items={"n": 2, "F": 1, "k": 2, "g": 1}),
+    dict(name="f11_sewers", size=(42, 25), style="double", seed=11, theme="sewer", title="SEWERS",
+         intro="SEWERS\\nSOMETHING IS UNDER THE FLOOR.", furnish=["columns", "racks"], furnished=0.5, wet=6, wet_corridor=True, start=["p", "n"],
+         enemies={"Z": 6, "a": 4, "S": 1}, items={"T": 1, "F": 1, "g": 3, "b": 2}),
+    dict(name="f12_kitchen", size=(42, 25), style="spine", seed=12, theme="stainless", title="KITCHEN",
+         intro="KITCHEN\\nKNIVES EVERYWHERE. SO IS THE GAS.", furnish=["counters", "counters", "tables"], wet=3, ice_rooms=1, start=["M"],
+         enemies={"a": 6, "U": 2, "q": 2}, items={"n": 5, "g": 6, "F": 1, "m": 2}),
+    dict(name="f13_coldstore", size=(40, 25), style="spine", seed=13, theme="frost", title="COLD STORE",
+         intro="COLD STORE\\nEVERY ROOM IS ICE.", furnish=["racks", "racks", "columns"], ice_rooms=7, ice_corridor=True, start=["p"],
+         enemies={"a": 6, "R": 2, "q": 3}, items={"F": 3, "K": 1, "n": 1, "g": 2}),
+    dict(name="f14_glassworks", size=(42, 25), style="spine", seed=14, theme="glass", title="GLASSWORKS",
+         intro="GLASSWORKS\\nRIGHT CLICK TO LOOK DOWN THE SCOPE.", furnish=["office", "tables", "columns"], glass=7, start=["Y", "p"],
+         layout={"min_w": 7, "max_w": 12}, enemies={"N": 3, "a": 5, "S": 1}, items={"V": 1, "b": 2, "g": 2, "F": 1}),
+    dict(name="f15_restrooms", size=(40, 25), style="double", seed=15, theme="mint", title="RESTROOMS",
+         intro="RESTROOMS\\nSHOOT THE GREEN FOG. HOLD YOUR NOSE.", furnish=["stalls", "stalls", "tables"], wet=4, fart=5, start=["p", "n"],
+         layout={"min_w": 5, "max_w": 8}, enemies={"a": 7, "u": 3, "q": 2}, items={"T": 1, "m": 3, "b": 2}),
+    dict(name="f16_armoury", size=(42, 25), style="bsp", seed=16, theme="olive", title="ARMOURY",
+         intro="ARMOURY\\nTAKE WHAT YOU LIKE. THEY DID.", furnish=["racks", "office", "columns"], start=["K", "T"],
+         enemies={"H": 2, "R": 3, "S": 2, "U": 2, "a": 3}, items={"M": 1, "V": 1, "Y": 1, "F": 2, "r": 1, "n": 1, "g": 4}),
+    dict(name="f17_greenhouse", size=(42, 27), style="double", seed=17, theme="leaf", title="GREENHOUSE",
+         intro="GREENHOUSE\\nTHEY GROW THEM HERE.", furnish=["counters", "tables"], glass=8, wet=4, fart=2, start=["p", "n"],
+         enemies={"Z": 8, "a": 4}, items={"K": 1, "F": 1, "b": 2, "g": 2}),
+    dict(name="f18_beanworks", size=(44, 27), style="spine", seed=18, theme="bean", title="BEANWORKS",
+         intro="BEAN CANNERY\\nIT IS EXACTLY AS BAD AS IT SMELLS.", furnish=["vats", "vats", "counters"], fart=7, start=["p", "T"],
+         layout={"min_w": 8, "max_w": 12}, enemies={"a": 6, "S": 2, "q": 3, "H": 1}, items={"g": 5, "M": 1, "n": 1}),
+    dict(name="f19_tradingfloor", size=(50, 31), style="double", seed=19, theme="navy", title="TRADING FLOOR",
+         intro="TRADING FLOOR\\nEVERYONE IS AT THEIR DESK.", furnish=["office", "office", "tables"], furnished=1.0, start=["K", "M"],
+         layout={"min_w": 9, "max_w": 14}, enemies={"a": 8, "R": 3, "U": 3, "q": 4}, items={"F": 1, "g": 4, "k": 3},
+         waves=[{"after_kills": 8, "count": 5, "armed": 4}, {"after_kills": 16, "count": 6, "armed": 4}], wave_points=6),
+    dict(name="f20_generators", size=(42, 27), style="bsp", seed=20, theme="amber", title="GENERATORS",
+         intro="GENERATOR HALL\\nONE SPARK.", furnish=["vats", "racks", "columns"], start=["V", "Y"],
+         enemies={"a": 6, "R": 2, "H": 2, "N": 1}, items={"g": 10, "r": 1, "F": 1}),
+    dict(name="f22_cryolab", size=(42, 25), style="spine", seed=22, theme="cryo", title="CRYO LAB",
+         intro="CRYO LAB\\nFREEZE BOMBS. USE ALL OF THEM.", furnish=["tables", "counters"], glass=6, ice_rooms=3, ice_corridor=True, start=["F", "p"],
+         enemies={"a": 6, "U": 2, "q": 3, "Z": 3}, items={"F": 3, "M": 1, "n": 1, "g": 1}),
+    dict(name="f23_mirrors", size=(44, 27), style="bsp", seed=23, theme="silver", title="HALL OF GLASS",
+         intro="HALL OF GLASS\\nEVERYONE CAN SEE EVERYONE.", furnish=["columns", "tables"], glass=12, start=["V", "Y"],
+         layout={"min_side": 6, "max_side": 10}, enemies={"N": 2, "S": 3, "a": 6, "H": 1}, items={"T": 1, "F": 1, "b": 2, "g": 2}),
+    dict(name="f24_strongrooms", size=(44, 27), style="double", seed=24, theme="bank", title="STRONGROOMS",
+         intro="STRONGROOMS\\nA DOOR IS A SUGGESTION. SO IS A WALL.", furnish=["racks", "office"], start=["r", "p"],
+         layout={"min_w": 5, "max_w": 8}, enemies={"a": 6, "S": 3, "H": 2, "R": 2}, items={"r": 1, "T": 1, "K": 1, "V": 1, "g": 3}),
+    dict(name="f25_skygarden", size=(46, 29), style="bsp", seed=25, theme="sky", title="SKY GARDEN", open_sky=True,
+         intro="SKY GARDEN\\nWALLED GARDENS. LONG SIGHTLINES. THEIRS TOO.", furnish=["counters", "columns", "tables"], wet=6, glass=4, start=["Y", "K"],
+         layout={"min_side": 8, "max_side": 14}, enemies={"N": 3, "R": 3, "a": 5, "q": 3}, items={"F": 1, "g": 3}),
+    dict(name="f26_morgue", size=(46, 29), style="double", seed=26, theme="morgue", title="MORGUE",
+         intro="MORGUE\\nNOT ALL OF THEM STAYED DEAD.", furnish=["slabs", "slabs", "racks"], ice_rooms=1, start=["T", "n"],
+         enemies={"Z": 12, "a": 3, "H": 1}, items={"n": 2, "F": 2, "p": 1}),
+    dict(name="f27_furnace", size=(44, 27), style="bsp", seed=27, theme="furnace", title="FURNACE",
+         intro="FURNACE ROOMS\\nTWELVE BARRELS. COUNT THEM.", furnish=["vats", "columns", "racks"], start=["K", "F"],
+         enemies={"S": 3, "R": 3, "U": 3, "a": 4, "H": 2}, items={"g": 12, "V": 1, "r": 1}),
+    dict(name="f28_waterworks", size=(46, 27), style="double", seed=28, theme="harbour", title="WATERWORKS",
+         intro="WATERWORKS\\nEVERY CORRIDOR IS FLOODED. LET THEM RUN.", furnish=["vats", "columns", "counters"], wet=8, wet_corridor=True, start=["M", "n"],
+         enemies={"q": 6, "a": 6, "R": 2, "Z": 3}, items={"F": 2, "T": 1, "g": 3}),
+    dict(name="f29_penthouse", size=(52, 31), style="double", seed=29, theme="gold", title="PENTHOUSE",
+         intro="PENTHOUSE\\nEVERYTHING THEY HAVE LEFT.", furnish=["office", "tables", "columns", "counters"], wet=3, ice_rooms=1, glass=5, fart=2,
+         start=["K", "T"], layout={"min_w": 8, "max_w": 12},
+         enemies={"a": 6, "R": 3, "S": 2, "U": 2, "N": 2, "H": 3, "q": 3, "Z": 3}, items={"Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5},
+         waves=[{"after_kills": 9, "count": 5, "armed": 4}, {"after_kills": 18, "count": 6, "armed": 5}], wave_points=5),
+]
 
 
 def f9_pool():
-    g = Grid(38, 24)
-    g.room(1, 1, 36, 22)
-    g.fill("W", 11, 7, 26, 16)          # the pool: deep water, a real basin
-    g.fill("~", 9, 5, 28, 6); g.fill("~", 9, 17, 28, 18)     # splashed deck
-    g.put("P", (1, 11)); g.put("X", (36, 12))
-    g.put("o", (5, 3), (5, 20), (18, 3), (18, 20), (32, 3), (32, 20), (8, 11), (30, 12))
-    g.put("c", (3, 7), (3, 8), (3, 15), (3, 16), (34, 7), (34, 16))
-    g.put("F", (4, 11)); g.put("p", (6, 5)); g.put("T", (31, 20)); g.put("b", (6, 18))
-    g.scatter({"a": 6, "S": 2, "q": 3}, [(10, 1, 36, 22)], 91, floor=".~")
-    save("f9_pool", g, {"title": "POOL", "intro": "POOL\nFREEZE THEM. THEN BREAK THEM.", "theme": theme("aqua")})
+    """Changing rooms along a corridor, and the pool hall beyond them."""
+    g = Grid(42, 30)
+    g.room(1, 5, 40, 7)                                          # corridor
+    for x0 in (1, 9, 17, 25, 33):                                # changing rooms and showers
+        g.room(x0, 1, x0 + 6, 3)
+        g.put("D", (x0 + 3, 4))
+        g.put("c", (x0 + 1, 1), (x0 + 5, 1))
+    for x in (8, 16, 24, 32):
+        g.put("D", (x, 2))
+    g.room(1, 9, 40, 28)                                         # pool hall
+    g.put("D", (6, 8), (20, 8), (35, 8))
+    g.fill("W", 7, 13, 34, 24)                                   # the pool: deep water, a real basin
+    g.fill("~", 5, 11, 36, 12); g.fill("~", 5, 25, 36, 26); g.fill("~", 5, 13, 6, 24); g.fill("~", 35, 13, 36, 24)
+    g.put("c", (2, 14), (2, 15), (2, 20), (2, 21), (39, 14), (39, 15), (39, 20), (39, 21), (12, 27), (13, 27), (28, 27), (29, 27))
+    g.put("#", (10, 5), (22, 7), (31, 5))
+    g.put("P", (1, 6)); g.put("X", (40, 27))
+    g.put("p", (6, 5)); g.put("F", (8, 7)); g.put("T", (3, 27)); g.put("b", (19, 1)); g.put("n", (27, 1))
+    g.scatter({"a": 6, "S": 2, "q": 3}, [(1, 1, 40, 3), (8, 5, 40, 7), (1, 9, 40, 28)], 91, floor=".~")
+    assert walkable_from_lift(g), "pool: somebody cannot be reached"
+    save("f9_pool", g, {"title": "POOL", "intro": "POOL\\nFREEZE THEM, OR LET THEM RUN ON THE WET DECK.", "theme": theme("aqua")})
 
 
 def f10_vault():
-    g = Grid(34, 34)
-    g.room(4, 4, 29, 29)
-    g.room(15, 1, 18, 2); g.room(15, 31, 18, 32); g.room(1, 15, 2, 18); g.room(31, 15, 32, 18)
-    g.put("D", (16, 3), (17, 30), (3, 16), (30, 17))
-    g.put("w", (16, 1), (17, 32), (1, 17), (32, 16))
-    g.pillars(4, 4, 29, 29, step=5, ox=3, oy=3)
-    g.put("P", (4, 27)); g.put("X", (29, 6)); g.put("B", (17, 9))
-    g.put("H", (12, 12), (22, 12)); g.put("R", (9, 7), (25, 8)); g.put("a", (17, 15), (27, 14))
-    g.put("g", (8, 16), (25, 17), (16, 21), (12, 6))
-    g.put("K", (7, 25)); g.put("T", (10, 28)); g.put("V", (5, 22)); g.put("F", (12, 25), (22, 25)); g.put("r", (8, 28))
-    save("f10_vault", g, {"title": "THE VAULT", "intro": "THE VAULT\nTHE BRUTE. TWELVE HITS. DO NOT LET HIM REACH YOU.",
+    """An antechamber, the vault floor itself, and strongrooms off it where reinforcements wait."""
+    g = Grid(40, 34)
+    g.room(1, 26, 12, 32)                                        # antechamber, where the lift is
+    g.room(8, 6, 31, 24)                                         # the vault floor
+    g.put("D", (10, 25))
+    for (x0, y0, x1, y1, door) in ((1, 6, 6, 12, (7, 9)), (1, 14, 6, 20, (7, 17)), (33, 6, 38, 12, (32, 9)),
+                                   (33, 14, 38, 20, (32, 17)), (14, 1, 25, 4, (19, 5)), (16, 26, 38, 32, (20, 25))):
+        g.room(x0, y0, x1, y1)
+        g.put("D", door)
+    g.put("w", (3, 9), (3, 17), (36, 9), (36, 17), (19, 2))
+    for (x, y) in ((13, 10), (13, 11), (26, 10), (26, 11), (13, 19), (13, 20), (26, 19), (26, 20), (19, 14), (20, 14), (19, 16), (20, 16)):
+        g.put("#", (x, y))                                       # wall stubs to fight round
+    g.put("c", (17, 22), (18, 22), (21, 22), (22, 22), (10, 15), (29, 15))
+    g.put("P", (1, 29)); g.put("X", (38, 29)); g.put("B", (19, 9))
+    g.put("H", (14, 14), (25, 14)); g.put("R", (10, 8), (29, 8)); g.put("a", (19, 19), (29, 22))
+    g.put("g", (11, 22), (28, 12), (16, 7), (23, 21))
+    g.put("K", (6, 27)); g.put("T", (8, 31)); g.put("V", (10, 27)); g.put("F", (4, 31), (11, 30)); g.put("r", (6, 31))
+    g.put("c", (22, 28), (23, 28), (30, 30), (31, 30), (3, 27), (3, 28), (35, 7), (35, 15), (16, 2), (23, 2))
+    assert walkable_from_lift(g), "vault: somebody cannot be reached"
+    save("f10_vault", g, {"title": "THE VAULT", "intro": "THE VAULT\\nTHE BRUTE. TWELVE HITS. DO NOT LET HIM REACH YOU.",
                           "boss": "brute", "theme": theme("steel")})
 
 
-def f11_sewers():
-    g = Grid(40, 26)
-    g.ring(1, 1, 38, 24, width=3)
-    g.room(4, 11, 35, 14)               # cross tunnel
-    g.room(18, 4, 21, 21)
-    g.fill("~", 2, 2, 37, 2); g.fill("~", 2, 23, 37, 23); g.fill("~", 5, 12, 34, 13); g.fill("~", 19, 5, 20, 20)
-    g.put("P", (1, 3)); g.put("X", (38, 22))
-    g.put("o", (8, 1), (30, 1), (8, 24), (30, 24), (10, 11), (28, 14), (18, 8), (21, 17))
-    g.put("p", (3, 5)); g.put("n", (2, 8)); g.put("T", (19, 12)); g.put("F", (36, 5))
-    g.put("g", (12, 3), (27, 22), (36, 12))
-    g.scatter({"Z": 6, "a": 4, "S": 1}, [(1, 1, 38, 24)], 111, floor=".~")
-    save("f11_sewers", g, {"title": "SEWERS", "intro": "SEWERS\nSOMETHING IS UNDER THE FLOOR.", "theme": theme("sewer")})
-
-
-def f12_kitchen():
-    g = Grid(38, 22)
-    g.room(1, 1, 27, 20)       # line kitchen
-    g.room(29, 1, 36, 9)       # cold room
-    g.room(29, 11, 36, 20)     # pantry
-    g.put("D", (28, 5), (28, 15), (32, 10))
-    for y in (4, 9, 14, 18):
-        for x in range(5, 25, 2):
-            g.put("c", (x, y))
-    g.fill("i", 30, 2, 35, 8)
-    g.fill("~", 12, 6, 15, 7); g.fill("~", 18, 11, 21, 12)
-    g.put("P", (1, 10)); g.put("X", (36, 17))
-    g.put("o", (3, 2), (3, 19), (14, 2), (14, 19), (26, 2), (26, 19), (26, 11))
-    g.put("n", (2, 5), (2, 15), (6, 2), (10, 19), (20, 2))
-    g.put("g", (8, 11), (16, 16), (23, 6), (23, 16), (34, 12), (31, 19))
-    g.put("F", (35, 3)); g.put("M", (4, 10))
-    g.scatter({"a": 6, "U": 2, "q": 2}, [(9, 1, 27, 20), (29, 1, 36, 20)], 121, floor=".~i")
-    save("f12_kitchen", g, {"title": "KITCHEN", "intro": "KITCHEN\nKNIVES EVERYWHERE. SO IS THE GAS.", "theme": theme("stainless")})
-
-
-def f13_coldstore():
-    g = Grid(36, 26)
-    g.room(1, 1, 34, 24)
-    g.fill("i", 6, 3, 30, 22)
-    for x in (9, 15, 21, 27):
-        for y in (5, 6, 7, 12, 13, 18, 19, 20):
-            g.put("s", (x, y))
-    g.put("P", (1, 12)); g.put("X", (34, 13))
-    g.put("o", (4, 3), (4, 22), (12, 10), (18, 15), (24, 10), (32, 3), (32, 22))
-    g.put("F", (3, 9), (3, 15), (18, 2)); g.put("p", (2, 5)); g.put("K", (33, 20)); g.put("n", (2, 20))
-    g.scatter({"a": 6, "R": 2, "q": 3}, [(8, 1, 34, 24)], 131, floor=".i")
-    save("f13_coldstore", g, {"title": "COLD STORE", "intro": "COLD STORE\nTHE WHOLE FLOOR IS ICE.", "theme": theme("frost")})
-
-
-def f14_glassworks():
-    g = Grid(38, 24)
-    g.room(1, 1, 36, 22)
-    for x in (8, 15, 22, 29):                                   # glass partitions with gaps
-        for y in list(range(2, 9)) + list(range(11, 15)) + list(range(17, 22)):
-            g.put("G", (x, y))
-    for y in (8, 16):
-        for x in list(range(10, 14)) + list(range(24, 28)):
-            g.put("G", (x, y))
-    g.put("P", (1, 12)); g.put("X", (36, 11))
-    g.put("o", (4, 4), (4, 19), (11, 12), (18, 4), (18, 19), (26, 12), (33, 4), (33, 19))
-    g.put("Y", (3, 12)); g.put("p", (3, 7)); g.put("V", (19, 12)); g.put("b", (5, 16), (12, 3))
-    g.scatter({"N": 3, "a": 5, "S": 1}, [(10, 1, 36, 22)], 141)
-    save("f14_glassworks", g, {"title": "GLASSWORKS", "intro": "GLASSWORKS\nRIGHT CLICK TO LOOK DOWN THE SCOPE.", "theme": theme("glass")})
-
-
-def f15_restrooms():
-    g = Grid(36, 24)
-    g.room(1, 9, 34, 14)                 # corridor
-    for i, x0 in enumerate((1, 10, 19, 28)):
-        g.room(x0, 1, x0 + 6, 7); g.room(x0, 16, x0 + 6, 22)
-        g.put("D", (x0 + 3, 8), (x0 + 3, 15))
-        for sx in (x0 + 1, x0 + 3, x0 + 5):                     # stall dividers
-            g.put("c", (sx, 2), (sx, 21))
-    g.put("P", (1, 12)); g.put("X", (34, 11))
-    g.put("f", (6, 11), (14, 4), (23, 19), (30, 11), (18, 12))
-    g.fill("~", 12, 10, 14, 13); g.fill("~", 24, 10, 25, 13)
-    g.put("o", (9, 9), (9, 14), (17, 9), (17, 14), (26, 9), (26, 14))
-    g.put("p", (3, 10)); g.put("n", (3, 13)); g.put("T", (21, 3)); g.put("m", (4, 4), (31, 20))
-    g.scatter({"a": 7, "u": 3, "q": 2}, [(8, 1, 34, 22)], 151, floor=".~")
-    save("f15_restrooms", g, {"title": "RESTROOMS", "intro": "RESTROOMS\nSHOOT THE GREEN CLOUD. HOLD YOUR NOSE.", "theme": theme("mint")})
-
-
-def f16_armoury():
-    g = Grid(38, 24)
-    g.room(1, 8, 8, 15)                  # the cage, where you start
-    g.room(10, 1, 36, 22)
-    g.put("D", (9, 10), (9, 13))
-    g.pillars(10, 1, 36, 22, step=4, ox=3, oy=3)
-    for y in (6, 17):
-        for x in (14, 20, 26, 32):
-            g.put("s", (x, y))
-    g.put("P", (1, 12)); g.put("X", (36, 11))
-    g.put("K", (3, 9)); g.put("T", (5, 9)); g.put("M", (7, 9)); g.put("V", (3, 14)); g.put("Y", (5, 14)); g.put("F", (7, 14)); g.put("r", (2, 11))
-    g.put("g", (16, 12), (24, 4), (24, 19), (33, 12))
-    g.scatter({"H": 2, "R": 3, "S": 2, "U": 2, "a": 3}, [(11, 1, 36, 22)], 161)
-    save("f16_armoury", g, {"title": "ARMOURY", "intro": "ARMOURY\nTAKE WHAT YOU LIKE. THEY DID.", "theme": theme("olive")})
-
-
-def f17_greenhouse():
-    g = Grid(38, 26)
-    g.room(1, 1, 36, 24)
-    for x0 in (5, 14, 23):                                       # planter beds: low cover with soil between
-        for y0 in (4, 11, 18):
-            g.put("c", (x0, y0), (x0 + 1, y0), (x0 + 2, y0), (x0 + 3, y0))
-    for x in (10, 19, 28):
-        for y in list(range(2, 6)) + list(range(9, 17)) + list(range(20, 24)):
-            g.put("G", (x, y))
-    g.fill("~", 6, 7, 8, 8); g.fill("~", 24, 14, 26, 15); g.fill("~", 15, 21, 17, 22)
-    g.put("P", (1, 13)); g.put("X", (36, 12))
-    g.put("o", (3, 3), (3, 22), (12, 13), (21, 7), (21, 19), (31, 3), (31, 22), (34, 8))
-    g.put("p", (3, 10)); g.put("n", (3, 16)); g.put("K", (33, 22)); g.put("F", (20, 13))
-    g.scatter({"Z": 8, "a": 4}, [(1, 1, 36, 24)], 171, floor=".~")
-    save("f17_greenhouse", g, {"title": "GREENHOUSE", "intro": "GREENHOUSE\nTHEY GROW THEM HERE.", "theme": theme("leaf")})
-
-
-def f18_beanworks():
-    g = Grid(40, 24)
-    g.room(1, 1, 38, 22)
-    for (x, y) in ((8, 6), (8, 16), (16, 11), (24, 6), (24, 16), (32, 11)):     # vats: four pillars each
-        g.put("o", (x, y), (x + 1, y), (x, y + 1), (x + 1, y + 1))
-    g.put("f", (5, 11), (12, 4), (12, 19), (20, 5), (20, 18), (28, 12), (35, 5))
-    g.put("g", (11, 11), (20, 12), (29, 5), (29, 18), (36, 17))
-    g.put("c", (4, 3), (5, 3), (34, 20), (35, 20), (14, 21), (15, 21))
-    g.put("P", (1, 11)); g.put("X", (38, 12))
-    g.put("p", (3, 8)); g.put("T", (3, 15)); g.put("M", (19, 2)); g.put("n", (19, 21))
-    g.scatter({"a": 6, "S": 2, "q": 3, "H": 1}, [(9, 1, 38, 22)], 181)
-    save("f18_beanworks", g, {"title": "BEANWORKS", "intro": "BEAN CANNERY\nIT IS EXACTLY AS BAD AS IT SMELLS.", "theme": theme("bean")})
-
-
-def f19_tradingfloor():
-    g = Grid(46, 30)
-    g.room(1, 1, 44, 28)
-    for y in range(4, 27, 4):
-        for x in range(6, 40, 6):
-            g.put("c", (x, y), (x + 1, y), (x + 2, y))
-    g.pillars(1, 1, 44, 28, step=6, ox=3, oy=2)
-    g.put("P", (1, 14)); g.put("X", (44, 15))
-    g.put("w", (44, 2), (44, 27), (22, 1), (23, 28), (1, 2), (1, 27))
-    g.put("K", (3, 12)); g.put("M", (3, 17)); g.put("F", (22, 14)); g.put("g", (14, 14), (30, 14), (22, 6), (22, 23))
-    g.scatter({"a": 8, "R": 3, "U": 3, "q": 4}, [(9, 1, 44, 28)], 191)
-    save("f19_tradingfloor", g, {"title": "TRADING FLOOR", "intro": "TRADING FLOOR\nEVERYONE IS AT THEIR DESK.", "theme": theme("navy"),
-                                 "waves": [{"after_kills": 8, "count": 5, "armed": 4}, {"after_kills": 16, "count": 6, "armed": 4}]})
-
-
-def f20_generators():
-    g = Grid(40, 26)
-    g.room(1, 1, 38, 24)
-    for x in (7, 14, 21, 28):                                    # generator blocks
-        g.wall(x, 5, x + 2, 9); g.wall(x, 16, x + 2, 20)
-    g.put("o", (4, 12), (11, 12), (18, 12), (25, 12), (32, 12), (36, 3), (36, 22))
-    g.put("g", (5, 4), (12, 7), (19, 7), (26, 7), (33, 7), (12, 18), (19, 18), (26, 18), (33, 18), (36, 12))
-    g.put("P", (1, 13)); g.put("X", (38, 12))
-    g.put("V", (3, 10)); g.put("Y", (3, 16)); g.put("r", (2, 3)); g.put("F", (20, 2))
-    g.scatter({"a": 6, "R": 2, "H": 2, "N": 1}, [(10, 1, 38, 24)], 201)
-    save("f20_generators", g, {"title": "GENERATORS", "intro": "GENERATOR HALL\nONE SPARK.", "theme": theme("amber")})
-
-
 def f21_lockdown():
-    g = Grid(40, 30)
-    g.room(3, 3, 36, 26)
-    for (x0, y0, x1, y1) in ((9, 8, 12, 9), (27, 8, 30, 9), (9, 20, 12, 21), (27, 20, 30, 21), (18, 13, 21, 16)):   # cell blocks
-        g.wall(x0, y0, x1, y1)
-    g.room(18, 1, 21, 1); g.room(18, 28, 21, 28); g.room(1, 13, 1, 16); g.room(38, 13, 38, 16)
-    g.put("D", (19, 2), (20, 27), (2, 14), (37, 15))
-    g.put("w", (20, 1), (19, 28), (1, 15), (38, 14))
-    g.put("o", (6, 6), (6, 23), (33, 6), (33, 23), (15, 6), (24, 23), (15, 23), (24, 6))
-    g.put("P", (3, 24)); g.put("X", (36, 5)); g.put("B", (20, 8))
-    g.put("H", (12, 13), (27, 13), (20, 19)); g.put("N", (8, 4), (31, 4))
-    g.put("Y", (6, 21)); g.put("K", (9, 25)); g.put("F", (12, 23), (5, 18)); g.put("g", (14, 11), (25, 18), (30, 24)); g.put("V", (4, 21))
-    save("f21_lockdown", g, {"title": "LOCKDOWN", "intro": "LOCKDOWN\nTHE WARDEN. THREE ROUNDS THROUGH THE GLASS.",
+    """A cell block: the yard in the middle, cells down both sides, guard rooms at the ends."""
+    g = Grid(44, 32)
+    g.room(9, 8, 34, 23)                                         # the yard
+    for i, x0 in enumerate(range(9, 33, 5)):                      # cells north and south
+        g.room(x0, 2, x0 + 3, 6); g.put("D", (x0 + 1, 7))
+        g.room(x0, 25, x0 + 3, 29); g.put("D", (x0 + 2, 24))
+    g.room(1, 8, 7, 14); g.put("D", (8, 11))                     # west guard room
+    g.room(1, 17, 7, 29); g.put("D", (8, 20))                    # the way in
+    g.room(36, 8, 42, 14); g.put("D", (35, 11))
+    g.room(36, 17, 42, 23); g.put("D", (35, 20))
+    g.put("w", (10, 3), (25, 3), (15, 28), (30, 28), (39, 10))
+    for (x, y) in ((15, 12), (15, 13), (28, 12), (28, 13), (15, 18), (15, 19), (28, 18), (28, 19), (21, 15), (22, 15)):
+        g.put("#", (x, y))
+    g.put("c", (12, 16), (31, 15), (20, 21), (23, 10), (3, 10), (4, 10), (38, 19), (39, 19), (3, 24), (4, 24), (3, 27), (4, 27))
+    g.put("P", (1, 22)); g.put("X", (42, 20)); g.put("B", (22, 10))
+    g.put("H", (14, 10), (29, 10), (22, 19)); g.put("N", (4, 12), (39, 12))
+    g.put("Y", (6, 19)); g.put("K", (6, 25)); g.put("F", (2, 28), (6, 28)); g.put("V", (2, 19)); g.put("g", (12, 21), (31, 21), (20, 12))
+    assert walkable_from_lift(g), "lockdown: somebody cannot be reached"
+    save("f21_lockdown", g, {"title": "LOCKDOWN", "intro": "LOCKDOWN\\nTHE WARDEN. THREE ROUNDS THROUGH THE GLASS.",
                              "boss": "warden", "theme": theme("prison")})
 
 
-def f22_cryolab():
-    g = Grid(38, 24)
-    g.room(1, 9, 36, 14)
-    for x0 in (1, 10, 19, 28):
-        g.room(x0, 1, x0 + 7, 7); g.room(x0, 16, x0 + 7, 22)
-        for x in range(x0 + 1, x0 + 7):
-            if x not in (x0 + 3, x0 + 4):
-                g.put("G", (x, 8), (x, 15))
-        g.put(".", (x0 + 3, 8), (x0 + 4, 8), (x0 + 3, 15), (x0 + 4, 15))
-    g.fill("i", 2, 10, 35, 13)
-    g.put("P", (1, 12)); g.put("X", (36, 11))
-    g.put("o", (9, 9), (9, 14), (18, 9), (18, 14), (27, 9), (27, 14), (4, 4), (32, 19))
-    g.put("F", (3, 10), (14, 3), (23, 20), (32, 4)); g.put("p", (3, 13)); g.put("M", (22, 3)); g.put("n", (13, 20))
-    g.scatter({"a": 6, "U": 2, "q": 3, "Z": 3}, [(8, 1, 36, 22)], 221, floor=".i")
-    save("f22_cryolab", g, {"title": "CRYO LAB", "intro": "CRYO LAB\nFREEZE BOMBS. USE ALL OF THEM.", "theme": theme("cryo")})
-
-
-def f23_mirrors():
-    g = Grid(40, 26)
-    g.room(1, 1, 38, 24)
-    for (x, y) in [(x, y) for x in range(6, 35, 4) for y in range(4, 23, 6)]:     # a hall of glass, mirrored left to right
-        g.put("G", (x, y), (x, y + 1))
-    for x in (12, 27):
-        for y in range(2, 24):
-            if g.c[y][x] == "." and y not in (7, 8, 12, 13, 17, 18):
-                g.put("G", (x, y))
-    g.put("P", (1, 13)); g.put("X", (38, 12))
-    g.put("o", (4, 3), (4, 22), (35, 3), (35, 22), (19, 8), (20, 17), (9, 13), (30, 12))
-    g.put("V", (3, 10)); g.put("Y", (3, 16)); g.put("T", (20, 13)); g.put("F", (19, 2)); g.put("b", (2, 4), (2, 21))
-    g.scatter({"N": 2, "S": 3, "a": 6, "H": 1}, [(9, 1, 38, 24)], 231)
-    save("f23_mirrors", g, {"title": "HALL OF GLASS", "intro": "HALL OF GLASS\nEVERYONE CAN SEE EVERYONE.", "theme": theme("silver")})
-
-
-def f24_strongrooms():
-    g = Grid(40, 26)
-    g.room(1, 11, 38, 14)                                        # the long corridor
-    for i, x0 in enumerate((1, 9, 17, 25, 33)):
-        x1 = x0 + 5
-        g.room(x0, 1, x1, 9); g.room(x0, 16, x1, 24)
-        g.put("D", (x0 + 2, 10), (x0 + 3, 15))
-        g.put("o", (x0 + 4, 3), (x0 + 1, 22))
-    g.put("P", (1, 12)); g.put("X", (38, 13))
-    g.put("r", (3, 13), (20, 12)); g.put("p", (5, 11)); g.put("T", (12, 4)); g.put("K", (28, 21)); g.put("V", (20, 5)); g.put("g", (11, 20), (27, 5), (36, 20))
-    g.put("c", (3, 6), (4, 6), (19, 19), (20, 19), (35, 6), (36, 6))
-    g.scatter({"a": 6, "S": 3, "H": 2, "R": 2}, [(9, 1, 38, 24)], 241)
-    save("f24_strongrooms", g, {"title": "STRONGROOMS", "intro": "STRONGROOMS\nA DOOR IS A SUGGESTION. SO IS A WALL.", "theme": theme("bank")})
-
-
-def f25_skygarden():
-    g = Grid(42, 28)
-    g.room(1, 1, 40, 26)
-    g.fill("~", 8, 6, 13, 10); g.fill("~", 27, 17, 33, 21); g.fill("~", 18, 12, 23, 15)
-    for (x, y) in ((6, 16), (6, 17), (16, 4), (17, 4), (25, 8), (25, 9), (34, 5), (35, 5), (14, 21), (15, 21), (36, 12), (36, 13)):
-        g.put("c", (x, y))
-    g.pillars(1, 1, 40, 26, step=7, ox=4, oy=4)
-    g.put("P", (1, 14)); g.put("X", (40, 13))
-    g.put("Y", (3, 11)); g.put("K", (3, 17)); g.put("F", (20, 3)); g.put("g", (12, 14), (30, 9), (22, 23))
-    g.scatter({"N": 3, "R": 3, "a": 5, "q": 3}, [(9, 1, 40, 26)], 251, floor=".~")
-    save("f25_skygarden", g, {"title": "SKY GARDEN", "intro": "SKY GARDEN\nLONG SIGHTLINES. THEIRS TOO.", "open_sky": True, "theme": theme("sky")})
-
-
-def f26_morgue():
-    g = Grid(38, 24)
-    g.room(1, 1, 36, 22)
-    for x in range(5, 34, 4):                                    # slabs
-        for y in (4, 5, 11, 12, 18, 19):
-            g.put("c", (x, y))
-    g.put("P", (1, 12)); g.put("X", (36, 11))
-    g.put("o", (3, 3), (3, 20), (11, 8), (19, 15), (27, 8), (34, 3), (34, 20), (19, 2))
-    g.put("n", (2, 8), (2, 16)); g.put("T", (3, 12)); g.put("F", (18, 8), (26, 15)); g.put("p", (10, 2))
-    g.scatter({"Z": 12, "a": 3, "H": 1}, [(1, 1, 36, 22)], 261)
-    save("f26_morgue", g, {"title": "MORGUE", "intro": "MORGUE\nNOT ALL OF THEM STAYED DEAD.", "theme": theme("morgue")})
-
-
-def f27_furnace():
-    g = Grid(40, 26)
-    g.room(1, 1, 38, 24)
-    for (x0, y0) in ((8, 5), (8, 17), (18, 11), (28, 5), (28, 17)):          # furnaces
-        g.wall(x0, y0, x0 + 3, y0 + 3)
-    g.put("g", (6, 7), (13, 6), (6, 19), (13, 18), (16, 13), (23, 12), (26, 7), (33, 6), (26, 19), (33, 18), (20, 3), (20, 22))
-    g.put("o", (4, 12), (14, 12), (25, 13), (35, 12), (20, 8), (20, 17))
-    g.put("P", (1, 13)); g.put("X", (38, 12))
-    g.put("K", (3, 10)); g.put("F", (3, 16)); g.put("V", (2, 3)); g.put("r", (2, 22))
-    g.scatter({"S": 3, "R": 3, "U": 3, "a": 4, "H": 2}, [(10, 1, 38, 24)], 271)
-    save("f27_furnace", g, {"title": "FURNACE", "intro": "FURNACE ROOM\nTWELVE BARRELS. COUNT THEM.", "theme": theme("furnace")})
-
-
-def f28_waterworks():
-    g = Grid(42, 26)
-    g.room(1, 1, 40, 24)
-    g.fill("~", 2, 2, 39, 23)
-    for y in (4, 12, 13, 21):                                    # dry walkways
-        for x in range(2, 40):
-            if g.c[y][x] == "~":
-                g.c[y][x] = "."
-    for x in (8, 20, 21, 33):
-        for y in range(2, 24):
-            if g.c[y][x] == "~":
-                g.c[y][x] = "."
-    g.put("o", (5, 8), (5, 17), (14, 8), (14, 17), (27, 8), (27, 17), (36, 8), (36, 17))
-    g.put("P", (1, 12)); g.put("X", (40, 13))
-    g.put("M", (3, 12)); g.put("n", (3, 13)); g.put("F", (20, 12), (21, 13)); g.put("T", (8, 4)); g.put("g", (14, 12), (27, 13), (33, 21))
-    g.scatter({"q": 6, "a": 6, "R": 2, "Z": 3}, [(9, 1, 40, 24)], 281, floor=".~")
-    save("f28_waterworks", g, {"title": "WATERWORKS", "intro": "WATERWORKS\nSTAY ON THE WALKWAYS. LET THEM RUN.", "theme": theme("harbour")})
-
-
-def f29_penthouse():
-    g = Grid(46, 30)
-    g.room(1, 1, 14, 12); g.room(1, 14, 14, 28)
-    g.room(16, 1, 44, 28)
-    g.put("D", (15, 6), (15, 21), (7, 13))
-    g.pillars(16, 1, 44, 28, step=6, ox=3, oy=3)
-    g.pillars(1, 1, 14, 12, step=5, ox=4, oy=4); g.pillars(1, 14, 14, 28, step=5, ox=4, oy=4)
-    for x in range(22, 40, 4):
-        g.put("c", (x, 14), (x + 1, 14), (x, 15), (x + 1, 15))
-    g.fill("~", 28, 4, 33, 7); g.fill("i", 28, 22, 33, 25)
-    for y in range(9, 21):
-        if g.c[y][40] == ".":
-            g.put("G", (40, y))
-    g.put("f", (24, 8), (36, 20))
-    g.put("g", (20, 5), (20, 24), (37, 5), (37, 24), (26, 17))
-    g.put("w", (44, 2), (44, 27), (30, 1), (30, 28), (16, 14))
-    g.put("P", (1, 6)); g.put("X", (44, 14))
-    g.put("K", (3, 3)); g.put("T", (5, 3)); g.put("Y", (3, 10)); g.put("F", (5, 10), (8, 20)); g.put("r", (3, 20)); g.put("n", (5, 24)); g.put("V", (11, 3))
-    g.scatter({"a": 6, "R": 3, "S": 2, "U": 2, "N": 2, "H": 3, "q": 3, "Z": 3}, [(9, 1, 44, 28)], 291, floor=".~i")
-    save("f29_penthouse", g, {"title": "PENTHOUSE", "intro": "PENTHOUSE\nEVERYTHING THEY HAVE LEFT.", "theme": theme("gold"),
-                              "waves": [{"after_kills": 9, "count": 5, "armed": 4}, {"after_kills": 18, "count": 6, "armed": 5}]})
-
-
-NEW_FLOORS = [f6_cafeteria, f7_garage, f8_archive, f9_pool, f10_vault, f11_sewers, f12_kitchen, f13_coldstore,
-              f14_glassworks, f15_restrooms, f16_armoury, f17_greenhouse, f18_beanworks, f19_tradingfloor,
-              f20_generators, f21_lockdown, f22_cryolab, f23_mirrors, f24_strongrooms, f25_skygarden, f26_morgue,
-              f27_furnace, f28_waterworks, f29_penthouse]
+def new_floors():
+    for spec in SPECS:
+        build_floor(spec)
+    f9_pool()
+    f10_vault()
+    f21_lockdown()
 
 
 if __name__ == "__main__":
@@ -750,5 +818,4 @@ if __name__ == "__main__":
     f4_labs()
     f5_executive()
     roof()
-    for make in NEW_FLOORS:
-        make()
+    new_floors()
