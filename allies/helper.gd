@@ -19,10 +19,15 @@ var kills: int = 0
 var leaving: bool = false
 var voice: HelperVoice
 
-const HIT_LINES: Array[String] = ["Ow!", "Hey, watch it!", "I felt that!", "Good thing I'm bulletproof!", "Rude!", "That tickles!", "Is that all you've got?"]
-const KILL_LINES: Array[String] = ["Got one!", "Target down!", "He's out!", "One less pink dude!", "Scratch one!"]
-const BLOCKED_LINES: Array[String] = ["Move! You're in my line of fire!", "Step aside, I can't shoot through you!", "You're blocking my shot!"]
-const QUIET_LINES: Array[String] = ["All quiet. Lead the way.", "Nobody here. After you.", "Clear for now. Keep moving."]
+## Line ids from allies/voice_lines.json. Each has a recorded clip.
+const HIT_LINES: Array[StringName] = [&"hit_1", &"hit_2", &"hit_3", &"hit_4", &"hit_5", &"hit_6", &"hit_7"]
+const KILL_LINES: Array[StringName] = [&"kill_1", &"kill_2", &"kill_3", &"kill_4", &"kill_5"]
+const BLOCKED_LINES: Array[StringName] = [&"blocked_1", &"blocked_2", &"blocked_3"]
+const QUIET_LINES: Array[StringName] = [&"quiet_1", &"quiet_2", &"quiet_3"]
+
+
+static func pick(ids: Array[StringName]) -> StringName:
+	return ids[randi() % ids.size()]
 
 var _called_out: Dictionary[int, bool] = {}
 var _hit_line_cooldown: float = 0.0
@@ -78,20 +83,20 @@ func _ready() -> void:
 
 ## Said once, when he steps out of the capsule.
 func greet() -> void:
-	voice.say("Hey, I'm your helper for %d minutes!" % int(T.helper_seconds / 60.0), HelperVoice.Priority.IMPORTANT)
+	voice.say_line(&"greet", HelperVoice.Priority.IMPORTANT)
 
 
 ## Said when he rides the lift back up with the player after a death.
 func greet_again() -> void:
-	var left: int = int(Game.helper_time_left)
-	voice.say("Still with you! %d:%02d left." % [left / 60, left % 60], HelperVoice.Priority.IMPORTANT)
+	voice.say_line(&"greet_again", HelperVoice.Priority.IMPORTANT)
 
 
 func _on_enemy_killed(_remaining: int) -> void:
 	if target != null and (not is_instance_valid(target) or not target.alive):
 		kills += 1
 		target = null
-		voice.say(HelperVoice.pick(KILL_LINES) if kills < 3 else "That's %d!" % kills, HelperVoice.Priority.CHATTER)
+		var kill_id: StringName = pick(KILL_LINES) if kills < 3 else (StringName("count_%d" % kills) if kills <= 12 else &"count_many")
+		voice.say_line(kill_id, HelperVoice.Priority.CHATTER)
 
 
 ## His bullets pass through the player he works for.
@@ -106,7 +111,7 @@ func on_bullet_hit(_bullet: Node, point: Vector3, normal: Vector3) -> bool:
 	_flinch = 1.0
 	if _hit_line_cooldown <= 0.0 and not leaving:
 		_hit_line_cooldown = 2.5
-		voice.say(HelperVoice.pick(HIT_LINES), HelperVoice.Priority.CALLOUT)
+		voice.say_line(pick(HIT_LINES), HelperVoice.Priority.CALLOUT)
 	return false
 
 
@@ -186,7 +191,7 @@ func _physics_process(delta: float) -> void:
 		var blocked: bool = _player_in_the_way(muzzle(), at)
 		if blocked and _blocked_cooldown <= 0.0 and _aim_clock >= T.helper_aim_time:
 			_blocked_cooldown = 7.0
-			voice.say(HelperVoice.pick(BLOCKED_LINES), HelperVoice.Priority.CALLOUT)
+			voice.say_line(pick(BLOCKED_LINES), HelperVoice.Priority.CALLOUT)
 		_quiet_clock = 0.0
 		if _aim_clock >= T.helper_aim_time and _cooldown <= 0.0 and facing > 0.97 and not blocked:
 			gun.cooldown_left = 0.0
@@ -199,7 +204,7 @@ func _physics_process(delta: float) -> void:
 		_quiet_clock += delta
 		if _quiet_clock > 9.0 and Game.alive_enemies > 0:
 			_quiet_clock = -12.0
-			voice.say(HelperVoice.pick(QUIET_LINES), HelperVoice.Priority.CHATTER)
+			voice.say_line(pick(QUIET_LINES), HelperVoice.Priority.CHATTER)
 
 	var rate: float = wd / delta if delta > 0.0 else 0.0
 	velocity.x = _desired.x * rate
@@ -256,7 +261,8 @@ func _call_out(dude: PinkDude) -> void:
 	var player: Player = get_tree().get_first_node_in_group(&"player") as Player
 	if player == null:
 		return
-	if voice.say(HelperVoice.callout(player.global_transform, dude, Game.data), HelperVoice.Priority.CALLOUT):
+	if voice.say(HelperVoice.callout(player.global_transform, dude, Game.data), HelperVoice.Priority.CALLOUT,
+			HelperVoice.callout_clips(player.global_transform, dude)):
 		_called_out[dude.get_instance_id()] = true
 		return
 	_tip_about_barrels(dude)
@@ -269,7 +275,7 @@ func _tip_about_barrels(dude: PinkDude) -> void:
 		if barrel == null or _warned_barrels.has(barrel.get_instance_id()):
 			continue
 		if barrel.global_position.distance_to(dude.global_position) < T.barrel_radius * 0.7:
-			if voice.say("Shoot the red barrel next to him!", HelperVoice.Priority.CHATTER):
+			if voice.say_line(&"barrel_tip", HelperVoice.Priority.CHATTER):
 				_warned_barrels[barrel.get_instance_id()] = true
 			return
 
@@ -278,10 +284,10 @@ func _talk_about_the_clock() -> void:
 	var left: float = Game.helper_time_left
 	if not _said_minute and left <= 60.0 and left > 50.0:
 		_said_minute = true
-		voice.say("One minute left on my contract!", HelperVoice.Priority.IMPORTANT)
+		voice.say_line(&"minute_left", HelperVoice.Priority.IMPORTANT)
 	elif not _said_ten and left <= 10.0 and left > 0.0:
 		_said_ten = true
-		voice.say("Ten seconds! Make them count!", HelperVoice.Priority.IMPORTANT)
+		voice.say_line(&"ten_seconds", HelperVoice.Priority.IMPORTANT)
 
 
 ## Contract over. He lowers the rifle, says goodbye, waves, and bursts into red shards.
@@ -289,7 +295,7 @@ func leave(floor_cleared: bool = false) -> void:
 	if leaving:
 		return
 	leaving = true
-	voice.say("Floor clear! My work here is done." if floor_cleared else "Time's up. Good luck out there!", HelperVoice.Priority.IMPORTANT)
+	voice.say_line(&"bye_clear" if floor_cleared else &"bye_time", HelperVoice.Priority.IMPORTANT)
 	target = null
 	gun.visible = false
 	_leave_clock = 2.4      # long enough to hear the goodbye

@@ -43,7 +43,7 @@ func test_greeting_is_what_was_asked_for() -> void:
 	check(Game.load_level("test_room"), "level loads")
 	await wait_physics(2)
 	var helper: Helper = Game.hire_helper(Game.data.cell_center(Vector2i(6, 8), 0.05), Basis.IDENTITY)
-	check_eq(helper.voice.last_line, "Hey, I'm your helper for 3 minutes!", "the greeting")
+	check_eq(helper.voice.last_line, "Hey! I'm your helper for three minutes!", "the greeting")
 	check(helper.voice.is_talking(), "bubble is up")
 	check(helper.voice._label.visible and helper.voice._panel.visible, "text on a white panel")
 	check_eq(helper.voice._label.text, helper.voice.last_line, "bubble shows the line")
@@ -97,7 +97,10 @@ func test_he_complains_when_shot_but_not_every_time() -> void:
 	for i: int in 5:
 		helper.on_bullet_hit(null, helper.global_position + Vector3.UP, Vector3.LEFT)
 	check_eq(helper.voice.history.size(), before + 1, "five hits in a row, one complaint")
-	check(Helper.HIT_LINES.has(helper.voice.last_line), "and it is one of his hit lines: %s" % helper.voice.last_line)
+	var hit_texts: Array[String] = []
+	for id: StringName in Helper.HIT_LINES:
+		hit_texts.append(HelperVoice.line(id))
+	check(hit_texts.has(helper.voice.last_line), "and it is one of his hit lines: %s" % helper.voice.last_line)
 	check(helper._flinch > 0.5, "he flinches too")
 
 
@@ -141,3 +144,35 @@ func test_goodbye_lines() -> void:
 func test_tts_is_available_on_a_machine_with_a_voice() -> void:
 	# Headless has no TTS. This only checks the project setting that turns it on in the real game.
 	check(ProjectSettings.get_setting("audio/general/text_to_speech", false), "text to speech is enabled in project settings")
+
+
+func test_every_line_has_a_recorded_clip() -> void:
+	var lines: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://allies/voice_lines.json"))
+	check(lines.size() > 90, "the line list is loaded (%d)" % lines.size())
+	var missing: PackedStringArray = []
+	for id: String in lines:
+		if HelperVoice.clip(StringName(id)) == null:
+			missing.append(id)
+	check(missing.is_empty(), "lines with no clip: %s" % ", ".join(missing))
+
+
+func test_every_id_the_helper_uses_exists() -> void:
+	var lines: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://allies/voice_lines.json"))
+	var regex := RegEx.new()
+	regex.compile('&"([a-z_0-9]+)"')
+	var source: String = FileAccess.get_file_as_string("res://allies/helper.gd")
+	for m: RegExMatch in regex.search_all(source):
+		var id: String = m.get_string(1)
+		if id.begins_with("hit_") or id.begins_with("kill_") or id.begins_with("blocked_") or id.begins_with("quiet_") \
+				or id.begins_with("bye_") or id.begins_with("greet") or id.ends_with("_tip") or id in ["minute_left", "ten_seconds", "count_many"]:
+			check(lines.has(id), "helper.gd uses line '%s' which is not in voice_lines.json" % id)
+
+
+func test_callout_is_spoken_from_clips() -> void:
+	check(Game.load_level("test_room"), "level loads")
+	await wait_physics(2)
+	var dude: PinkDude = Game.spawn_dude(Vector3(20, 0.05, 6), true, &"rifle")
+	var ids: Array[StringName] = HelperVoice.callout_clips(Transform3D(Basis.IDENTITY, Vector3(10, 0, 6)), dude)
+	check_eq(ids, [&"name_rifle", &"clock_3", &"dist_10"] as Array[StringName], "who, which way, how far")
+	for id: StringName in ids:
+		check(HelperVoice.clip(id) != null, "clip %s exists" % id)
