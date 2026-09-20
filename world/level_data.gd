@@ -21,6 +21,14 @@ var glass: Array[Dictionary] = []
 ## {cell: Vector2i, kind: StringName}
 var props: Array[Dictionary] = []
 var wave_points: Array[Vector2i] = []
+## {cell: Vector2i, icy: bool}
+var puddles: Array[Dictionary] = []
+var fart_cells: Array[Vector2i] = []
+## &"director", &"brute" or &"warden"
+var boss_kind: StringName = &"director"
+## Colours and light for this floor. Keys: wall, floor, prop, ambient, sky, light.
+var theme: Dictionary = {}
+var title: String = ""
 var triggers: Array[Vector2i] = []
 
 var intro: String = ""
@@ -87,5 +95,10 @@ func capsule_cell() -> Vector2i:
 	return Vector2i(-1, -1)
 
 
+## Buried biters do not count until they climb out.
 func initial_enemy_count() -> int:
-	return spawns.size() + (1 if boss_cell.x >= 0 else 0)
+	var count: int = 1 if boss_cell.x >= 0 else 0
+	for spawn: Dictionary in spawns:
+		if spawn.get("weapon", &"pistol") != &"zombie":
+			count += 1
+	return count

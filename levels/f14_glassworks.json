@@ -1,0 +1,13 @@
+{
+  "title": "GLASSWORKS",
+  "intro": "GLASSWORKS\nRIGHT CLICK TO LOOK DOWN THE SCOPE.",
+  "theme": {
+    "wall": "f4fbfd",
+    "floor": "bcd9e2",
+    "prop": "d5e8ee",
+    "ambient": "f0fbff",
+    "sky": "eaf6fa",
+    "energy": 0.62,
+    "sun": 0.45
+  }
+}

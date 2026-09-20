@@ -1,0 +1,13 @@
+{
+  "title": "GREENHOUSE",
+  "intro": "GREENHOUSE\nTHEY GROW THEM HERE.",
+  "theme": {
+    "wall": "e3efd6",
+    "floor": "5f8a45",
+    "prop": "8fb070",
+    "ambient": "f2ffe0",
+    "sky": "d6ecc4",
+    "energy": 0.58,
+    "sun": 0.5
+  }
+}

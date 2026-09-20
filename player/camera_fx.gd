@@ -8,6 +8,12 @@ var _kick: float = 0.0
 var _fov_punch: float = 0.0
 var _shake: float = 0.0
 
+const T: Tuning = preload("res://data/tuning.tres")
+
+## 0 looking normally, 1 fully through the scope. Hands and HUD read this.
+var scope_amount: float = 0.0
+var scope_wanted: bool = false
+
 
 func kick(radians: float) -> void:
 	_kick = minf(_kick + radians, 0.12)
@@ -29,4 +35,6 @@ func _process(delta: float) -> void:
 	_shake = lerpf(_shake, 0.0, minf(1.0, delta * 5.0))
 	camera.rotation.x = _kick + randf_range(-1.0, 1.0) * _shake
 	camera.rotation.z = randf_range(-1.0, 1.0) * _shake * 0.7
-	camera.fov = Settings.fov + _fov_punch
+	scope_amount = move_toward(scope_amount, 1.0 if scope_wanted else 0.0, delta * T.scope_zoom_speed)
+	var eased: float = scope_amount * scope_amount * (3.0 - 2.0 * scope_amount)
+	camera.fov = lerpf(Settings.fov, T.scope_fov, eased) + _fov_punch * (1.0 - eased)

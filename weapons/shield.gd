@@ -164,9 +164,11 @@ static func rolls_deflect() -> bool:
 ## Called by either plate. Returns true if the bullet ricochets instead of stopping.
 func bullet_struck(part: ShieldPlate, bullet: Node, point: Vector3, normal: Vector3) -> bool:
 	if part.is_visor and holder_dude != null and is_instance_valid(holder_dude) and holder_dude.alive:
-		break_glass(point, normal)
 		var dir: Vector3 = (bullet as Bullet).direction if bullet is Bullet else -normal
-		holder_dude.call(&"visor_shot", dir)
+		var holder: PinkDude = holder_dude
+		holder.call(&"visor_shot", dir)
+		if not is_instance_valid(holder) or not holder.alive:
+			break_glass(point, normal)      # thick glass survives until the man behind it does not
 		return false
 	Shatter.burst(Game.entities_root(self), point + normal * 0.04, 4, Mats.steel(), Vector3.ONE * 0.02, normal * 2.0, 0.035)
 	if rolls_deflect():

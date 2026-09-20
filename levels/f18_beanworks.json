@@ -1,0 +1,13 @@
+{
+  "title": "BEANWORKS",
+  "intro": "BEAN CANNERY\nIT IS EXACTLY AS BAD AS IT SMELLS.",
+  "theme": {
+    "wall": "d9c7a4",
+    "floor": "6b5234",
+    "prop": "9a7f57",
+    "ambient": "fff0d4",
+    "sky": "cdb98f",
+    "energy": 0.5,
+    "sun": 0.42
+  }
+}

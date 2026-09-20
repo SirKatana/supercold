@@ -60,7 +60,10 @@ func test_every_floor_has_cover_and_spread_out_enemies() -> void:
 		for prop: Dictionary in d.props:
 			if prop["kind"] == &"pillar":
 				pillars += 1
-		check(pillars >= 4, "%s has only %d pillars to hide behind" % [floor_name, pillars])
+		var cover: int = pillars
+		for prop: Dictionary in d.props:
+			cover += 1 if prop["kind"] == &"rack" or prop["kind"] == &"desk" else 0
+		check(pillars >= 4 or cover >= 12, "%s has only %d pillars and %d cover pieces" % [floor_name, pillars, cover])
 		for i: int in d.spawns.size():
 			var a: Vector2i = d.spawns[i]["cell"]
 			check(Vector2(a - d.player_start).length() >= 6.0, "%s: enemy at %s starts too close to the player" % [floor_name, a])

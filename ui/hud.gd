@@ -12,6 +12,11 @@ var _words: WordFlash
 var _intro: Label
 var _hint: Label
 var _helper_clock: Label
+var _scope: ColorRect
+var _boss_name: Label
+var _boss_back: ColorRect
+var _boss_bar: ColorRect
+var _scope_material: ShaderMaterial
 
 
 func _ready() -> void:
@@ -25,6 +30,15 @@ func _ready() -> void:
 	_slowmo_material.shader = preload("res://fx/slowmo.gdshader")
 	_slowmo.material = _slowmo_material
 	add_child(_slowmo)
+
+	_scope = ColorRect.new()
+	_scope.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_scope.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_scope_material = ShaderMaterial.new()
+	_scope_material.shader = preload("res://fx/scope.gdshader")
+	_scope.material = _scope_material
+	_scope.visible = false
+	add_child(_scope)
 
 	_crosshair = ColorRect.new()
 	_crosshair.color = Color(0.05, 0.05, 0.06, 0.9)
@@ -71,6 +85,35 @@ func _ready() -> void:
 	_helper_clock.add_theme_color_override(&"font_color", Color(0.85, 0.10, 0.08))
 	add_child(_helper_clock)
 
+	_boss_back = ColorRect.new()
+	_boss_back.color = Color(0.05, 0.05, 0.06, 0.35)
+	_boss_back.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_boss_back.offset_left = -260
+	_boss_back.offset_right = 260
+	_boss_back.offset_top = 56
+	_boss_back.offset_bottom = 70
+	_boss_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_boss_back)
+	_boss_bar = ColorRect.new()
+	_boss_bar.color = Mats.PINK
+	_boss_bar.position = Vector2(2, 2)
+	_boss_bar.size = Vector2(516, 10)
+	_boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_back.add_child(_boss_bar)
+	_boss_name = Label.new()
+	_boss_name.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_boss_name.offset_left = -260
+	_boss_name.offset_right = 260
+	_boss_name.offset_top = 26
+	_boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_name.add_theme_font_size_override(&"font_size", 22)
+	_boss_name.add_theme_color_override(&"font_color", Color(0.04, 0.04, 0.05))
+	add_child(_boss_name)
+	Game.super_gun_granted.connect(func() -> void:
+		_words.flash(["SUPER", "GUN"], 0.7, 2)
+		_hint.text = "THE SUPER GUN IS YOURS. IT MELTS THEM.")
+
 	_words = WordFlash.new()
 	add_child(_words)
 
@@ -94,6 +137,23 @@ func _process(delta: float) -> void:
 		_debug.visible = not _debug.visible
 	if Game.player != null and is_instance_valid(Game.player) and Game.player.alive:
 		_prompt_shield()
+	var boss: Node = get_tree().get_first_node_in_group(&"bosses")
+	var show_boss: bool = boss != null and is_instance_valid(boss) and boss.get(&"alive") == true
+	_boss_back.visible = show_boss
+	_boss_name.visible = show_boss
+	if show_boss:
+		var health: Vector2i = boss.call(&"boss_health")
+		_boss_name.text = boss.call(&"boss_name")
+		_boss_bar.size.x = 516.0 * clampf(float(health.x) / maxf(health.y, 1), 0.0, 1.0)
+	var stink: float = Game.player.in_stink if Game.player != null and is_instance_valid(Game.player) else 0.0
+	_slowmo_material.set_shader_parameter(&"stink", clampf(stink / 0.3, 0.0, 1.0))
+	var scoped: float = Game.player.fx.scope_amount if Game.player != null and is_instance_valid(Game.player) else 0.0
+	_scope.visible = scoped > 0.02
+	_crosshair.visible = scoped < 0.5
+	if _scope.visible:
+		var size: Vector2 = get_viewport().get_visible_rect().size
+		_scope_material.set_shader_parameter(&"amount", scoped)
+		_scope_material.set_shader_parameter(&"aspect", size.x / maxf(size.y, 1.0))
 	var left: int = int(ceilf(Game.helper_time_left))
 	_helper_clock.text = "HELPER %d:%02d" % [left / 60, left % 60] if left > 0 else ""
 	if _debug.visible:

@@ -1,0 +1,13 @@
+{
+  "title": "ARMOURY",
+  "intro": "ARMOURY\nTAKE WHAT YOU LIKE. THEY DID.",
+  "theme": {
+    "wall": "a7ab8d",
+    "floor": "4f533c",
+    "prop": "777b5c",
+    "ambient": "e6ead2",
+    "sky": "9da184",
+    "energy": 0.46,
+    "sun": 0.4
+  }
+}

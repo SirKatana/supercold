@@ -80,6 +80,62 @@ extends Resource
 @export var barrel_chain_delay: float = 0.12
 @export var barrel_throw_speed: float = 11.0
 
+@export_group("Cold, wet and smelly")
+## Freeze bomb: every dude in the radius is frozen solid. Any hit shatters a frozen dude.
+@export var freeze_radius: float = 5.5
+@export var freeze_seconds: float = 7.0
+## Water and ice: a dude moving faster than this over a wet cell goes down and loses his gun.
+@export var slip_speed: float = 1.6
+@export var slip_seconds: float = 2.4
+@export var slip_again_after: float = 4.0
+## Fart cloud: drifting it is small, shot it fills a room. A dude who breathes it this long dies.
+@export var fart_small_radius: float = 1.5
+@export var fart_big_radius: float = 6.5
+@export var fart_big_seconds: float = 8.0
+@export var fart_kill_time: float = 2.2
+@export var fart_drift_speed: float = 0.9
+## Knife: one stab kills an ordinary dude.
+@export var knife_range: float = 1.9
+@export var knife_cooldown: float = 0.32
+## Melting under the super gun takes this long, world seconds.
+@export var melt_seconds: float = 1.3
+
+@export_group("More guns")
+@export var smg_ammo: int = 24
+@export var smg_cooldown: float = 0.065
+@export var smg_spread_deg: float = 3.2
+@export var revolver_ammo: int = 5
+@export var revolver_cooldown: float = 0.6
+@export var revolver_pierce: int = 2
+@export var sniper_ammo: int = 4
+@export var sniper_cooldown: float = 1.1
+@export var sniper_speed_scale: float = 3.0
+@export var sniper_pierce: int = 4
+@export var sniper_enemy_aim_time: float = 1.5
+## Holding right click with the sniper rifle looks through the scope.
+@export var scope_fov: float = 14.0
+@export var scope_zoom_speed: float = 9.0
+## Super gun: a laser. Instant, goes through every dude in line, melts them. Recharges each level.
+@export var super_charges: int = 8
+@export var super_cooldown: float = 0.45
+@export var super_range: float = 70.0
+
+@export_group("More dudes")
+@export var runner_speed: float = 6.4
+@export var runner_windup: float = 0.28
+@export var zombie_wake_distance: float = 9.0
+@export var zombie_rise_seconds: float = 1.5
+@export var zombie_shamble: float = 1.9
+@export var zombie_lunge: float = 4.6
+@export var zombie_lunge_distance: float = 3.2
+@export var zombie_bite_range: float = 1.25
+@export var brute_scale: float = 1.75
+@export var brute_hp: int = 12
+@export var brute_speed: float = 2.4
+@export var brute_slam_range: float = 2.6
+@export var warden_scale: float = 1.45
+@export var warden_glass_hits: int = 3
+
 @export_group("Helper")
 ## Die this many times on one floor and the helper capsule is waiting outside the lift.
 @export var helper_deaths_needed: int = 3

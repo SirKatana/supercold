@@ -1,0 +1,13 @@
+{
+  "title": "RESTROOMS",
+  "intro": "RESTROOMS\nSHOOT THE GREEN CLOUD. HOLD YOUR NOSE.",
+  "theme": {
+    "wall": "dff1e4",
+    "floor": "7fae8f",
+    "prop": "a8cdb4",
+    "ambient": "ecfff2",
+    "sky": "dcefe2",
+    "energy": 0.55,
+    "sun": 0.42
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "title": "TRADING FLOOR",
+  "intro": "TRADING FLOOR\nEVERYONE IS AT THEIR DESK.",
+  "theme": {
+    "wall": "3b4966",
+    "floor": "1c2436",
+    "prop": "e8ecf2",
+    "ambient": "b9c8ea",
+    "sky": "2a3450",
+    "energy": 0.4,
+    "sun": 0.3
+  },
+  "waves": [
+    {
+      "after_kills": 8,
+      "count": 5,
+      "armed": 4
+    },
+    {
+      "after_kills": 16,
+      "count": 6,
+      "armed": 4
+    }
+  ]
+}

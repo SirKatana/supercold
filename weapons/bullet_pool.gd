@@ -27,7 +27,7 @@ static func for_node(node: Node) -> BulletPool:
 	return pool
 
 
-func fire(from: Vector3, direction: Vector3, shooter: Node, size: float = 1.0) -> Bullet:
+func fire(from: Vector3, direction: Vector3, shooter: Node, size: float = 1.0, pierce: int = 0, speed: float = 1.0) -> Bullet:
 	var bullet: Bullet = null
 	for b: Bullet in _bullets:
 		if not b.active:
@@ -37,7 +37,7 @@ func fire(from: Vector3, direction: Vector3, shooter: Node, size: float = 1.0) -
 		bullet = Bullet.new()
 		add_child(bullet)
 		_bullets.append(bullet)
-	bullet.launch(from, direction, shooter, size)
+	bullet.launch(from, direction, shooter, size, pierce, speed)
 	return bullet
 
 

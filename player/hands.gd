@@ -73,10 +73,17 @@ func _physics_process(delta: float) -> void:
 		return
 	if Input.is_action_just_pressed(&"primary"):
 		primary()
-	elif Input.is_action_pressed(&"primary") and held is Gun and (held as Gun).automatic:
+	elif Input.is_action_pressed(&"primary") and is_instance_valid(held) and held is Gun and (held as Gun).automatic:
 		primary()      # hold the trigger on an automatic
 	if Input.is_action_just_pressed(&"secondary"):
 		secondary()
+	if Input.is_action_just_pressed(&"throw_item"):
+		throw_held()
+	# Hold right click to look down a scope.
+	# A ram or a thrown gun may have been freed by the input handled just above.
+	var can_scope: bool = is_instance_valid(held) and held is Gun and (held as Gun).has_scope
+	player.fx.scope_wanted = can_scope and Input.is_action_pressed(&"secondary")
+	visible = player.fx.scope_amount < 0.55 and player.alive
 	if Input.is_action_just_pressed(&"interact"):
 		interact()
 	if Input.is_action_just_pressed(&"use_shield"):
@@ -91,6 +98,10 @@ func primary() -> void:
 			TimeManager.burst(T.burst_action, gun.burst_strength)
 			player.fx.kick(gun.kick)
 			_kick()
+	elif held is Knife:
+		if (held as Knife).stab(player):
+			TimeManager.burst(T.burst_action, T.burst_strength_punch)
+			_animate_thrust()
 	elif held is Ram:
 		if (held as Ram).bash(player):
 			TimeManager.burst(T.burst_action, T.burst_strength_punch)
@@ -106,6 +117,8 @@ func primary() -> void:
 func _shot_from_muzzle(pistol: Gun) -> Array[Vector3]:
 	var eye: Vector3 = player.aim_origin()
 	var forward: Vector3 = player.aim_direction()
+	if player.fx.scope_amount > 0.5:
+		return [eye + forward * 0.6, forward]      # scoped: dead on the reticle
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var aim_query := PhysicsRayQueryParameters3D.create(eye, eye + forward * 120.0, 1 | 4 | 32)
 	aim_query.exclude = [player.get_rid()]
@@ -120,6 +133,8 @@ func _shot_from_muzzle(pistol: Gun) -> Array[Vector3]:
 
 
 func secondary() -> void:
+	if held is Gun and (held as Gun).has_scope:
+		return      # right click is the scope on this one. Q throws it.
 	if held != null:
 		throw_held()
 	else:

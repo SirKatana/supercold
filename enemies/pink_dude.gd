@@ -30,6 +30,15 @@ var aiming: bool = false
 var stunned: bool = false
 var winding_up: bool = false
 var hiding: bool = false
+var frozen: bool = false
+var slipped: bool = false
+var choking: bool = false
+## World seconds of gas breathed, and world seconds since the last breath of it.
+var choke_exposure: float = 0.0
+var gas_clock: float = 99.0
+var last_slip: float = 99.0
+## The material he normally wears. Freezing swaps it for ice and back.
+var body_material: Material
 
 ## Where on the ring around the player this dude likes to stand.
 var flank_angle: float = 0.0
@@ -49,6 +58,8 @@ var _laser: MeshInstance3D
 var _walk_phase: float = 0.0
 var _aim_raise: float = 0.0
 var _stagger: float = 0.0
+var _recline: float = 0.0
+var _cough_phase: float = 0.0
 
 
 func _ready() -> void:
@@ -74,7 +85,10 @@ func _ready() -> void:
 	agent.avoidance_enabled = false
 	add_child(agent)
 
-	skin = Humanoid.create(self, Mats.pink(), body_scale)
+	if body_material == null:
+		body_material = Mats.pink()
+	skin = Humanoid.create(self, body_material, body_scale)
+	skin.bulk = body_bulk()
 	hand_anchor = _make_anchor("HandAnchor")
 	off_hand_anchor = _make_anchor("OffHandAnchor")
 	_build_laser()
@@ -83,6 +97,7 @@ func _ready() -> void:
 		&"idle": DudeIdle.new(), &"alert": DudeAlert.new(), &"approach": DudeApproach.new(),
 		&"aim": DudeAim.new(), &"fire": DudeFire.new(), &"reposition": DudeReposition.new(),
 		&"stunned": DudeStunned.new(), &"disarmed": DudeDisarmed.new(), &"dead": DudeDead.new(),
+		&"frozen": DudeFrozen.new(), &"slipped": DudeSlipped.new(), &"choking": DudeChoking.new(),
 	}
 	for s: DudeState in _states.values():
 		s.dude = self
@@ -101,6 +116,14 @@ static func create_gun(gun_kind: StringName) -> Gun:
 			return Rifle.create()
 		&"shotgun":
 			return Shotgun.create()
+		&"smg":
+			return Smg.create()
+		&"revolver":
+			return Revolver.create()
+		&"sniper":
+			return SniperRifle.create()
+		&"super":
+			return SuperGun.create()
 	return Pistol.create()
 
 
@@ -127,11 +150,32 @@ func _build_laser() -> void:
 # ---------------------------------------------------------------- tuning hooks
 
 func aim_time() -> float:
-	return T.dude_aim_time
+	return weapon.enemy_aim_time if has_weapon() else T.dude_aim_time
+
+
+func punch_windup() -> float:
+	return T.dude_punch_windup
+
+
+func punch_range() -> float:
+	return T.dude_punch_range
+
+
+func punch_sound() -> StringName:
+	return &"punch"
+
+
+## The least the arms are ever raised. Biters walk with theirs out.
+func arm_raise_floor() -> float:
+	return 0.0
 
 
 func reposition_time() -> float:
 	return maxf(0.1, T.dude_cadence - T.dude_aim_time)
+
+
+func body_bulk() -> float:
+	return 1.0
 
 
 func engage_distance() -> float:
@@ -165,7 +209,11 @@ func _physics_process(delta: float) -> void:
 	if not alive:
 		return
 	var wd: float = TimeManager.world_delta(delta)
-	if not sense_override:
+	gas_clock += wd
+	last_slip += wd
+	if gas_clock > 1.5:
+		choke_exposure = maxf(0.0, choke_exposure - wd * 0.5)
+	if not sense_override and not frozen:
 		sense()
 	tick(wd)
 
@@ -175,7 +223,8 @@ func _physics_process(delta: float) -> void:
 	velocity.z = (desired_velocity.z + push.z) * rate
 	velocity.y = 0.0 if is_on_floor() else -4.0 * rate
 	move_and_slide()
-	_animate(wd)
+	if not frozen:      # ice holds the pose he froze in
+		_animate(wd)
 
 
 func tick(wd: float) -> void:
@@ -265,6 +314,8 @@ func _nav_ready() -> bool:
 func approach_point() -> Vector3:
 	var target: Vector3 = player_position()
 	var ring: float = minf(ring_distance, engage_distance() * 0.7)
+	if has_weapon() and weapon is SniperRifle:
+		ring = 30.0      # a sniper keeps his distance
 	if dist_to_player <= ring + 1.5 or not _nav_ready():
 		return target
 	var wish: Vector3 = target + Vector3(cos(flank_angle), 0, sin(flank_angle)) * ring
@@ -395,9 +446,63 @@ func disarm() -> void:
 
 func land_punch() -> void:
 	var p: Player = get_player()
-	if p != null and p.alive and dist_to_player <= T.dude_punch_range + 0.5:
-		Sfx.play(&"punch", global_position)
+	if p != null and p.alive and dist_to_player <= punch_range() + 0.5:
+		Sfx.play(punch_sound(), global_position)
 		p.die()
+
+
+# ---------------------------------------------------------------- cold, wet, smelly
+
+func can_freeze() -> bool:
+	return true
+
+
+func can_choke() -> bool:
+	return true
+
+
+func can_slip() -> bool:
+	return true
+
+
+## Hit by a freeze bomb.
+func freeze(seconds: float) -> void:
+	if not alive or not can_freeze():
+		return
+	(_states[&"frozen"] as DudeFrozen).duration = seconds
+	change_state(&"frozen")
+
+
+func set_frozen(on: bool) -> void:
+	frozen = on
+	skin.set_material(Mats.ice() if on else body_material)
+	_laser.visible = false
+
+
+## Stepped on something wet while moving.
+func slip(direction: Vector3) -> bool:
+	if not alive or frozen or slipped or not can_slip() or last_slip < T.slip_again_after:
+		return false
+	var flat := Vector3(direction.x, 0, direction.z)
+	(_states[&"slipped"] as DudeSlipped).slide = flat.normalized() * maxf(flat.length(), 2.5) * 1.3
+	change_state(&"slipped")
+	Sfx.play(&"slip", global_position)
+	return true
+
+
+## One tick inside a fart cloud. `wd` is world seconds spent in it.
+func breathe_gas(wd: float) -> void:
+	if not alive or frozen or not can_choke():
+		return
+	gas_clock = 0.0
+	choke_exposure += wd
+	if not choking and not slipped:
+		change_state(&"choking")
+
+
+## The super gun. No ragdoll: he melts where he stands.
+func on_laser(_direction: Vector3) -> void:
+	die(global_position, Vector3.ZERO, &"melt")
 
 
 # ---------------------------------------------------------------- damage
@@ -411,6 +516,9 @@ func stun(duration: float) -> void:
 
 ## Returns true only if the bullet bounced off instead of stopping. A plain dude never deflects.
 func on_bullet_hit(_bullet: Node, point: Vector3, _normal: Vector3) -> bool:
+	if frozen:
+		die(point, Vector3.ZERO, &"ice")
+		return false
 	var from_dir: Vector3 = Vector3.ZERO
 	if _bullet is Bullet:
 		from_dir = (_bullet as Bullet).direction
@@ -433,6 +541,11 @@ func on_rammed(direction: Vector3) -> void:
 	_take_blunt(T.ram_throw_damage, T.throw_stun, direction)
 
 
+## A knife in the ribs. Nobody ordinary survives it.
+func on_stabbed(direction: Vector3) -> void:
+	_take_blunt(99, T.throw_stun, direction)
+
+
 func on_punched(by: Node, _at: Vector3) -> void:
 	var dir: Vector3 = Vector3.ZERO
 	if by is Node3D:
@@ -443,6 +556,9 @@ func on_punched(by: Node, _at: Vector3) -> void:
 func _take_blunt(damage: int, stun_time: float, push: Vector3) -> void:
 	if not alive:
 		return
+	if frozen:
+		die(global_position + Vector3.UP, push, &"ice")
+		return
 	hp -= damage
 	Sfx.play(&"punch", global_position)
 	if hp <= 0:
@@ -452,9 +568,12 @@ func _take_blunt(damage: int, stun_time: float, push: Vector3) -> void:
 	stun(stun_time)
 
 
-func die(_at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO) -> void:
+## `style` is how the body goes: &"ragdoll" (falls, then shatters), &"melt" (super gun), &"ice" (frozen, shatters at once).
+func die(_at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: StringName = &"ragdoll") -> void:
 	if not alive:
 		return
+	if frozen and style == &"ragdoll":
+		style = &"ice"
 	alive = false
 	if has_weapon():
 		_release_weapon().drop(global_position + Vector3(0, 1.2, 0))
@@ -462,13 +581,22 @@ func die(_at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO) -> void:
 	collision_layer = 0
 	collision_mask = 0
 	_laser.visible = false
-	# The body goes limp exactly as it stood, falls on world time, then bursts into shards.
 	skin.visible = false
-	var shove: Vector3 = Vector3(push.x, 0, push.z).normalized() * 3.4 + Vector3.UP * 1.2 if push.length() > 0.01 \
-		else -global_transform.basis.z * -1.5 + Vector3.UP
-	var body: Ragdoll = Ragdoll.spawn(Game.entities_root(self), joints, body_scale, shove, Mats.pink(), 1.0)
-	body.use_world_time = true
-	body.shatter_after = T.dude_ragdoll_shatter
+	match style:
+		&"melt":
+			Melt.begin(Game.entities_root(self), joints, body_scale, body_bulk())
+		&"ice":
+			for joint: StringName in [&"head", &"chest", &"pelvis", &"knee_l", &"knee_r", &"elbow_l", &"elbow_r", &"hand_l", &"hand_r"]:
+				Shatter.burst(Game.entities_root(self), joints[Humanoid.index_of(joint)], 5, Mats.ice(),
+					Vector3.ONE * 0.12 * body_scale, push * 2.0 + Vector3.UP, 0.16 * body_scale)
+			Sfx.play(&"shatter", global_position)
+		_:
+			# The body goes limp exactly as it stood, falls on world time, then bursts into shards.
+			var shove: Vector3 = Vector3(push.x, 0, push.z).normalized() * 3.4 + Vector3.UP * 1.2 if push.length() > 0.01 \
+				else -global_transform.basis.z * -1.5 + Vector3.UP
+			var body: Ragdoll = Ragdoll.spawn(Game.entities_root(self), joints, body_scale, shove, body_material, 1.0)
+			body.use_world_time = true
+			body.shatter_after = T.dude_ragdoll_shatter
 	Sfx.play(&"punch", global_position)
 	TimeManager.hit_pause(0.05)
 	died.emit(self)
@@ -487,7 +615,20 @@ func _animate(wd: float) -> void:
 	_aim_raise = move_toward(_aim_raise, raise_target, wd * 5.0)
 	_stagger = move_toward(_stagger, 1.0 if stunned else 0.0, wd * 6.0)
 
-	var local: PackedVector3Array = Humanoid.pose(_walk_phase, moving, _aim_raise, aim_left_amount(), _stagger)
+	_recline = move_toward(_recline, 1.0 if slipped else 0.0, wd * (5.0 if slipped else 2.2))
+	var cough: float = 0.0
+	if choking:
+		_cough_phase += wd * 9.0
+		cough = 0.55 + sin(_cough_phase) * 0.3
+	var left_arm: float = maxf(aim_left_amount(), 0.75 if choking else 0.0)
+	var right_arm: float = maxf(maxf(_aim_raise, arm_raise_floor()), 0.7 if choking else 0.0)
+	var local: PackedVector3Array = Humanoid.pose(_walk_phase, moving, right_arm, left_arm,
+		maxf(_stagger, cough) * (0.0 if slipped else 1.0), arm_raise_floor() > 0.5)
+	if _recline > 0.01:
+		# Flat on his back: the whole pose tips over about the heels.
+		var tip := Basis(Vector3.RIGHT, _recline * 1.48)
+		for i: int in local.size():
+			local[i] = tip * local[i] + Vector3(0, 0.12 * _recline, 0)
 	joints = Humanoid.to_world(local, global_transform, body_scale)
 	skin.apply(joints)
 	_place_anchor(hand_anchor, &"elbow_r", &"wrist_r", &"hand_r")

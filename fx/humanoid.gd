@@ -67,6 +67,8 @@ static var _ball_at: PackedInt32Array = []
 
 var material: Material
 var body_scale: float = 1.0
+## Limb and torso thickness on top of body_scale. The Brute is 1.5: same height, much wider.
+var bulk: float = 1.0
 
 var _part_nodes: Array[MeshInstance3D] = []
 var _ball_nodes: Array[MeshInstance3D] = []
@@ -129,6 +131,15 @@ func _instance(mesh: Mesh, group: StringName) -> MeshInstance3D:
 
 ## Hides a whole group: &"head", &"arms", &"legs" or &"torso". The player hides head and arms
 ## so the first-person camera and viewmodel arms are not fighting the body.
+func set_material(next: Material) -> void:
+	material = next
+	for node: MeshInstance3D in _part_nodes:
+		node.material_override = next
+	for node: MeshInstance3D in _ball_nodes:
+		node.material_override = next
+	_head.material_override = next
+
+
 func set_group_visible(group: StringName, shown: bool) -> void:
 	for node: MeshInstance3D in _groups.get(group, []):
 		node.visible = shown
@@ -182,7 +193,7 @@ func apply(joints: PackedVector3Array) -> void:
 		_stretch(_part_nodes[i], a, b, side, depth)
 	for i: int in BALLS.size():
 		var ball: Array = BALLS[i]
-		var radius: float = ball[1] * body_scale
+		var radius: float = ball[1] * body_scale * (bulk if ball[0] != &"pelvis" else lerpf(1.0, bulk, 0.6))
 		var basis := Basis.from_scale(Vector3.ONE * radius)
 		if ball[0] == &"pelvis":
 			var x: Vector3 = across_hips.normalized() if across_hips.length() > 0.001 else Vector3.RIGHT
@@ -213,7 +224,7 @@ func _stretch(node: MeshInstance3D, a: Vector3, b: Vector3, side: Vector3, depth
 		x = y.cross(Vector3.FORWARD if absf(y.z) < 0.9 else Vector3.RIGHT)
 	x = x.normalized()
 	var z: Vector3 = x.cross(y).normalized()
-	node.global_transform = Transform3D(Basis(x * body_scale, y * length, z * body_scale * depth), (a + b) * 0.5)
+	node.global_transform = Transform3D(Basis(x * body_scale * bulk, y * length, z * body_scale * bulk * depth), (a + b) * 0.5)
 
 
 # ---------------------------------------------------------------- posing
@@ -246,7 +257,10 @@ const ARM: Dictionary[StringName, Array] = {
 }
 
 
-static func pose(walk_phase: float, walk_amount: float, aim_right: float, aim_left: float, stagger: float) -> PackedVector3Array:
+##   reach_straight: raised arms go straight out from the shoulders (a biter's grab) instead
+##   of turning in to meet on a gun
+static func pose(walk_phase: float, walk_amount: float, aim_right: float, aim_left: float, stagger: float,
+		reach_straight: bool = false) -> PackedVector3Array:
 	var j: Dictionary[StringName, Vector3] = {}
 	var pelvis_rest: Vector3 = REST[&"pelvis"]
 	j[&"pelvis"] = pelvis_rest
@@ -281,9 +295,9 @@ static func pose(walk_phase: float, walk_amount: float, aim_right: float, aim_le
 		var sign: float = -1.0 if side == &"l" else 1.0
 		var aim: float = aim_left if side == &"l" else aim_right
 		var phase: float = walk_phase + (PI if side == &"l" else 0.0)
-		var raise: float = lerpf(sin(phase) * 0.55 * walk_amount - 0.25 * stagger, 1.42 if side == &"r" else 1.22, aim)
+		var raise: float = lerpf(sin(phase) * 0.55 * walk_amount - 0.25 * stagger, (1.42 if side == &"r" else 1.22) if not reach_straight else 1.38, aim)
 		var elbow_bend: float = lerpf(0.18 + 0.45 * walk_amount + 0.5 * stagger, 0.14 if side == &"r" else 0.42, aim)
-		var inward: float = lerpf(0.0, 0.10 if side == &"r" else 0.62, aim) + 0.35 * stagger
+		var inward: float = lerpf(0.0, (0.10 if side == &"r" else 0.62) if not reach_straight else 0.04, aim) + 0.35 * stagger
 		var splay: float = lerpf(0.10, 0.0, aim)
 		var turn := Basis(Vector3.UP, inward * sign) * Basis(Vector3.FORWARD, -splay * sign)
 		var arm: Array = ARM[side]

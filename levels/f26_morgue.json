@@ -1,0 +1,13 @@
+{
+  "title": "MORGUE",
+  "intro": "MORGUE\nNOT ALL OF THEM STAYED DEAD.",
+  "theme": {
+    "wall": "8fa6a8",
+    "floor": "2f3f42",
+    "prop": "5f7679",
+    "ambient": "cfe9ea",
+    "sky": "6f8688",
+    "energy": 0.36,
+    "sun": 0.24
+  }
+}

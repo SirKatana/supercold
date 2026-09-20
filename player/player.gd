@@ -19,6 +19,8 @@ var _look_rate: float = 0.0
 var ragdoll: Ragdoll
 ## The SWAT shield on the left arm, or null.
 var shield: Shield
+## Seconds of green screen left. A fart cloud tops it up while the player stands in one.
+var in_stink: float = 0.0
 ## The player's own body: same rig as the dudes. Head and arms are hidden in first person,
 ## so looking down shows a chest, hips and walking legs.
 var body: Humanoid
@@ -99,13 +101,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var motion: InputEventMouseMotion = event
-		var sens: float = Settings.mouse_sensitivity
+		# Through the scope the same hand movement must turn the view far less, or it is unusable.
+		var sens: float = Settings.mouse_sensitivity * lerpf(1.0, T.scope_fov / Settings.fov, fx.scope_amount)
 		rotate_y(deg_to_rad(-motion.relative.x * sens))
 		head.rotation.x = clampf(head.rotation.x - deg_to_rad(motion.relative.y * sens), -1.5, 1.5)
 		_look_accum_deg += motion.relative.length() * sens
 
 
 func _physics_process(delta: float) -> void:
+	in_stink = maxf(0.0, in_stink - delta)
 	_look_rate = lerpf(_look_rate, _look_accum_deg / delta, 0.5)
 	_look_accum_deg = 0.0
 

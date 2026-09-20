@@ -1,0 +1,13 @@
+{
+  "title": "FURNACE",
+  "intro": "FURNACE ROOM\nTWELVE BARRELS. COUNT THEM.",
+  "theme": {
+    "wall": "57514c",
+    "floor": "2b2724",
+    "prop": "7a7068",
+    "ambient": "ffc98a",
+    "sky": "3c3632",
+    "energy": 0.34,
+    "sun": 0.3
+  }
+}

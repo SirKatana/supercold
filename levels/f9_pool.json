@@ -1,0 +1,13 @@
+{
+  "title": "POOL",
+  "intro": "POOL\nFREEZE THEM. THEN BREAK THEM.",
+  "theme": {
+    "wall": "e6f6f7",
+    "floor": "7fb8c2",
+    "prop": "a9d5da",
+    "ambient": "e8fbff",
+    "sky": "dff4f6",
+    "energy": 0.58,
+    "sun": 0.45
+  }
+}

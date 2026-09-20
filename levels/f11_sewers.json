@@ -1,0 +1,13 @@
+{
+  "title": "SEWERS",
+  "intro": "SEWERS\nSOMETHING IS UNDER THE FLOOR.",
+  "theme": {
+    "wall": "6f7a63",
+    "floor": "3a4234",
+    "prop": "59624e",
+    "ambient": "c9d8b0",
+    "sky": "4a5340",
+    "energy": 0.34,
+    "sun": 0.22
+  }
+}

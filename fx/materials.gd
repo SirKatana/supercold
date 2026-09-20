@@ -186,6 +186,103 @@ static func scorch() -> StandardMaterial3D:
 		return m)
 
 
+static func ice() -> StandardMaterial3D:
+	return _cached(&"ice", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.70, 0.90, 1.0, 0.92)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.emission_enabled = true
+		m.emission = Color(0.45, 0.80, 1.0)
+		m.emission_energy_multiplier = 0.35
+		m.metallic = 0.2
+		m.roughness = 0.08
+		return m)
+
+
+static func water() -> StandardMaterial3D:
+	return _cached(&"water", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.25, 0.55, 0.85, 0.55)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.metallic = 0.3
+		m.roughness = 0.04
+		return m)
+
+
+static func ice_floor() -> StandardMaterial3D:
+	return _cached(&"ice_floor", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.82, 0.93, 1.0, 0.85)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.metallic = 0.25
+		m.roughness = 0.03
+		return m)
+
+
+static func fart() -> StandardMaterial3D:
+	return _cached(&"fart", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.albedo_color = Color(0.55, 0.72, 0.12, 0.30)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		return m)
+
+
+static func melt_pink() -> StandardMaterial3D:
+	return _cached(&"melt_pink", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(1.0, 0.30, 0.55)
+		m.emission_enabled = true
+		m.emission = Color(1.0, 0.35, 0.15)
+		m.emission_energy_multiplier = 1.8
+		m.metallic = 0.1
+		m.roughness = 0.05
+		return m)
+
+
+static func zombie() -> StandardMaterial3D:
+	return _cached(&"zombie", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.62, 0.30, 0.46)
+		m.emission_enabled = true
+		m.emission = Color(0.45, 0.10, 0.30)
+		m.emission_energy_multiplier = 0.35
+		m.roughness = 0.95
+		return m)
+
+
+static func hot_pink() -> StandardMaterial3D:
+	return _cached(&"hot_pink", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(1.0, 0.35, 0.72)
+		m.emission_enabled = true
+		m.emission = Color(1.0, 0.25, 0.65)
+		m.emission_energy_multiplier = 1.6
+		m.roughness = 0.4
+		return m)
+
+
+static func laser() -> StandardMaterial3D:
+	return _cached(&"laser", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.albedo_color = Color(1.0, 0.82, 0.45)
+		m.emission_enabled = true
+		m.emission = Color(1.0, 0.45, 0.10)
+		m.emission_energy_multiplier = 6.0
+		return m)
+
+
+static func copper() -> StandardMaterial3D:
+	return _cached(&"copper", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.80, 0.45, 0.25)
+		m.metallic = 0.7
+		m.roughness = 0.3
+		return m)
+
+
 static func helper_red() -> StandardMaterial3D:
 	return _cached(&"helper_red", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

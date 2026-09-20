@@ -17,8 +17,13 @@ var automatic: bool = false
 var pellets: int = 1
 var spread_deg: float = 0.0
 var bullet_scale: float = 1.0
+## Dudes a round passes through, and its speed against a pistol round.
+var pierce: int = 0
+var bullet_speed_scale: float = 1.0
 ## Needs the off hand on the fore-end.
 var two_handed: bool = false
+## Right click looks through a scope instead of throwing the gun. Q still throws it.
+var has_scope: bool = false
 var muzzle_local: Vector3 = Vector3(0, 0.048, -0.20)
 ## How far a shot lifts the world clock, and how hard it kicks the camera.
 var burst_strength: float = 0.22
@@ -33,6 +38,8 @@ var drop_ammo: int = 4
 var enemy_pellets: int = 1
 ## Dudes open fire inside this range.
 var enemy_range: float = 16.0
+## How long a dude holds his aim on you before firing it. A sniper takes his time.
+var enemy_aim_time: float = 0.7
 
 
 func mesh_key() -> StringName:
@@ -82,7 +89,7 @@ func fire(origin: Vector3, direction: Vector3, shooter: Node, spend: bool = true
 	var pool: BulletPool = BulletPool.for_node(self)
 	var cone: float = deg_to_rad(spread_deg)
 	for i: int in pellets:
-		pool.fire(origin, scatter(direction, cone), shooter, bullet_scale)
+		pool.fire(origin, scatter(direction, cone), shooter, bullet_scale, pierce, bullet_speed_scale)
 	Sfx.play(sound, origin)
 	if spend:
 		Game.emit_noise(origin, T.dude_hearing)

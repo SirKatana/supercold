@@ -1,0 +1,13 @@
+{
+  "title": "COLD STORE",
+  "intro": "COLD STORE\nTHE WHOLE FLOOR IS ICE.",
+  "theme": {
+    "wall": "e4f1fb",
+    "floor": "a9c9e2",
+    "prop": "c3dbee",
+    "ambient": "e6f4ff",
+    "sky": "dcecf8",
+    "energy": 0.6,
+    "sun": 0.42
+  }
+}

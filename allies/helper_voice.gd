@@ -248,6 +248,8 @@ static func name_id(dude: PinkDude) -> StringName:
 		return &"name_rifle"
 	if dude.weapon is Shotgun:
 		return &"name_shotgun"
+	if dude.weapon is SniperRifle:
+		return &"name_sniper"
 	return &"name_pink"
 
 

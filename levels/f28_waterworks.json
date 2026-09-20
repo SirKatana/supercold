@@ -1,0 +1,13 @@
+{
+  "title": "WATERWORKS",
+  "intro": "WATERWORKS\nSTAY ON THE WALKWAYS. LET THEM RUN.",
+  "theme": {
+    "wall": "cbd8e2",
+    "floor": "4e6b82",
+    "prop": "8aa2b5",
+    "ambient": "e4f1fb",
+    "sky": "bccddb",
+    "energy": 0.52,
+    "sun": 0.42
+  }
+}

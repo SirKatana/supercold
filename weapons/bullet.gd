@@ -14,6 +14,11 @@ var active: bool = false
 var direction: Vector3 = Vector3.FORWARD
 var shooter: Node = null
 var age: float = 0.0
+## How many more dudes it goes through, and how fast it flies compared to a pistol round.
+var pierce_left: int = 0
+var speed_scale: float = 1.0
+var _passed: Array[RID] = []
+var _heavy: bool = false
 
 var _trail: MeshInstance3D
 var _body: Node3D
@@ -65,8 +70,12 @@ static func _model_round(kit: MeshKit) -> void:
 	kit.tube(0.021, 0.016, 0.018, Vector3(0, 0, 0.034), black, true, 12)     # boat tail
 
 
-func launch(from: Vector3, dir: Vector3, by: Node, size: float = 1.0) -> void:
+func launch(from: Vector3, dir: Vector3, by: Node, size: float = 1.0, pierce: int = 0, speed: float = 1.0) -> void:
 	active = true
+	pierce_left = pierce
+	_heavy = pierce > 0      # stays true after its last pierce is spent
+	speed_scale = speed
+	_passed.clear()
 	_size = size
 	_body.scale = Vector3.ONE * size
 	visible = true
@@ -100,7 +109,7 @@ func step(wd: float) -> void:
 		deactivate()
 		return
 	var from: Vector3 = global_position
-	var to: Vector3 = from + direction * T.bullet_speed * wd
+	var to: Vector3 = from + direction * T.bullet_speed * speed_scale * wd
 	var query := PhysicsRayQueryParameters3D.create(from, to, MASK)
 	query.collide_with_areas = true
 	query.hit_from_inside = false
@@ -109,7 +118,10 @@ func step(wd: float) -> void:
 		# Whoever fired it must not hit the shield they are standing behind.
 		if shooter.has_method(&"bullet_excludes"):
 			skip.append_array(shooter.call(&"bullet_excludes"))
+		skip.append_array(_passed)
 		query.exclude = skip
+	elif not _passed.is_empty():
+		query.exclude = _passed
 	var result: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 	if result.is_empty():
 		global_position = to
@@ -120,6 +132,10 @@ func step(wd: float) -> void:
 	var point: Vector3 = result["position"]
 	var normal: Vector3 = result["normal"]
 	global_position = point
+	if _heavy and collider is Pickup:
+		# A heavy round punches past a loose gun tumbling out of a dead hand.
+		_passed.append(result["rid"])
+		return
 	var bounced: bool = false
 	if collider.has_method(&"on_bullet_hit"):
 		# A handler that returns true has turned the bullet away instead of stopping it.
@@ -129,6 +145,11 @@ func step(wd: float) -> void:
 		Shatter.burst(Game.entities_root(self), point + normal * 0.05, 4, Mats.pink_bright(),
 			Vector3.ONE * 0.02, normal * 1.5, 0.05)
 	hit.emit(collider, point)
+	if not bounced and pierce_left > 0 and collider is PinkDude:
+		# Heavy rounds go straight through a dude and on to the next one.
+		pierce_left -= 1
+		_passed.append(result["rid"])
+		return
 	if not bounced:
 		deactivate()
 		return

@@ -8,6 +8,8 @@ const ENDING_SCENE: PackedScene = preload("res://ui/ending.tscn")
 
 var _title: TitleScreen
 var _ending: EndingScreen
+var _env: Environment
+var _sun: DirectionalLight3D
 
 
 func _ready() -> void:
@@ -25,6 +27,7 @@ func _ready() -> void:
 	add_child(_ending)
 	_ending.dismissed.connect(Game.back_to_title)
 	Game.state_changed.connect(_on_state_changed)
+	Game.floor_loaded.connect(_apply_theme)
 
 	Game.god_mode = _arg("god", "") != ""
 	var level: String = _arg("level", "")
@@ -37,9 +40,20 @@ func _ready() -> void:
 		_capture.call_deferred(_arg("shot", ""), float(_arg("shot-after", "1.0")))
 
 
-func _start_run() -> void:
+## Every floor has its own colours and light. The first five keep the white look.
+func _apply_theme(data: LevelData) -> void:
+	var t: Dictionary = data.theme if data != null else {}
+	var sky := Color(str(t.get("sky", "edf0f5")))
+	_env.background_color = sky
+	_env.ambient_light_color = Color(str(t.get("ambient", "ffffff")))
+	_env.ambient_light_energy = float(t.get("energy", 0.55))
+	_sun.light_energy = float(t.get("sun", 0.45))
+	RenderingServer.set_default_clear_color(sky)
+
+
+func _start_run(from_floor: int) -> void:
 	_title.visible = false
-	Game.start_run(int(_arg("floor", "0")))
+	Game.start_run(maxi(from_floor, int(_arg("floor", "0"))))
 
 
 func _on_state_changed(state: Game.State) -> void:
@@ -185,6 +199,87 @@ func _capture(path: String, after: float) -> void:
 	if _arg("do", "") == "ad" and Game.player != null:
 		AdService.show_rewarded()
 		await get_tree().create_timer(float(_arg("ad-at", "4.0")), true, false, true).timeout
+	if _arg("do", "").begins_with("tour") and Game.player != null:
+		# Stand a few cells out of the lift, a little above head height, looking across the floor.
+		var d: LevelData = Game.data
+		var front: Vector3 = d.cell_center(d.front_cell(d.player_start), 0.05)
+		var centre := Vector3(d.width * d.cell_size * 0.5, 0.05, d.height * d.cell_size * 0.5)
+		if _arg("do", "").contains(":"):
+			var parts: PackedStringArray = _arg("do", "").trim_prefix("tour:").split(",")
+			front = d.cell_center(Vector2i(int(parts[0]), int(parts[1])), 0.05)
+			if parts.size() >= 4:
+				centre = d.cell_center(Vector2i(int(parts[2]), int(parts[3])), 0.05)
+		Game.player.global_position = front
+		Game.player.look_at(Vector3(centre.x, front.y, centre.z))
+		Game.player.head.rotation.x = -0.10
+		Game.player.hands.visible = false
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			(node as PinkDude).sense_override = true
+		await get_tree().create_timer(0.5, true, false, true).timeout
+	if _arg("do", "").begins_with("fx:") and Game.player != null:
+		var what: String = _arg("do", "").trim_prefix("fx:")
+		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
+		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))
+		Game.player.head.rotation.x = -0.04
+		Game.player.hands.visible = false
+		for group: StringName in [&"enemies", &"barrels", &"buried"]:
+			for node: Node in get_tree().get_nodes_in_group(group):
+				node.queue_free()
+		var ahead: Vector3 = -Game.player.global_transform.basis.z
+		var side: Vector3 = Game.player.global_transform.basis.x
+		var base: Vector3 = Game.player.global_position
+		var cast: Array[PinkDude] = []
+		var kinds: Array[StringName] = [&"pistol"]
+		if what != "brute":
+			kinds.append(&"rifle")
+			kinds.append(&"shield")
+		for i: int in kinds.size():
+			var d: PinkDude = Game.spawn_dude(base + ahead * 4.2 + side * (i - 1) * 1.6, true, kinds[i])
+			d.sense_override = true
+			d.look_at(Vector3(base.x, d.global_position.y, base.z))
+			d.set_physics_process(false)
+			d._animate(0.0)
+			cast.append(d)
+		TimeManager.override_scale = 1.0
+		match what:
+			"melt":
+				for d: PinkDude in cast:
+					d.on_laser(ahead)
+				await get_tree().create_timer(0.75, true, false, true).timeout
+			"freeze":
+				FreezeBlast.go(Game.entities_root(self), base + ahead * 4.2 + Vector3.UP * 0.5)
+				await get_tree().create_timer(0.35, true, false, true).timeout
+			"zombie":
+				for d: PinkDude in cast:
+					d.queue_free()
+				for i: int in 3:
+					Game.spawn_dude(base + ahead * 3.6 + side * (i - 1) * 1.5, true, &"zombie")
+				await get_tree().create_timer(float(_arg("at", "1.0")), true, false, true).timeout
+			"brute":
+				var brute := Brute.new()
+				Game.entities_root(self).add_child(brute)
+				brute.global_position = base + ahead * 5.5 - side * 0.4
+				brute.sense_override = true
+				brute.look_at(Vector3(base.x, brute.global_position.y, base.z))
+				brute.set_physics_process(false)
+				brute._animate(0.0)
+				cast[0].global_position = base + ahead * 5.5 - side * 3.0
+				cast[0]._animate(0.0)
+				await get_tree().create_timer(0.3, true, false, true).timeout
+	if _arg("do", "") == "scope" and Game.player != null:
+		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
+		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))
+		Game.player.head.rotation.x = 0.0
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			(node as PinkDude).sense_override = true
+		var target: PinkDude = Game.spawn_dude(Game.player.global_position - Game.player.global_transform.basis.z * 16.0, true, &"rifle")
+		target.sense_override = true
+		var scoped: SniperRifle = SniperRifle.create()
+		Game.entities_root(self).add_child(scoped)
+		Game.player.hands.pick_up(scoped)
+		Game.player.head.rotation.x = 0.045
+		Input.action_press(&"secondary")
+		await get_tree().create_timer(0.8, true, false, true).timeout
 	if _arg("do", "") == "bullet" and Game.player != null:
 		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
 		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))
@@ -231,6 +326,7 @@ func _capture(path: String, after: float) -> void:
 
 func _build_environment() -> void:
 	var env := Environment.new()
+	_env = env
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.93, 0.94, 0.96)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -248,6 +344,7 @@ func _build_environment() -> void:
 	add_child(world_env)
 
 	var sun := DirectionalLight3D.new()
+	_sun = sun
 	sun.rotation_degrees = Vector3(-55, 35, 0)
 	sun.light_energy = 0.45
 	sun.shadow_enabled = false

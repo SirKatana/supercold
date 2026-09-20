@@ -16,8 +16,17 @@ func _ready() -> void:
 	bullets_left = T.director_hp
 	armed_at_spawn = true
 	super()
+	add_to_group(&"bosses")
 	off_hand_weapon = Pistol.create()
 	off_hand_weapon.attach_to(off_hand_anchor)
+
+
+func boss_name() -> String:
+	return "THE DIRECTOR"
+
+
+func boss_health() -> Vector2i:
+	return Vector2i(bullets_left, T.director_hp)
 
 
 ## The boss does not hide. He keeps coming.
@@ -63,6 +72,28 @@ func on_bullet_hit(bullet: Node, point: Vector3, _normal: Vector3) -> bool:
 	return false
 
 
+## A knife only annoys him.
+func on_stabbed(_direction: Vector3) -> void:
+	_take_blunt(0, T.throw_stun, Vector3.ZERO)
+
+
+func can_freeze() -> bool:
+	return false
+
+
+func can_choke() -> bool:
+	return false
+
+
+func can_slip() -> bool:
+	return false
+
+
+## The laser costs him a hit like a bullet does. He is too big to melt in one go.
+func on_laser(direction: Vector3) -> void:
+	on_bullet_hit(null, global_position + Vector3.UP * 1.2, -direction)
+
+
 ## A blast hurts him as much as one bullet does.
 func on_explosion(_centre: Vector3) -> void:
 	on_bullet_hit(null, global_position + Vector3.UP, Vector3.UP)
@@ -74,12 +105,12 @@ func _take_blunt(_damage: int, stun_time: float, _push: Vector3) -> void:
 		stun(stun_time * 0.4)
 
 
-func die(at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO) -> void:
+func die(at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: StringName = &"ragdoll") -> void:
 	if alive and off_hand_weapon != null and is_instance_valid(off_hand_weapon):
 		off_hand_weapon.ammo = T.pistol_ammo
 		off_hand_weapon.drop(global_position + Vector3(-0.4, 1.4, 0))
 		off_hand_weapon = null
-	super(at, push)
+	super(at, push, style)
 
 
 ## Both arms come up when he aims: one pistol each.

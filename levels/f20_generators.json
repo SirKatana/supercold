@@ -1,0 +1,13 @@
+{
+  "title": "GENERATORS",
+  "intro": "GENERATOR HALL\nONE SPARK.",
+  "theme": {
+    "wall": "4a4743",
+    "floor": "26241f",
+    "prop": "6a655c",
+    "ambient": "ffd9a0",
+    "sky": "38342e",
+    "energy": 0.32,
+    "sun": 0.26
+  }
+}

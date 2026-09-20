@@ -25,7 +25,7 @@ func update(wd: float) -> StringName:
 		dude.desired_velocity = Vector3.ZERO
 		dude.face_toward(dude.player_position(), wd)
 		_windup += wd
-		if _windup >= T.dude_punch_windup:
+		if _windup >= dude.punch_windup():
 			_windup = -1.0
 			dude.winding_up = false
 			dude.land_punch()
@@ -44,7 +44,7 @@ func update(wd: float) -> StringName:
 		if dude.flat_distance_to(_target_weapon.global_position) < 1.1:
 			dude.take_weapon(_target_weapon)
 			return &"approach"
-	elif dude.dist_to_player <= T.dude_punch_range:
+	elif dude.dist_to_player <= dude.punch_range():
 		_windup = 0.0
 		dude.winding_up = true
 		return &""

@@ -6,8 +6,29 @@ extends RefCounted
 const T: Tuning = preload("res://data/tuning.tres")
 const LAYER_WORLD: int = 1
 
+## This floor's materials. Set at the start of build(), and still right when WallBreach
+## rebuilds a wall later on the same floor.
+static var wall_material: Material
+static var floor_material: Material
+static var prop_material: Material
+
+
+static func _themed(base: StandardMaterial3D, hex: Variant) -> Material:
+	if not hex is String:
+		return base
+	var m: StandardMaterial3D = base.duplicate()
+	m.albedo_color = Color(hex as String)
+	return m
+
+
+static func apply_theme(data: LevelData) -> void:
+	wall_material = _themed(Mats.wall(), data.theme.get("wall"))
+	floor_material = _themed(Mats.floor_mat(), data.theme.get("floor"))
+	prop_material = _themed(Mats.prop(), data.theme.get("prop"))
+
 
 static func build(data: LevelData) -> Node3D:
+	apply_theme(data)
 	var level := Node3D.new()
 	level.name = "Level"
 	level.set_meta(&"data", data)
@@ -28,6 +49,7 @@ static func build(data: LevelData) -> Node3D:
 	_place_pickups(data, nav, entities)
 	_place_breakables(data, nav, entities)
 	_place_exit_and_triggers(data, nav, entities)
+	_place_hazards(data, entities)
 	return level
 
 
@@ -52,6 +74,20 @@ static func _place_breakables(data: LevelData, geometry: Node3D, entities: Node3
 		pane.position = data.cell_center(entry["cell"])
 		# Under Nav so the pane carves the navmesh.
 		geometry.add_child(pane)
+
+
+static func _place_hazards(data: LevelData, entities: Node3D) -> void:
+	for entry: Dictionary in data.puddles:
+		var puddle := Puddle.new()
+		puddle.name = "Ice" if entry["icy"] else "Water"
+		puddle.icy = entry["icy"]
+		puddle.position = data.cell_center(entry["cell"])
+		entities.add_child(puddle)
+	for cell: Vector2i in data.fart_cells:
+		var cloud := FartCloud.new()
+		cloud.name = "FartCloud"
+		cloud.position = data.cell_center(cell, 1.1)
+		entities.add_child(cloud)
 
 
 static func elevator_transform(data: LevelData, cell: Vector2i) -> Transform3D:
@@ -98,6 +134,12 @@ static func create_pickup(kind: StringName) -> Pickup:
 		return Shotgun.create()
 	if kind == &"barrel":
 		return GasBarrel.create()
+	if kind == &"knife":
+		return Knife.create()
+	if kind == &"freeze":
+		return FreezeBomb.create()
+	if kind == &"smg" or kind == &"revolver" or kind == &"sniper" or kind == &"super":
+		return PinkDude.create_gun(kind)
 	return Throwable.create(kind)
 
 
@@ -110,7 +152,7 @@ static func _place_pickups(data: LevelData, geometry: Node3D, entities: Node3D) 
 			barrel.position = data.cell_center(entry["cell"], 0.0)
 			entities.add_child(barrel)
 			continue
-		var pedestal: StaticBody3D = make_box(Vector3(0.7, 0.9, 0.7), Mats.prop())
+		var pedestal: StaticBody3D = make_box(Vector3(0.7, 0.9, 0.7), prop_material)
 		pedestal.name = "Pedestal"
 		pedestal.position = data.cell_center(entry["cell"], 0.45)
 		geometry.add_child(pedestal)
@@ -158,7 +200,7 @@ static func make_box(size: Vector3, material: Material, layer: int = LAYER_WORLD
 
 static func _build_floor(data: LevelData, parent: Node3D) -> void:
 	var size := Vector3(data.width * data.cell_size, 0.5, data.height * data.cell_size)
-	var body: StaticBody3D = make_box(size, Mats.floor_mat())
+	var body: StaticBody3D = make_box(size, floor_material)
 	body.name = "Floor"
 	body.position = Vector3(size.x * 0.5, -0.25, size.z * 0.5)
 	parent.add_child(body)
@@ -168,7 +210,7 @@ static func _build_ceiling(data: LevelData, parent: Node3D) -> void:
 	var mesh_instance := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(data.width * data.cell_size, 0.2, data.height * data.cell_size)
-	mesh.material = Mats.wall()
+	mesh.material = wall_material
 	mesh_instance.mesh = mesh
 	mesh_instance.name = "Ceiling"
 	mesh_instance.position = Vector3(mesh.size.x * 0.5, T.wall_height + 0.1, mesh.size.z * 0.5)
@@ -203,7 +245,7 @@ static func wall_rects(data: LevelData) -> Array[Rect2i]:
 
 static func add_wall_rect(data: LevelData, parent: Node3D, rect: Rect2i) -> StaticBody3D:
 	var size := Vector3(rect.size.x * data.cell_size, T.wall_height, rect.size.y * data.cell_size)
-	var body: StaticBody3D = make_box(size, Mats.wall())
+	var body: StaticBody3D = make_box(size, wall_material if wall_material != null else Mats.wall())
 	body.name = "Wall"
 	body.add_to_group(&"walls")
 	# WallBreach needs to know which cells this body stands for.
@@ -229,7 +271,7 @@ static func _build_props(data: LevelData, parent: Node3D) -> void:
 			size = Vector3(1.7, 1.0, 0.9)
 		elif kind == &"pillar":
 			size = Vector3(1.1, T.wall_height, 1.1)
-		var body: StaticBody3D = make_box(size, Mats.prop())
+		var body: StaticBody3D = make_box(size, prop_material)
 		body.name = String(kind).capitalize()
 		body.position = data.cell_center(prop["cell"], size.y * 0.5)
 		parent.add_child(body)

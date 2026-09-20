@@ -1,0 +1,25 @@
+{
+  "title": "PENTHOUSE",
+  "intro": "PENTHOUSE\nEVERYTHING THEY HAVE LEFT.",
+  "theme": {
+    "wall": "fbf6ea",
+    "floor": "c9b27a",
+    "prop": "e4d3a3",
+    "ambient": "fffaec",
+    "sky": "f8f1de",
+    "energy": 0.62,
+    "sun": 0.52
+  },
+  "waves": [
+    {
+      "after_kills": 9,
+      "count": 5,
+      "armed": 4
+    },
+    {
+      "after_kills": 18,
+      "count": 6,
+      "armed": 5
+    }
+  ]
+}

@@ -10,13 +10,21 @@ signal run_finished
 ## The player stepped out of the arrival elevator. The HUD announces the level on this.
 signal floor_announced(label: String, intro: String)
 signal helper_changed(active: bool)
+signal super_gun_granted
 
 enum State { TITLE, PLAYING, DEAD, CLEARED, ENDING }
 
 const T: Tuning = preload("res://data/tuning.tres")
 const PLAYER_SCENE: PackedScene = preload("res://player/player.tscn")
 const DUDE_SCENE: PackedScene = preload("res://enemies/pink_dude.tscn")
-const FLOORS: PackedStringArray = ["f1_lobby", "f2_offices", "f3_servers", "f4_labs", "f5_executive", "roof"]
+const FLOORS: PackedStringArray = [
+	"f1_lobby", "f2_offices", "f3_servers", "f4_labs", "f5_executive",
+	"f6_cafeteria", "f7_garage", "f8_archive", "f9_pool", "f10_vault",
+	"f11_sewers", "f12_kitchen", "f13_coldstore", "f14_glassworks", "f15_restrooms",
+	"f16_armoury", "f17_greenhouse", "f18_beanworks", "f19_tradingfloor", "f20_generators",
+	"f21_lockdown", "f22_cryolab", "f23_mirrors", "f24_strongrooms", "f25_skygarden",
+	"f26_morgue", "f27_furnace", "f28_waterworks", "f29_penthouse", "roof",
+]
 
 var state: State = State.TITLE
 var level_root: Node3D
@@ -35,6 +43,12 @@ var deaths_this_floor: int = 0
 ## Real seconds of hired help left. Survives a death and restart, ends when the floor is clear.
 var helper_time_left: float = 0.0
 var helper: Helper = null
+## Won from the Brute. From then on the player starts every floor holding it.
+var has_super_gun: bool = false
+## Furthest floor reached, for Continue on the title screen.
+var best_floor: int = 0
+
+const PROGRESS_PATH: String = "user://progress.cfg"
 ## Tests and the smoke bot: doors are already open and rides take a blink.
 var fast_elevators: bool = false
 ## Set while reloading after a death, so the retry starts almost at once.
@@ -47,6 +61,7 @@ var _load_serial: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	load_progress()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -72,6 +87,7 @@ func start_run(from_floor: int = 0) -> void:
 
 ## Tests: forget the run so one test's deaths and helper do not leak into the next.
 func start_run_state_for_tests() -> void:
+	has_super_gun = false
 	deaths = 0
 	deaths_this_floor = 0
 	helper_time_left = 0.0
@@ -193,6 +209,11 @@ func load_level(name_of_level: String) -> bool:
 	for wave: Dictionary in data.waves:
 		_pending_waves.append(wave.duplicate())
 
+	_arm_player_with_super_gun()
+	var index: int = FLOORS.find(level_name)
+	if index > best_floor and not god_mode:
+		best_floor = index
+		save_progress()
 	TimeManager.reset()
 	_set_state(State.PLAYING)
 	if helper_time_left > 0.0:
@@ -201,6 +222,46 @@ func load_level(name_of_level: String) -> bool:
 		_spawn_helper(data.cell_center(data.front_cell(data.player_start), 0.05) + out * 0.6 + arrival.basis.x * 0.9, arrival.basis).greet_again()
 	floor_loaded.emit(data)
 	return true
+
+
+# ---------------------------------------------------------------- super gun and progress
+
+## The Brute is down. The gun appears where he fell and is the player's from now on.
+func grant_super_gun(at: Vector3) -> void:
+	has_super_gun = true
+	save_progress()
+	var prize: SuperGun = SuperGun.create()
+	entities_root(self).add_child(prize)
+	prize.global_position = Vector3(at.x, 1.1, at.z)
+	super_gun_granted.emit()
+
+
+func _arm_player_with_super_gun() -> void:
+	if not has_super_gun or player == null:
+		return
+	var gun: SuperGun = SuperGun.create()
+	entities_root(self).add_child(gun)
+	player.hands.pick_up(gun)
+
+
+func save_progress() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("run", "best_floor", best_floor)
+	cfg.set_value("run", "has_super_gun", has_super_gun)
+	cfg.save(PROGRESS_PATH)
+
+
+func load_progress() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(PROGRESS_PATH) == OK:
+		best_floor = int(cfg.get_value("run", "best_floor", 0))
+		has_super_gun = bool(cfg.get_value("run", "has_super_gun", false))
+
+
+func erase_progress() -> void:
+	best_floor = 0
+	has_super_gun = false
+	save_progress()
 
 
 # ---------------------------------------------------------------- helper
@@ -254,9 +315,19 @@ func dismiss_helper(floor_is_clear: bool = false) -> void:
 
 func spawn_dude(at: Vector3, armed: bool, weapon_kind: StringName = &"pistol") -> PinkDude:
 	var dude: PinkDude
+	if weapon_kind == &"zombie":
+		# Buried. He registers himself as an enemy when he climbs out.
+		var biter := Zombie.new()
+		biter.name = "Biter"
+		entities_root(self).add_child(biter)
+		biter.global_position = at
+		return biter
 	if weapon_kind == &"shield":
 		dude = ShieldDude.new()
 		dude.name = "ShieldDude"
+	elif weapon_kind == &"runner":
+		dude = Runner.new()
+		dude.name = "Runner"
 	else:
 		dude = DUDE_SCENE.instantiate()
 		dude.armed_at_spawn = armed
@@ -266,8 +337,15 @@ func spawn_dude(at: Vector3, armed: bool, weapon_kind: StringName = &"pistol") -
 
 
 func spawn_boss(at: Vector3) -> PinkDude:
-	var boss := Director.new()
-	boss.name = "Director"
+	var boss: PinkDude
+	match data.boss_kind:
+		&"brute":
+			boss = Brute.new()
+		&"warden":
+			boss = Warden.new()
+		_:
+			boss = Director.new()
+	boss.name = String(data.boss_kind).capitalize()
 	_register(boss, at)
 	return boss
 
@@ -284,7 +362,13 @@ func _register(dude: PinkDude, at: Vector3) -> void:
 
 
 ## Spawns `count` dudes spread over the level's wave points, already alerted.
-func spawn_wave(count: int, armed: int) -> void:
+## A biter has clawed his way up. Now he counts.
+func register_risen(biter: Zombie) -> void:
+	biter.died.connect(_on_dude_died)
+	alive_enemies += 1
+
+
+func spawn_wave(count: int, armed: int, kind: StringName = &"pistol") -> void:
 	if data == null or data.wave_points.is_empty():
 		return
 	# Start at a random wave point and take a different one for each dude, so a wave
@@ -293,7 +377,7 @@ func spawn_wave(count: int, armed: int) -> void:
 	for i: int in count:
 		var cell: Vector2i = data.wave_points[(first + i) % data.wave_points.size()]
 		var jitter := Vector3(randf_range(-0.7, 0.7), 0, randf_range(-0.7, 0.7))
-		var dude: PinkDude = spawn_dude(data.cell_center(cell, 0.05) + jitter, i < armed)
+		var dude: PinkDude = spawn_dude(data.cell_center(cell, 0.05) + jitter, i < armed, kind if i < armed else &"runner" if kind == &"runner" else &"pistol")
 		dude.alerted = true
 
 

@@ -1,0 +1,13 @@
+{
+  "title": "KITCHEN",
+  "intro": "KITCHEN\nKNIVES EVERYWHERE. SO IS THE GAS.",
+  "theme": {
+    "wall": "dfe3e6",
+    "floor": "8a9197",
+    "prop": "b4bbc1",
+    "ambient": "f2f7fb",
+    "sky": "e2e6e9",
+    "energy": 0.56,
+    "sun": 0.48
+  }
+}

@@ -4,8 +4,8 @@ A first-person time-shooter. Time crawls while you stand still, slow enough to s
 around bullets, grab what is lying about, and break doors down. Move and the world
 moves with you. One hit kills you. One bullet kills them.
 
-Climb a corporate HQ full of evil pink dudes with pistols: Lobby, Offices, Server Room,
-Labs, Executive Floor, then the Director on the roof.
+Thirty levels up a corporate HQ full of evil pink dudes. The Brute waits on level 10 and
+his super gun is the prize. The Warden holds level 21. The Director is on the roof.
 
 ## Play
 
@@ -22,6 +22,8 @@ godot4 --path .                 # or run from source with Godot 4.7
 | Right click | Grab what you are looking at | Throw it |
 | E | Grab | Swap for what you are looking at |
 | F | Wear a dropped SWAT shield, or drop the one you wear | |
+| Q | | Throw it (always) |
+| Right click, sniper rifle | | Hold to look down the scope |
 | R | Restart the floor | |
 | Esc | Pause: sensitivity, field of view, volume | |
 | F3 | Debug readout (source runs only) | |
@@ -39,6 +41,12 @@ Things worth knowing:
 - The wall breaker opens doors in one bash and interior walls in two. It has five hits.
 - The AK-47 is automatic: hold the trigger. The shotgun throws eight pellets.
 - Die three times on a floor and a capsule with a red figure waits outside the lift. Hit its button, watch the ad, and a red helper with an AK fights beside you for three minutes or until the floor is clear.
+- Freeze bombs turn dudes to ice. Anything shatters a frozen dude, even a thrown mug.
+- Dudes running over water or ice fall over and lose their guns. You never slip.
+- Shoot a green cloud and it fills the room. Dudes choke in it. Troopers wear masks.
+- A knife kills in one stab. Runners are faster than you, so keep one.
+- Biters wait under the floor and climb out when you get close. They do not count toward clearing a floor until they are up.
+- The super gun is a laser. It goes through everyone in line, shields too, and they melt.
 - The Director takes three bullets and calls a wave each time he is hit.
 
 ## Develop

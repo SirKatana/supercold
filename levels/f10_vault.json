@@ -1,0 +1,14 @@
+{
+  "title": "THE VAULT",
+  "intro": "THE VAULT\nTHE BRUTE. TWELVE HITS. DO NOT LET HIM REACH YOU.",
+  "boss": "brute",
+  "theme": {
+    "wall": "aab4c2",
+    "floor": "4a5261",
+    "prop": "7c8797",
+    "ambient": "dfe8f5",
+    "sky": "b4bdca",
+    "energy": 0.46,
+    "sun": 0.42
+  }
+}

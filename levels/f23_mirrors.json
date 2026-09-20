@@ -1,0 +1,13 @@
+{
+  "title": "HALL OF GLASS",
+  "intro": "HALL OF GLASS\nEVERYONE CAN SEE EVERYONE.",
+  "theme": {
+    "wall": "dcdfe4",
+    "floor": "9498a0",
+    "prop": "b8bcc3",
+    "ambient": "f4f6fa",
+    "sky": "d8dbe0",
+    "energy": 0.56,
+    "sun": 0.46
+  }
+}

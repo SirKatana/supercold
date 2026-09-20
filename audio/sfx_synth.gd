@@ -32,6 +32,29 @@ static func build_all() -> Dictionary[StringName, AudioStream]:
 			var crack: float = n * exp(-t * 28.0) * 1.2
 			var rumble: float = n * sin(TAU * 38.0 * t) * exp(-t * 4.5) * 0.7
 			return clampf((thump * 1.1 + crack + rumble) * 0.9, -1.0, 1.0)),
+		&"slip": _render(0.4, func(t: float, n: float) -> float:
+			return sin(TAU * (900.0 - t * 1500.0) * t) * exp(-t * 7.0) * 0.4 + n * exp(-t * 18.0) * 0.25),
+		&"melt": _render(0.9, func(t: float, n: float) -> float:
+			return n * (0.35 + 0.25 * sin(TAU * 23.0 * t)) * exp(-t * 2.2) * 0.8 + sin(TAU * (160.0 - t * 90.0) * t) * exp(-t * 3.0) * 0.3),
+		&"laser": _render(0.45, func(t: float, n: float) -> float:
+			var tone: float = sin(TAU * (1900.0 - t * 2600.0) * t) + 0.5 * sin(TAU * (950.0 - t * 1300.0) * t)
+			return tone * exp(-t * 6.5) * 0.45 + n * exp(-t * 40.0) * 0.35),
+		&"freeze": _render(0.8, func(t: float, n: float) -> float:
+			var glass: float = sin(TAU * 3100.0 * t) * exp(-t * 9.0) + sin(TAU * 4700.0 * t) * exp(-t * 13.0) * 0.6
+			return glass * 0.3 + n * exp(-t * 5.0) * 0.45 * (0.5 + 0.5 * sin(TAU * 60.0 * t))),
+		&"fart": _render(0.95, func(t: float, n: float) -> float:
+			var buzz: float = signf(sin(TAU * (62.0 + 30.0 * sin(TAU * 3.1 * t) - t * 22.0) * t))
+			return (buzz * 0.55 + n * 0.25) * sin(PI * minf(t / 0.95, 1.0)) * (0.7 + 0.3 * sin(TAU * 17.0 * t))),
+		&"cough": _render(0.3, func(t: float, n: float) -> float:
+			return n * exp(-t * 16.0) * (0.6 + 0.4 * sin(TAU * 140.0 * t)) * 0.7),
+		&"stab": _render(0.16, func(t: float, n: float) -> float:
+			return n * exp(-t * 55.0) * 0.6 + sin(TAU * 2400.0 * t) * exp(-t * 45.0) * 0.3),
+		&"bite": _render(0.22, func(t: float, n: float) -> float:
+			return n * exp(-t * 30.0) * 0.7 + sin(TAU * 210.0 * t) * exp(-t * 20.0) * 0.5),
+		&"rise": _render(0.95, func(t: float, n: float) -> float:
+			return n * sin(PI * t / 0.95) * 0.5 * (0.5 + 0.5 * sin(TAU * 11.0 * t)) + sin(TAU * (55.0 + t * 25.0) * t) * sin(PI * t / 0.95) * 0.35),
+		&"slam": _render(0.7, func(t: float, n: float) -> float:
+			return sin(TAU * (60.0 - t * 35.0) * t) * exp(-t * 4.5) + n * exp(-t * 14.0) * 0.6),
 		&"death": _render(0.8, func(t: float, n: float) -> float:
 			return sin(TAU * (300.0 - t * 280.0) * t) * exp(-t * 3.0) * 0.6 + n * exp(-t * 12.0) * 0.3),
 	}

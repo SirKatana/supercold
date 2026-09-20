@@ -1,0 +1,13 @@
+{
+  "title": "CRYO LAB",
+  "intro": "CRYO LAB\nFREEZE BOMBS. USE ALL OF THEM.",
+  "theme": {
+    "wall": "eef7ff",
+    "floor": "bcd6ee",
+    "prop": "d6e7f6",
+    "ambient": "eaf5ff",
+    "sky": "e6f1fb",
+    "energy": 0.64,
+    "sun": 0.4
+  }
+}

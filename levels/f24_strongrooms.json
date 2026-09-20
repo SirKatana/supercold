@@ -1,0 +1,13 @@
+{
+  "title": "STRONGROOMS",
+  "intro": "STRONGROOMS\nA DOOR IS A SUGGESTION. SO IS A WALL.",
+  "theme": {
+    "wall": "c9d2bd",
+    "floor": "3f5a44",
+    "prop": "b39a55",
+    "ambient": "f0f6e2",
+    "sky": "bac5ac",
+    "energy": 0.5,
+    "sun": 0.42
+  }
+}

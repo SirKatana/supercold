@@ -1,0 +1,14 @@
+{
+  "title": "LOCKDOWN",
+  "intro": "LOCKDOWN\nTHE WARDEN. THREE ROUNDS THROUGH THE GLASS.",
+  "boss": "warden",
+  "theme": {
+    "wall": "9aa4b3",
+    "floor": "3e4652",
+    "prop": "6c7685",
+    "ambient": "dbe4f2",
+    "sky": "8d97a6",
+    "energy": 0.44,
+    "sun": 0.38
+  }
+}
