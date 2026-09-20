@@ -182,4 +182,4 @@ func test_no_floor_has_fog_lying_about_any_more() -> void:
 		for node: Node in get_tree().get_nodes_in_group(&"pickups"):
 			if node is FartGrenade:
 				grenades += 1
-		check(grenades >= 5, "%s has stink grenades to find (%d)" % [floor_name, grenades])
+		check(grenades >= 4, "%s has stink grenades to find (%d)" % [floor_name, grenades])

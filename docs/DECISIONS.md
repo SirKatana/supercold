@@ -151,3 +151,8 @@ One line per call made in auto mode, with why.
 - `Puddle` gained `radius` and `life` instead of a second class, so floor water, ice and spills share the slip logic.
 - Buckets are on 11 of the 30 floors: the ones where water belongs (cafeteria, kitchen, restrooms, pool, sewers, greenhouse, morgue, waterworks) plus a few others.
 - Helper is 240 s. The greeting clip was re-rendered with Piper ("four minutes"); `make_voice.py` only re-renders lines whose text changed, so it was one clip.
+- Playtest 15 (user): fart grenades, freeze bombs and water buckets should be scattered, with the choice of floors left to me, and "not all levels have all three or even one of them".
+- One table decides it. Seven floors have none, so the player cannot count on a gadget and has to use what the floor gives. Floors keep the gadget their theme suggests (restrooms and the cannery have stink grenades, the cryo lab and cold store have freeze bombs, the pool and waterworks have buckets). Only the armoury and the penthouse have all three.
+- "Scattered" is enforced, not hoped for: at least 6 cells from the lift, 4 from each other, and three or more must span half the floor's width and 30 percent of its depth. The first pass put all four cold store freeze bombs in a third of the map.
+- The stink grenade and the freeze bomb that used to wait by the lift on levels 15, 18 and 22 are gone. They are found in rooms now.
+- Bug caught while doing this: hand-built floors were seeded with Python's `hash(name)`, which is randomised per process, so regenerating would have shuffled them every time. Replaced with a sum of character codes, and regeneration was checked to be byte-identical across two runs.

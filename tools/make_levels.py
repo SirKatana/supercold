@@ -9,6 +9,36 @@ OUT = os.path.join(os.path.dirname(__file__), "..", "levels")
 
 ENEMIES = "auBRSHqZNU"
 
+# Which floors get which gadget, and how many. f = fart grenade, F = freeze bomb, j = water bucket.
+# Deliberately uneven: seven floors have none, most have one or two, only two have all three.
+# On a floor that has them they are spread across the rooms, never handed over at the lift.
+GADGETS = {
+    "f1_lobby": {"j": 2},
+    "f3_servers": {"F": 2},
+    "f5_executive": {"f": 3},
+    "f6_cafeteria": {"j": 4},
+    "f8_archive": {"F": 2, "j": 2},
+    "f9_pool": {"j": 3, "F": 2},
+    "f10_vault": {"F": 3, "f": 2},
+    "f11_sewers": {"j": 3},
+    "f12_kitchen": {"j": 3, "f": 2},
+    "f13_coldstore": {"F": 4},
+    "f15_restrooms": {"f": 4, "j": 3},
+    "f16_armoury": {"f": 2, "F": 2, "j": 2},
+    "f17_greenhouse": {"j": 3, "f": 2},
+    "f18_beanworks": {"f": 5},
+    "f19_tradingfloor": {"F": 3},
+    "f21_lockdown": {"F": 3},
+    "f22_cryolab": {"F": 5},
+    "f23_mirrors": {"f": 3},
+    "f25_skygarden": {"j": 3},
+    "f26_morgue": {"F": 2, "f": 2},
+    "f28_waterworks": {"j": 4},
+    "f29_penthouse": {"f": 2, "F": 2, "j": 2},
+    "roof": {"f": 2, "F": 2},
+    # none: f2_offices, f4_labs, f7_garage, f14_glassworks, f20_generators, f24_strongrooms, f27_furnace
+}
+
 
 class Grid:
     def __init__(self, w, h):
@@ -82,7 +112,7 @@ class Grid:
             if self.c[y][x] == "#" and ((self.c[y][x - 1] == "." and self.c[y][x + 1] == ".") or (self.c[y - 1][x] == "." and self.c[y + 1][x] == ".")):
                 self.c[y][x] = "."
 
-    def scatter(self, spec, rects, seed, gap=4.2, from_player=6.5, floor=".", margin=False):
+    def scatter(self, spec, rects, seed, gap=4.2, from_player=6.5, floor=".", margin=False, spread=0.0):
         """Drops things on random floor cells. `spec` is {char: count}. Enemies keep `gap` cells from each
         other and `from_player` from P. Nothing lands beside a door, a lift, or in front of one."""
         import math, random
@@ -112,6 +142,12 @@ class Grid:
                         continue
                 elif margin and any(n not in ".~i" for n in near):
                     continue
+                if spread > 0.0:
+                    # Gadgets: well away from the lift, and well away from each other.
+                    if player and math.dist((x, y), player[0]) < from_player:
+                        continue
+                    if any(math.dist((x, y), other) < spread for other in self.cells("fFj")):
+                        continue
                 self.c[y][x] = ch
                 placed += 1
             assert placed == count, f"could only place {placed} of {count} '{ch}'"
@@ -127,6 +163,29 @@ class Grid:
             assert math.dist(a, player) >= from_player, f"{name}: enemy {a} is {math.dist(a, player):.1f} cells from the player"
             for b in enemies[i + 1:]:
                 assert math.dist(a, b) >= between, f"{name}: enemies {a} and {b} are {math.dist(a, b):.1f} cells apart"
+
+    def gadgets(self, name, seed):
+        """Places this floor's share of fart grenades, freeze bombs and buckets from GADGETS."""
+        wanted = GADGETS.get(name, {})
+        if not wanted:
+            return
+        everywhere = [(1, 1, self.w - 2, self.h - 2)]
+        total = sum(wanted.values())
+        for spread in (7.0, 5.5, 4.0):          # as spread out as the floor allows
+            for retry in range(40):
+                trial = [row[:] for row in self.c]
+                try:
+                    self.scatter(wanted, everywhere, seed + retry * 13, floor=".", margin=True, spread=spread)
+                except AssertionError:
+                    self.c = trial
+                    continue
+                xs = [x for x, y in self.cells("fFj")]
+                ys = [y for x, y in self.cells("fFj")]
+                # Three or more should reach across the floor, not sit in one corner of it.
+                if total < 3 or ((max(xs) - min(xs)) >= self.w * 0.5 and (max(ys) - min(ys)) >= self.h * 0.3):
+                    return
+                self.c = trial
+        raise AssertionError(f"{name}: no room for its gadgets")
 
     def text(self):
         return "\n".join("".join(r) for r in self.c) + "\n"
@@ -188,10 +247,10 @@ def f1_lobby():
     g.put("a", (16, 2), (2, 11), (17, 11), (9, 12))
     g.put("b", (6, 10))
     g.put("m", (13, 10))
-    g.put("j", (7, 1))
     g.put("X", (12, 12))
     g.put("g", (11, 9))
     g.put("o", (3, 6), (7, 3), (12, 3), (16, 6), (4, 10), (15, 10), (7, 12))
+    g.gadgets("f1_lobby", 799)
     save("f1_lobby", g, {"intro": "LOBBY\nSTAND STILL. TIME CRAWLS."})
 
 
@@ -221,6 +280,7 @@ def f2_offices():
     g.pillars(1, 7, 8, 14, step=3, ox=2, oy=2)
     g.pillars(1, 16, 13, 20, step=4, ox=3, oy=2)
     g.pillars(15, 16, 28, 20, step=4, ox=3, oy=2)
+    g.gadgets("f2_offices", 99)
     save("f2_offices", g, {"intro": "OFFICES\nTHROW THINGS. TAKE THEIR GUNS."})
 
 
@@ -250,6 +310,7 @@ def f3_servers():
     g.pillars(1, 14, 26, 18, step=4, ox=3, oy=2)
     g.pillars(1, 7, 6, 12, step=3, ox=2, oy=2)
     g.put("o", (8, 6), (12, 7), (16, 6), (20, 7), (24, 6), (26, 12))
+    g.gadgets("f3_servers", 143)
     save("f3_servers", g, {"intro": "SERVER ROOM\nDOORS BREAK. SO DO THEY."})
 
 
@@ -281,6 +342,7 @@ def f4_labs():
     for x0 in (1, 12, 24):
         g.pillars(x0, 1, x0 + 10, 9, step=4, ox=2, oy=2)
         g.pillars(x0, 14, x0 + 10, 22, step=4, ox=2, oy=2)
+    g.gadgets("f4_labs", 684)
     save("f4_labs", g, {
         "intro": "LABS\nLONG HALLS. WATCH THE BULLETS.",
         "waves": [{"after_kills": 6, "count": 4, "armed": 3}],
@@ -324,6 +386,7 @@ def f5_executive():
     g.pillars(14, 20, 25, 26, step=4, ox=2, oy=2)
     g.pillars(27, 20, 38, 26, step=4, ox=2, oy=2)
     g.put("o", (18, 17), (24, 18), (30, 16), (35, 17))
+    g.gadgets("f5_executive", 345)
     save("f5_executive", g, {
         "intro": "EXECUTIVE FLOOR\nEVERYTHING YOU LEARNED.",
         "waves": [{"after_kills": 5, "count": 4, "armed": 3}, {"after_kills": 10, "count": 5, "armed": 4}],
@@ -355,6 +418,7 @@ def roof():
     g.put("m", (24, 24))
     g.put("l", (24, 5))
     g.pillars(4, 4, 25, 25, step=5, ox=3, oy=3)
+    g.gadgets("roof", 455)
     save("roof", g, {"intro": "ROOF\nTHE DIRECTOR. THREE BULLETS.", "open_sky": True, "exit": "helipad"})
 
 
@@ -618,7 +682,7 @@ def build_floor(spec):
             rects = [r["rect"] for r in rooms]
             start = g.cells("P")[0]
             # Things to grab by the lift, clear of where the helper capsule goes.
-            for i, ch in enumerate(spec.get("start", [])):
+            for i, ch in enumerate([c for c in spec.get("start", []) if c not in "fFj"]):
                 for dx in range(5, 12):
                     x, y = start[0] + dx, start[1] + (-1 if i % 2 == 0 else 1)
                     near = [g.c[y + dy][x + ddx] for dy in (-1, 0, 1) for ddx in (-1, 0, 1)]
@@ -645,10 +709,9 @@ def build_floor(spec):
             g.scatter(spec["enemies"], everywhere, spec["seed"] + attempt, floor=".~i")
             if spec.get("waves"):
                 g.scatter({"w": spec.get("wave_points", 4)}, rects, spec["seed"] + attempt + 7, floor=".")
-            if spec.get("fart"):
-                # Stink grenades sit on stands in the rooms, like every other thing you can pick up.
-                g.scatter({"f": spec["fart"]}, rects, spec["seed"] + attempt + 3, floor=".", margin=True)
-            g.scatter(spec.get("items", {}), rects, spec["seed"] + attempt + 5, floor=".", margin=True)
+            items = {k: v for k, v in spec.get("items", {}).items() if k not in "fFj"}
+            g.scatter(items, rects, spec["seed"] + attempt + 5, floor=".", margin=True)
+            g.gadgets(spec["name"], spec["seed"] + attempt + 11)
             assert walkable_from_lift(g), "somebody cannot be reached"
             cover = len(g.cells("cso"))
             assert cover >= 12, f"only {cover} pieces of cover"
@@ -752,10 +815,10 @@ def f9_pool():
     g.put("c", (2, 14), (2, 15), (2, 20), (2, 21), (39, 14), (39, 15), (39, 20), (39, 21), (12, 27), (13, 27), (28, 27), (29, 27))
     g.put("#", (10, 5), (22, 7), (31, 5))
     g.put("P", (1, 6)); g.put("X", (40, 27))
-    g.put("p", (6, 5)); g.put("F", (8, 7)); g.put("T", (3, 27)); g.put("b", (19, 1)); g.put("n", (27, 1))
-    g.put("j", (12, 7), (3, 10), (38, 10))
+    g.put("p", (6, 5)); g.put("T", (3, 27)); g.put("b", (19, 1)); g.put("n", (27, 1))
     g.scatter({"a": 6, "S": 2, "q": 3}, [(1, 1, 40, 3), (8, 5, 40, 7), (1, 9, 40, 28)], 91, floor=".~")
     assert walkable_from_lift(g), "pool: somebody cannot be reached"
+    g.gadgets("f9_pool", 713)
     save("f9_pool", g, {"title": "POOL", "intro": "POOL\\nFREEZE THEM, OR LET THEM RUN ON THE WET DECK.", "theme": theme("aqua")})
 
 
@@ -776,9 +839,10 @@ def f10_vault():
     g.put("P", (1, 29)); g.put("X", (38, 29)); g.put("B", (19, 9))
     g.put("H", (14, 14), (25, 14)); g.put("R", (10, 8), (29, 8)); g.put("a", (19, 19), (29, 22))
     g.put("g", (11, 22), (28, 12), (16, 7), (23, 21))
-    g.put("K", (6, 27)); g.put("T", (8, 31)); g.put("V", (10, 27)); g.put("F", (4, 31), (11, 30)); g.put("r", (6, 31))
+    g.put("K", (6, 27)); g.put("T", (8, 31)); g.put("V", (10, 27)); g.put("r", (6, 31))
     g.put("c", (22, 28), (23, 28), (30, 30), (31, 30), (3, 27), (3, 28), (35, 7), (35, 15), (16, 2), (23, 2))
     assert walkable_from_lift(g), "vault: somebody cannot be reached"
+    g.gadgets("f10_vault", 867)
     save("f10_vault", g, {"title": "THE VAULT", "intro": "THE VAULT\\nTHE BRUTE. TWELVE HITS. DO NOT LET HIM REACH YOU.",
                           "boss": "brute", "theme": theme("steel")})
 
@@ -800,8 +864,9 @@ def f21_lockdown():
     g.put("c", (12, 16), (31, 15), (20, 21), (23, 10), (3, 10), (4, 10), (38, 19), (39, 19), (3, 24), (4, 24), (3, 27), (4, 27))
     g.put("P", (1, 22)); g.put("X", (42, 20)); g.put("B", (22, 10))
     g.put("H", (14, 10), (29, 10), (22, 19)); g.put("N", (4, 12), (39, 12))
-    g.put("Y", (6, 19)); g.put("K", (6, 25)); g.put("F", (2, 28), (6, 28)); g.put("V", (2, 19)); g.put("g", (12, 21), (31, 21), (20, 12))
+    g.put("Y", (6, 19)); g.put("K", (6, 25)); g.put("V", (2, 19)); g.put("g", (12, 21), (31, 21), (20, 12))
     assert walkable_from_lift(g), "lockdown: somebody cannot be reached"
+    g.gadgets("f21_lockdown", 278)
     save("f21_lockdown", g, {"title": "LOCKDOWN", "intro": "LOCKDOWN\\nTHE WARDEN. THREE ROUNDS THROUGH THE GLASS.",
                              "boss": "warden", "theme": theme("prison")})
 
