@@ -84,11 +84,6 @@ static func _place_hazards(data: LevelData, entities: Node3D) -> void:
 		puddle.icy = entry["icy"]
 		puddle.position = data.cell_center(entry["cell"])
 		entities.add_child(puddle)
-	for cell: Vector2i in data.fart_cells:
-		var cloud := FartCloud.new()
-		cloud.name = "FartCloud"
-		cloud.position = data.cell_center(cell, 1.1)
-		entities.add_child(cloud)
 
 
 static func elevator_transform(data: LevelData, cell: Vector2i) -> Transform3D:
@@ -139,6 +134,8 @@ static func create_pickup(kind: StringName) -> Pickup:
 		return Knife.create()
 	if kind == &"freeze":
 		return FreezeBomb.create()
+	if kind == &"fart":
+		return FartGrenade.create()
 	if kind == &"smg" or kind == &"revolver" or kind == &"sniper" or kind == &"super":
 		return PinkDude.create_gun(kind)
 	return Throwable.create(kind)

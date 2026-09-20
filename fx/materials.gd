@@ -295,6 +295,25 @@ static func fart() -> StandardMaterial3D:
 		return m)
 
 
+static func grenade_olive() -> StandardMaterial3D:
+	return _cached(&"grenade_olive", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.27, 0.33, 0.16)
+		m.metallic = 0.2
+		m.roughness = 0.55
+		return m)
+
+
+static func fart_glow() -> StandardMaterial3D:
+	return _cached(&"fart_glow", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.55, 0.90, 0.12)
+		m.emission_enabled = true
+		m.emission = Color(0.50, 0.95, 0.10)
+		m.emission_energy_multiplier = 1.4
+		return m)
+
+
 static func melt_pink() -> StandardMaterial3D:
 	return _cached(&"melt_pink", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

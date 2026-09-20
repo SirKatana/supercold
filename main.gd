@@ -345,6 +345,11 @@ func _capture(path: String, after: float) -> void:
 		pool.fire(eye + ahead * 1.1 - side * 1.2, (side + ahead * 0.15).normalized(), null)
 		pool.fire(eye + ahead * 1.5 - side * 1.0 + Vector3.UP * 0.2, (side + ahead * 0.1).normalized(), null, 0.6)
 		await get_tree().create_timer(0.30, true, false, true).timeout
+	if _arg("do", "").begins_with("item:") and Game.player != null:
+		var thing: Pickup = LevelBuilder.create_pickup(StringName(_arg("do", "").trim_prefix("item:")))
+		Game.entities_root(self).add_child(thing)
+		Game.player.hands.pick_up(thing)
+		await get_tree().create_timer(0.2, true, false, true).timeout
 	if _arg("do", "").begins_with("gun:") and Game.player != null:
 		var gun: Gun = PinkDude.create_gun(StringName(_arg("do", "").trim_prefix("gun:")))
 		Game.entities_root(self).add_child(gun)

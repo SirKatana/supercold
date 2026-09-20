@@ -366,7 +366,7 @@ def roof():
 
 import random
 
-SOLID = set("# GWcso" + "pbmklrKTgnFMVY")      # walls, glass, deep water, furniture, pedestals, barrels
+SOLID = set("# GWcso" + "pbmklrKTgnFMVYf")      # walls, glass, deep water, furniture, pedestals, barrels
 
 
 def _door_between(g, rng, cells):
@@ -645,7 +645,8 @@ def build_floor(spec):
             if spec.get("waves"):
                 g.scatter({"w": spec.get("wave_points", 4)}, rects, spec["seed"] + attempt + 7, floor=".")
             if spec.get("fart"):
-                g.scatter({"f": spec["fart"]}, everywhere, spec["seed"] + attempt + 3, floor=".")
+                # Stink grenades sit on stands in the rooms, like every other thing you can pick up.
+                g.scatter({"f": spec["fart"]}, rects, spec["seed"] + attempt + 3, floor=".", margin=True)
             g.scatter(spec.get("items", {}), rects, spec["seed"] + attempt + 5, floor=".", margin=True)
             assert walkable_from_lift(g), "somebody cannot be reached"
             cover = len(g.cells("cso"))
@@ -686,7 +687,7 @@ SPECS = [
          intro="GLASSWORKS\\nRIGHT CLICK TO LOOK DOWN THE SCOPE.", furnish=["office", "tables", "columns"], glass=7, start=["Y", "p"],
          layout={"min_w": 7, "max_w": 12}, enemies={"N": 3, "a": 5, "S": 1}, items={"V": 1, "b": 2, "g": 2, "F": 1}),
     dict(name="f15_restrooms", size=(40, 25), style="double", seed=15, theme="mint", title="RESTROOMS",
-         intro="RESTROOMS\\nSHOOT THE GREEN FOG. HOLD YOUR NOSE.", furnish=["stalls", "stalls", "tables"], wet=4, fart=5, start=["p", "n"],
+         intro="RESTROOMS\\nSTINK GRENADES. THROW ONE INTO A ROOM AND SHUT THE DOOR.", furnish=["stalls", "stalls", "tables"], wet=4, fart=5, start=["f", "p"],
          layout={"min_w": 5, "max_w": 8}, enemies={"a": 7, "u": 3, "q": 2}, items={"T": 1, "m": 3, "b": 2}),
     dict(name="f16_armoury", size=(42, 25), style="bsp", seed=16, theme="olive", title="ARMOURY",
          intro="ARMOURY\\nTAKE WHAT YOU LIKE. THEY DID.", furnish=["racks", "office", "columns"], start=["K", "T"],
@@ -695,7 +696,7 @@ SPECS = [
          intro="GREENHOUSE\\nTHEY GROW THEM HERE.", furnish=["counters", "tables"], glass=8, wet=4, fart=2, start=["p", "n"],
          enemies={"Z": 8, "a": 4}, items={"K": 1, "F": 1, "b": 2, "g": 2}),
     dict(name="f18_beanworks", size=(44, 27), style="spine", seed=18, theme="bean", title="BEANWORKS",
-         intro="BEAN CANNERY\\nIT IS EXACTLY AS BAD AS IT SMELLS.", furnish=["vats", "vats", "counters"], fart=7, start=["p", "T"],
+         intro="BEAN CANNERY\\nIT IS EXACTLY AS BAD AS IT SMELLS.", furnish=["vats", "vats", "counters"], fart=7, start=["f", "p"],
          layout={"min_w": 8, "max_w": 12}, enemies={"a": 6, "S": 2, "q": 3, "H": 1}, items={"g": 5, "M": 1, "n": 1}),
     dict(name="f19_tradingfloor", size=(50, 31), style="double", seed=19, theme="navy", title="TRADING FLOOR",
          intro="TRADING FLOOR\\nEVERYONE IS AT THEIR DESK.", furnish=["office", "office", "tables"], furnished=1.0, start=["K", "M"],

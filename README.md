@@ -43,7 +43,7 @@ Things worth knowing:
 - Die three times on a floor and a capsule with a red figure waits outside the lift. Hit its button, watch the ad, and a red helper with an AK fights beside you for three minutes or until the floor is clear.
 - Freeze bombs turn dudes to ice. Anything shatters a frozen dude, even a thrown mug.
 - Dudes running over water or ice fall over and lose their guns. You never slip.
-- Shoot a green cloud and it fills the room. Dudes choke in it. Troopers wear masks.
+- Throw a stink grenade into a room and green fog fills it. Dudes grab their throats, double over and drop. Troopers wear gas masks. Levels 15 and 18 are full of them.
 - A knife kills in one stab. Runners are faster than you, so keep one.
 - Biters wait under the floor and climb out when you get close. They do not count toward clearing a floor until they are up.
 - The super gun is a laser. It goes through everyone in line, shields too, and they melt.

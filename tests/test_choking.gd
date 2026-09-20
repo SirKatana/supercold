@@ -112,3 +112,74 @@ func test_cloud_is_fog_not_a_shape() -> void:
 			shown_big += 1
 	check(shown_big > shown_small * 3, "a burst cloud shows far more fog (%d then %d)" % [shown_small, shown_big])
 	cloud.free()
+
+
+func _empty_room() -> Vector3:
+	check(Game.load_level("test_room"), "level loads")
+	await wait_physics(3)
+	for group: StringName in [&"enemies", &"barrels"]:
+		for node: Node in get_tree().get_nodes_in_group(group):
+			node.free()
+	Game.alive_enemies = 0
+	Game.player.global_position = Game.data.cell_center(Vector2i(2, 2), 0.05)
+	return Game.data.cell_center(Vector2i(8, 8), 0.05)
+
+
+func test_thrown_fart_grenade_fills_the_room_with_fog_where_it_lands() -> void:
+	var spot: Vector3 = await _empty_room()
+	var grenade: FartGrenade = FartGrenade.create()
+	Game.entities_root(self).add_child(grenade)
+	check_eq(get_tree().get_nodes_in_group(&"fart_clouds").size(), 0, "no fog anywhere before it is thrown")
+	var from: Vector3 = spot + Vector3(-7, 1.4, 0)
+	grenade.throw_from(from, Vector3(8, 2, 0), null)
+	await wait_physics(140)
+	check(not is_instance_valid(grenade), "the grenade is spent")
+	var cloud: FartCloud = get_tree().get_first_node_in_group(&"fart_clouds") as FartCloud
+	check(cloud != null and cloud.big, "fog is out, and it is the room-filling kind")
+	check(cloud.global_position.x > from.x + 3.0, "where the grenade landed, not where it was thrown from")
+	check(cloud.radius > T.fart_big_radius * 0.8, "rolled out to full size (%.1f m)" % cloud.radius)
+	check(Sfx.history.has(&"fart"), "with the noise")
+
+
+func test_fart_grenade_chokes_dudes_to_death_and_spares_gas_masks() -> void:
+	var spot: Vector3 = await _empty_room()
+	var dude: PinkDude = Game.spawn_dude(spot + Vector3(1.5, 0, 0), true)
+	var other: PinkDude = Game.spawn_dude(spot + Vector3(-1.5, 0, -2.0), true, &"rifle")
+	var trooper: PinkDude = Game.spawn_dude(spot + Vector3(0, 0, 2.5), true, &"shield")
+	for d: PinkDude in [dude, other, trooper]:
+		d.sense_override = true
+	var grenade: FartGrenade = FartGrenade.create()
+	Game.entities_root(self).add_child(grenade)
+	grenade.global_position = spot + Vector3(0, 0.3, 0)
+	grenade.go_off()
+	await wait_physics(60)
+	check(dude.choking and other.choking, "both are choking")
+	check(not dude.has_weapon(), "and have dropped their guns to grab their throats")
+	await wait_physics(int(T.fart_kill_time * 60.0) + 40)
+	check(not is_instance_valid(dude) or not dude.alive, "the first one died of it")
+	check(not is_instance_valid(other) or not other.alive, "so did the second")
+	check(is_instance_valid(trooper) and trooper.alive, "the trooper's gas mask saved him")
+
+
+func test_shooting_a_fart_grenade_sets_it_off() -> void:
+	var spot: Vector3 = await _empty_room()
+	var grenade: FartGrenade = FartGrenade.create()
+	Game.entities_root(self).add_child(grenade)
+	grenade.global_position = spot + Vector3(0, 1.0, 0)
+	await wait_physics(2)
+	BulletPool.for_node(Game.player).fire(spot + Vector3(-4, 1.0, 0), Vector3.RIGHT, null)
+	await wait_physics(40)
+	check(not is_instance_valid(grenade), "gone")
+	check(get_tree().get_nodes_in_group(&"fart_clouds").size() == 1, "fog where it lay")
+
+
+func test_no_floor_has_fog_lying_about_any_more() -> void:
+	for floor_name: String in ["f15_restrooms", "f18_beanworks"]:
+		check(Game.load_level(floor_name), "%s loads" % floor_name)
+		await wait_physics(2)
+		check_eq(get_tree().get_nodes_in_group(&"fart_clouds").size(), 0, "%s starts with clean air" % floor_name)
+		var grenades: int = 0
+		for node: Node in get_tree().get_nodes_in_group(&"pickups"):
+			if node is FartGrenade:
+				grenades += 1
+		check(grenades >= 5, "%s has stink grenades to find (%d)" % [floor_name, grenades])

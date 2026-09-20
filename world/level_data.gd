@@ -23,7 +23,6 @@ var props: Array[Dictionary] = []
 var wave_points: Array[Vector2i] = []
 ## {cell: Vector2i, icy: bool}
 var puddles: Array[Dictionary] = []
-var fart_cells: Array[Vector2i] = []
 ## Cells of deep pool. The floor is cut away under them.
 var deep_cells: Array[Vector2i] = []
 ## &"director", &"brute" or &"warden"

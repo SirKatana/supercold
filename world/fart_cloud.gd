@@ -1,5 +1,7 @@
 class_name FartCloud
 extends Area3D
+## The green fog a stink grenade lets out. (It can also drift on its own as a small puff and be
+## shot open, which is how it first worked; floors no longer place any, the grenade is the way.)
 ## A bank of green fog drifting round the floor. It is drawn as dozens of soft overlapping
 ## puffs that always face the camera, denser near the floor, so it reads as fog and not a shape. Small, it makes a dude who walks through it gag.
 ## Shoot it (or punch, stab or hit it with anything) and it bursts to fill a room: every dude
@@ -76,6 +78,16 @@ func _layout() -> void:
 		# Seventy puffs on top of each other go solid. The burst cloud is drawn much thinner per
 		# puff so you can still see the dudes choking inside it, thinnest at head height.
 		puff.transparency = clampf((0.88 + o.y * 0.08) if big else 0.0, 0.0, 1.0) if _big_left >= 1.5 or not big else maxf(puff.transparency, 1.0 - _big_left / 1.5)
+
+
+## What a stink grenade does: fog, already bursting, rolling out from `at`.
+static func release(parent: Node, at: Vector3) -> FartCloud:
+	var cloud := FartCloud.new()
+	cloud.name = "FartCloud"
+	parent.add_child(cloud)
+	cloud.global_position = Vector3(at.x, 1.1, at.z)
+	cloud.burst()
+	return cloud
 
 
 func on_bullet_hit(_bullet: Node, _point: Vector3, _normal: Vector3) -> void:
