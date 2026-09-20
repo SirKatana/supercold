@@ -43,6 +43,7 @@ func _run() -> void:
 	var game: Node = root.get_node(^"Game")
 	game.set(&"god_mode", true)
 	game.set(&"fast_elevators", true)
+	root.get_node(^"AdService").set(&"auto_result", 1)
 	var floors: PackedStringArray = game.get(&"FLOORS")
 	var total: int = 0
 	var passed: int = 0

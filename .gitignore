@@ -3,3 +3,6 @@ build/
 *.tmp
 *.translation
 export_credentials.cfg
+
+# The raw screen recording. The game ships ads/the_last_ward.ogv, converted from it.
+/*.mp4

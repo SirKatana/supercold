@@ -11,6 +11,7 @@ var _pips: HBoxContainer
 var _words: WordFlash
 var _intro: Label
 var _hint: Label
+var _helper_clock: Label
 
 
 func _ready() -> void:
@@ -59,6 +60,17 @@ func _ready() -> void:
 	_hint.add_theme_color_override(&"font_color", Color(0.04, 0.04, 0.05))
 	add_child(_hint)
 
+	_helper_clock = Label.new()
+	_helper_clock.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_helper_clock.offset_left = -260
+	_helper_clock.offset_right = -18
+	_helper_clock.offset_top = 12
+	_helper_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_helper_clock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_helper_clock.add_theme_font_size_override(&"font_size", 24)
+	_helper_clock.add_theme_color_override(&"font_color", Color(0.85, 0.10, 0.08))
+	add_child(_helper_clock)
+
 	_words = WordFlash.new()
 	add_child(_words)
 
@@ -82,6 +94,8 @@ func _process(delta: float) -> void:
 		_debug.visible = not _debug.visible
 	if Game.player != null and is_instance_valid(Game.player) and Game.player.alive:
 		_prompt_shield()
+	var left: int = int(ceilf(Game.helper_time_left))
+	_helper_clock.text = "HELPER %d:%02d" % [left / 60, left % 60] if left > 0 else ""
 	if _debug.visible:
 		_debug.text = "world_scale %.2f   fps %d" % [TimeManager.world_scale, Engine.get_frames_per_second()]
 

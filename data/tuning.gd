@@ -80,6 +80,19 @@ extends Resource
 @export var barrel_chain_delay: float = 0.12
 @export var barrel_throw_speed: float = 11.0
 
+@export_group("Helper")
+## Die this many times on one floor and the helper capsule is waiting outside the lift.
+@export var helper_deaths_needed: int = 3
+## Real seconds of help. It also ends the moment the floor is clear.
+@export var helper_seconds: float = 180.0
+@export var helper_speed: float = 4.4
+@export var helper_follow_distance: float = 3.5
+@export var helper_aim_time: float = 0.35
+@export var helper_cadence: float = 0.55
+@export var helper_sight: float = 34.0
+## The helper is earned this far into the 57 second ad. Closing it sooner earns nothing.
+@export var ad_reward_after: float = 20.0
+
 @export_group("Pink dude")
 @export var dude_speed: float = 3.2
 @export var dude_run_speed: float = 4.3

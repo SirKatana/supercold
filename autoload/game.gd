@@ -9,6 +9,7 @@ signal enemy_killed(remaining: int)
 signal run_finished
 ## The player stepped out of the arrival elevator. The HUD announces the level on this.
 signal floor_announced(label: String, intro: String)
+signal helper_changed(active: bool)
 
 enum State { TITLE, PLAYING, DEAD, CLEARED, ENDING }
 
@@ -29,6 +30,11 @@ var alive_enemies: int = 0
 ## Debug and test aid: the player cannot die.
 var god_mode: bool = false
 var deaths: int = 0
+## Deaths on the current floor. Three of them bring out the helper capsule.
+var deaths_this_floor: int = 0
+## Real seconds of hired help left. Survives a death and restart, ends when the floor is clear.
+var helper_time_left: float = 0.0
+var helper: Helper = null
 ## Tests and the smoke bot: doors are already open and rides take a blink.
 var fast_elevators: bool = false
 ## Set while reloading after a death, so the retry starts almost at once.
@@ -57,8 +63,19 @@ func _set_state(next: State) -> void:
 
 func start_run(from_floor: int = 0) -> void:
 	deaths = 0
+	deaths_this_floor = 0
+	helper_time_left = 0.0
+	level_name = ""
 	run_seconds = 0.0
 	load_floor(from_floor)
+
+
+## Tests: forget the run so one test's deaths and helper do not leak into the next.
+func start_run_state_for_tests() -> void:
+	deaths = 0
+	deaths_this_floor = 0
+	helper_time_left = 0.0
+	level_name = ""
 
 
 func back_to_title() -> void:
@@ -70,6 +87,10 @@ func back_to_title() -> void:
 func _process(delta: float) -> void:
 	if (state == State.PLAYING or state == State.CLEARED) and not get_tree().paused:
 		run_seconds += delta
+	if helper_time_left > 0.0 and state == State.PLAYING and not get_tree().paused:
+		helper_time_left = maxf(0.0, helper_time_left - delta)
+		if helper_time_left <= 0.0:
+			dismiss_helper()
 
 
 func load_floor(index: int) -> bool:
@@ -133,6 +154,7 @@ func unload_level() -> void:
 		level.free()
 	level = null
 	player = null
+	helper = null
 	alive_enemies = 0
 	_pending_waves.clear()
 
@@ -145,10 +167,15 @@ func load_level(name_of_level: String) -> bool:
 		for e: String in data.errors:
 			push_error("level %s: %s" % [name_of_level, e])
 		return false
+	if name_of_level != level_name:
+		# A new floor: the death count starts over and any help that was left is gone.
+		deaths_this_floor = 0
+		helper_time_left = 0.0
 	level_name = name_of_level
 	kills = 0
 	level = LevelBuilder.build(data)
 	level_root.add_child(level)
+	_place_helper_capsule()
 	LevelBuilder.bake_navigation(level, data)
 	BulletPool.for_node(level)
 
@@ -168,8 +195,57 @@ func load_level(name_of_level: String) -> bool:
 
 	TimeManager.reset()
 	_set_state(State.PLAYING)
+	if helper_time_left > 0.0:
+		# Still under contract from before the last death: he rides up with you.
+		var out: Vector3 = -arrival.basis.z
+		_spawn_helper(data.cell_center(data.front_cell(data.player_start), 0.05) + out * 0.6 + arrival.basis.x * 0.9, arrival.basis)
 	floor_loaded.emit(data)
 	return true
+
+
+# ---------------------------------------------------------------- helper
+
+func wants_helper_capsule() -> bool:
+	return deaths_this_floor >= T.helper_deaths_needed and helper_time_left <= 0.0 and AdService.is_available()
+
+
+func _place_helper_capsule() -> void:
+	if not wants_helper_capsule():
+		return
+	var cell: Vector2i = data.capsule_cell()
+	if cell.x < 0:
+		return
+	var capsule := HelperCapsule.new()
+	capsule.name = "HelperCapsule"
+	# Under Nav, so the bake carves around it. It faces back toward the lift doors.
+	level.get_node(^"Nav").add_child(capsule)
+	var toward_lift: Vector3 = data.cell_center(data.front_cell(data.player_start)) - data.cell_center(cell)
+	capsule.transform = Transform3D(Basis(Vector3.UP, atan2(-toward_lift.x, -toward_lift.z)), data.cell_center(cell))
+
+
+## Called by the capsule once the ad has been watched.
+func hire_helper(at: Vector3, facing: Basis) -> Helper:
+	helper_time_left = T.helper_seconds
+	return _spawn_helper(at, facing)
+
+
+func _spawn_helper(at: Vector3, facing: Basis) -> Helper:
+	if helper != null and is_instance_valid(helper):
+		return helper
+	helper = Helper.new()
+	helper.name = "Helper"
+	entities_root(self).add_child(helper)
+	helper.global_transform = Transform3D(facing.orthonormalized(), Vector3(at.x, 0.05, at.z))
+	helper_changed.emit(true)
+	return helper
+
+
+func dismiss_helper() -> void:
+	helper_time_left = 0.0
+	if helper != null and is_instance_valid(helper):
+		helper.leave()
+	helper = null
+	helper_changed.emit(false)
 
 
 # ---------------------------------------------------------------- enemies
@@ -253,6 +329,7 @@ func _on_dude_died(_dude: PinkDude) -> void:
 	if is_floor_clear() and state == State.PLAYING:
 		_set_state(State.CLEARED)
 		floor_cleared.emit()
+		dismiss_helper()      # the job is done
 
 
 func _on_player_died() -> void:
@@ -260,6 +337,7 @@ func _on_player_died() -> void:
 		return
 	_set_state(State.DEAD)
 	deaths += 1
+	deaths_this_floor += 1
 	Sfx.play(&"death")
 	var serial: int = _load_serial
 	await get_tree().create_timer(T.death_restart_delay, true, false, true).timeout

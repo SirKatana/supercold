@@ -90,3 +90,14 @@ One line per call made in auto mode, with why.
 - Barrels are `Pickup` areas plus a layer-1 `StaticBody3D` that is only solid while resting. They also sit on layer 6 so bullets and punches reach them at rest, which plain pickups do not allow.
 - Walls block the blast, with one ray on layer 1 from the barrel to each chest. Cover is the whole game, so an explosion that ignored it would be unfair both ways.
 - The explosion is built from unshaded emissive spheres, a torus ring and an OmniLight, all driven by world time, with per-puff materials so each can fade on its own. First pass had one heavy black smoke lump; smoke is now 18 lighter grey puffs born over a second and drifting apart.
+- Playtest 6 (user): after three deaths a capsule with a red player offers an AI helper for three minutes in exchange for watching an ad. The user then said the ad is for their own game, The Last Ward, using the mp4 screen recording in the project root.
+- Godot 4 plays Ogg Theora only. The mp4 was converted once with `ffmpeg -vf scale=960:-2,fps=30 -c:v libtheora -q:v 6 -an` to `ads/the_last_ward.ogv` (7.5 MB, 57 s, no audio in the source). The raw mp4 is git-ignored and excluded from export; the ogv is the shipped asset. To replace the ad, convert a new file to that path.
+- A 57 second unskippable ad in the middle of a shooter would be punishing, so the helper is earned 20 s in (`ad_reward_after`) and the rest is optional. Closing before that earns nothing. The user can change the number.
+- `VideoStreamPlayer.expand` stretched the recording to the window. It now sits in an `AspectRatioContainer`.
+- The contract is counted in real seconds, because "three minutes" means a player's three minutes, and world time nearly stops whenever they stand still.
+- The helper cannot be killed: bullets stop on him. An ally who dies in ten seconds after a 20 s ad would feel like a cheat. It also makes him moving cover.
+- The helper keeps his remaining time through the player's death and restart. He was paid for. A new floor, a cleared floor, or the clock ends it.
+- "Three deaths" is per floor, and the capsule only appears when no helper time is left, so there is never a second capsule while he is hired.
+- The capsule is added under the navmesh parent before the bake and only on a plain floor cell beside the lift's exit path (`LevelData.capsule_cell`). A test loads every floor with the capsule and re-runs the reachability validator.
+- No ad network is wired. This is a desktop build with no network SDK, and an account and publisher ID are the user's to create. `AdService` is the single place a real backend would go.
+- Seen only when the capture harness quits while the ad is up: two engine lines about disconnecting `tree_entered` on the Player. It happens at quit during pause, not in play, and the test logger sees no error in the ad tests.

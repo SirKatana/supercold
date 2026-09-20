@@ -38,6 +38,7 @@ Things worth knowing:
 - Red barrels explode when shot or thrown. Walls block the blast, so use them. Do not stand next to one.
 - The wall breaker opens doors in one bash and interior walls in two. It has five hits.
 - The AK-47 is automatic: hold the trigger. The shotgun throws eight pellets.
+- Die three times on a floor and a capsule with a red figure waits outside the lift. Hit its button, watch the ad, and a red helper with an AK fights beside you for three minutes or until the floor is clear.
 - The Director takes three bullets and calls a wave each time he is hit.
 
 ## Develop

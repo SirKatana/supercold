@@ -7,7 +7,7 @@ signal hit(collider: Object, point: Vector3)
 signal deflected(by: Object)
 
 const T: Tuning = preload("res://data/tuning.tres")
-const MASK: int = 1 | 2 | 4 | 32 | 64 | 128  # world, player, enemies, breakables, flying items, shields
+const MASK: int = 1 | 2 | 4 | 32 | 64 | 128 | 256  # world, player, enemies, breakables, flying items, shields, allies
 const TRAIL_LENGTH: float = 1.8
 
 var active: bool = false

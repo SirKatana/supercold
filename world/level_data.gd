@@ -74,5 +74,18 @@ func front_cell(cell: Vector2i) -> Vector2i:
 	return cell + door_direction(cell)
 
 
+## A plain floor cell near the arrival lift for the helper capsule: beside the path out of the
+## doors, never in it. Returns (-1, -1) if the lift opens onto something cramped.
+func capsule_cell() -> Vector2i:
+	var dir: Vector2i = door_direction(player_start)
+	var side := Vector2i(dir.y, -dir.x)
+	var front: Vector2i = front_cell(player_start)
+	for offset: Vector2i in [dir + side, dir - side, dir * 2 + side, dir * 2 - side, side, -side, dir * 2 + side * 2, dir * 2 - side * 2]:
+		var cell: Vector2i = front + offset
+		if char_at(cell) == ".":
+			return cell
+	return Vector2i(-1, -1)
+
+
 func initial_enemy_count() -> int:
 	return spawns.size() + (1 if boss_cell.x >= 0 else 0)

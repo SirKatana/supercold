@@ -186,6 +186,17 @@ static func scorch() -> StandardMaterial3D:
 		return m)
 
 
+static func helper_red() -> StandardMaterial3D:
+	return _cached(&"helper_red", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.92, 0.10, 0.08)
+		m.emission_enabled = true
+		m.emission = Color(1.0, 0.10, 0.06)
+		m.emission_energy_multiplier = 0.8
+		m.roughness = 0.5
+		return m)
+
+
 static func arm() -> StandardMaterial3D:
 	return _cached(&"arm", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

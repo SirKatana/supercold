@@ -163,6 +163,27 @@ func _capture(path: String, after: float) -> void:
 		Game.entities_root(self).add_child(sidearm)
 		Game.player.hands.pick_up(sidearm)
 		await get_tree().create_timer(0.2, true, false, true).timeout
+	if (_arg("do", "") == "capsule" or _arg("do", "") == "helper") and Game.player != null:
+		Game.deaths_this_floor = 3
+		Game.fast_elevators = true
+		Game.load_level(Game.level_name)
+		var capsule: HelperCapsule = get_tree().get_first_node_in_group(&"helper_capsule") as HelperCapsule
+		var out: Vector3 = -capsule.global_transform.basis.z
+		Game.player.global_position = capsule.global_position + out * 3.6 + capsule.global_transform.basis.x * 0.9 + Vector3(0, 0.05, 0)
+		Game.player.look_at(capsule.global_position + Vector3(0, 0.0, 0))
+		Game.player.head.rotation.x = 0.06
+		Game.player.hands.visible = false
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			(node as PinkDude).sense_override = true
+		if _arg("do", "") == "helper":
+			AdService.auto_result = 1
+			capsule.press()
+			await get_tree().create_timer(0.9, true, false, true).timeout
+		else:
+			await get_tree().create_timer(1.4, true, false, true).timeout
+	if _arg("do", "") == "ad" and Game.player != null:
+		AdService.show_rewarded()
+		await get_tree().create_timer(float(_arg("ad-at", "4.0")), true, false, true).timeout
 	if _arg("do", "") == "bullet" and Game.player != null:
 		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
 		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))

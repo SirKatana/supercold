@@ -13,6 +13,7 @@ Settings="*res://autoload/settings.gd"
 TimeManager="*res://autoload/time_manager.gd"
 Sfx="*res://autoload/sfx.gd"
 Game="*res://autoload/game.gd"
+AdService="*res://autoload/ad_service.gd"
 
 [display]
 
@@ -82,6 +83,7 @@ debug_overlay={
 3d_physics/layer_6="breakables"
 3d_physics/layer_7="flying_items"
 3d_physics/layer_8="shields"
+3d_physics/layer_9="allies"
 
 [physics]
 
