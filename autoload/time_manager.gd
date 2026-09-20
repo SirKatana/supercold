@@ -8,6 +8,9 @@ signal scale_changed(scale: float)
 const T: Tuning = preload("res://data/tuning.tres")
 
 var world_scale: float = 1.0
+## Seconds of world time since boot. Shaders read it as the global `world_time`, so water
+## and anything else animated on the GPU slows down with the world.
+var world_time: float = 0.0
 ## When >= 0 the formula is bypassed (menus, tests, hit pause).
 var override_scale: float = -1.0
 
@@ -76,6 +79,8 @@ func _process(delta: float) -> void:
 	_burst_left = maxf(0.0, _burst_left - delta)
 	if not is_equal_approx(previous, world_scale):
 		scale_changed.emit(world_scale)
+	world_time += world_delta(delta)
+	RenderingServer.global_shader_parameter_set(&"world_time", world_time)
 	_push_to_group()
 
 

@@ -21,7 +21,8 @@ func _ready() -> void:
 
 	var mi := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(T.cell_size * (1.0 if icy else 0.96), 0.012, T.cell_size * (1.0 if icy else 0.96))
+	# Full cell, so neighbouring wet cells join into one sheet with no grid showing.
+	mesh.size = Vector3(T.cell_size, 0.012, T.cell_size)
 	mesh.material = Mats.ice_floor() if icy else Mats.water()
 	mi.mesh = mesh
 	mi.position.y = 0.008

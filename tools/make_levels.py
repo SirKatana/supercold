@@ -411,7 +411,7 @@ def f8_archive():
 def f9_pool():
     g = Grid(38, 24)
     g.room(1, 1, 36, 22)
-    g.fill("~", 11, 7, 26, 16)          # the pool
+    g.fill("W", 11, 7, 26, 16)          # the pool: deep water, a real basin
     g.fill("~", 9, 5, 28, 6); g.fill("~", 9, 17, 28, 18)     # splashed deck
     g.put("P", (1, 11)); g.put("X", (36, 12))
     g.put("o", (5, 3), (5, 20), (18, 3), (18, 20), (32, 3), (32, 20), (8, 11), (30, 12))

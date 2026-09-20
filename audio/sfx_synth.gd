@@ -32,6 +32,10 @@ static func build_all() -> Dictionary[StringName, AudioStream]:
 			var crack: float = n * exp(-t * 28.0) * 1.2
 			var rumble: float = n * sin(TAU * 38.0 * t) * exp(-t * 4.5) * 0.7
 			return clampf((thump * 1.1 + crack + rumble) * 0.9, -1.0, 1.0)),
+		&"splash": _render(0.7, func(t: float, n: float) -> float:
+			var plunge: float = sin(TAU * (130.0 - t * 110.0) * t) * exp(-t * 9.0) * 0.6
+			var spray: float = n * exp(-t * 5.5) * (0.55 + 0.45 * sin(TAU * (900.0 + 700.0 * sin(t * 40.0)) * t))
+			return plunge + spray * 0.6),
 		&"slip": _render(0.4, func(t: float, n: float) -> float:
 			return sin(TAU * (900.0 - t * 1500.0) * t) * exp(-t * 7.0) * 0.4 + n * exp(-t * 18.0) * 0.25),
 		&"melt": _render(0.9, func(t: float, n: float) -> float:

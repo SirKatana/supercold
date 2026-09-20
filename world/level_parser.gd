@@ -5,7 +5,7 @@ extends RefCounted
 ## `#` wall  `.` floor  ` ` void  `D` door  `G` glass  `P` player  `X` exit
 ## `H` shield trooper  `g` gas barrel  `q` runner  `Z` buried biter  `N` sniper  `U` SMG dude
 ## `n` knife  `F` freeze bomb  `M` SMG  `V` revolver  `Y` sniper rifle
-## `~` water  `i` ice  `f` drifting fart cloud
+## `~` wet floor  `W` deep water (a real pool)  `i` ice  `f` drifting fart cloud
 ## `a` pistol dude  `R` rifle dude  `S` shotgun dude  `u` unarmed dude  `K` AK-47  `T` shotgun
 ##  `B` boss  `w` wave point  `t` trigger
 ## `r` wall breaker  `p` pistol  `b` bottle  `m` mug  `k` keyboard  `l` stapler
@@ -16,7 +16,7 @@ const PICKUP_KINDS: Dictionary[String, StringName] = {
 	"n": &"knife", "F": &"freeze", "M": &"smg", "V": &"revolver", "Y": &"sniper",
 }
 const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar"}
-const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqZNU~if"
+const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqZNU~ifW"
 const DUDE_KINDS: Dictionary[String, StringName] = {
 	"a": &"pistol", "u": &"", "R": &"rifle", "S": &"shotgun", "H": &"shield",
 	"q": &"runner", "Z": &"zombie", "N": &"sniper", "U": &"smg",
@@ -70,6 +70,8 @@ static func parse(text: String, json_text: String = "") -> LevelData:
 				data.puddles.append({"cell": cell, "icy": c == "i"})
 			elif c == "f":
 				data.fart_cells.append(cell)
+			elif c == "W":
+				data.deep_cells.append(cell)
 			elif c == "w":
 				data.wave_points.append(cell)
 			elif c == "t":

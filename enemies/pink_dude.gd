@@ -502,6 +502,12 @@ func breathe_gas(wd: float) -> void:
 		change_state(&"choking")
 
 
+## Went into the pool. Pink dudes cannot swim.
+func drown() -> void:
+	Sfx.play(&"splash", global_position)
+	die(global_position, Vector3.DOWN * 0.2)
+
+
 ## The super gun. No ragdoll: he melts where he stands.
 func on_laser(_direction: Vector3) -> void:
 	die(global_position, Vector3.ZERO, &"melt")

@@ -21,6 +21,9 @@ var ragdoll: Ragdoll
 var shield: Shield
 ## Seconds of green screen left. A fart cloud tops it up while the player stands in one.
 var in_stink: float = 0.0
+## Seconds left of being in deep water (the pool keeps topping it up), and where its surface is.
+var in_water: float = 0.0
+var water_surface: float = 0.0
 ## The player's own body: same rig as the dudes. Head and arms are hidden in first person,
 ## so looking down shows a chest, hips and walking legs.
 var body: Humanoid
@@ -74,6 +77,25 @@ func _ready() -> void:
 	camera.add_child(hands)
 
 
+## Chest under the surface.
+func swimming() -> bool:
+	return in_water > 0.0 and global_position.y + 1.05 < water_surface
+
+
+func head_under_water() -> bool:
+	return in_water > 0.0 and camera.global_position.y < water_surface
+
+
+## Hold jump to rise, let go to sink slowly. At the surface against the wall, jump hauls you out.
+func _swim(delta: float) -> void:
+	var rising: bool = alive and input_enabled and Input.is_action_pressed(&"jump")
+	var target: float = T.swim_up_speed if rising else -T.swim_sink_speed
+	velocity.y = move_toward(velocity.y, target, 14.0 * delta)
+	var near_surface: bool = global_position.y + T.eye_height > water_surface - 0.25
+	if rising and near_surface and is_on_wall():
+		velocity.y = T.swim_hop_out
+
+
 func _pose_body(delta: float) -> void:
 	var real: Vector3 = get_real_velocity()
 	var moving: float = clampf(Vector2(real.x, real.z).length() / T.walk_speed, 0.0, 1.0)
@@ -110,6 +132,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	in_stink = maxf(0.0, in_stink - delta)
+	in_water = maxf(0.0, in_water - delta)
 	_look_rate = lerpf(_look_rate, _look_accum_deg / delta, 0.5)
 	_look_accum_deg = 0.0
 
@@ -117,13 +140,17 @@ func _physics_process(delta: float) -> void:
 	if alive and input_enabled:
 		var input: Vector2 = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
 		wish = (global_transform.basis * Vector3(input.x, 0.0, input.y)).normalized() * T.walk_speed
-		if Input.is_action_just_pressed(&"jump") and is_on_floor():
+		if swimming():
+			wish = wish.normalized() * T.swim_speed if wish.length() > 0.01 else Vector3.ZERO
+		elif Input.is_action_just_pressed(&"jump") and is_on_floor():
 			velocity.y = T.jump_velocity
 
 	var horizontal := Vector2(velocity.x, velocity.z).move_toward(Vector2(wish.x, wish.z), T.accel * delta)
 	velocity.x = horizontal.x
 	velocity.z = horizontal.y
-	if not is_on_floor():
+	if swimming():
+		_swim(delta)
+	elif not is_on_floor():
 		velocity.y -= T.gravity * delta
 	move_and_slide()
 

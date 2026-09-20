@@ -130,3 +130,9 @@ One line per call made in auto mode, with why.
 - Hands to the throat needed inverse kinematics. `Humanoid.two_bone` solves the elbow with the law of cosines and a pole vector. The hand goal is blended from the swing pose to the throat and the arm is always solved, so limb lengths stay exact through the blend. First pole pointed sideways and folded arms looked like a short-armed T-pose; the pole now points down and slightly out.
 - Choking dudes drop their gun. Two hands on a throat cannot hold a rifle, and it gives the player guns to grab out of the fog.
 - `Sfx.history` records the last 32 sound names so a test can assert the gag and the death wheeze were actually asked for.
+- Playtest 11 (user): the water looked nothing like water, and the pool should be deep with a real water shader.
+- One spatial shader does both the pool and wet floors, with parameters. Ripples are computed per pixel from world position, so even single-quad puddles move, and the pool's subdivided plane is also displaced in the vertex stage. Colour under the surface goes out as emission because the screen texture is already lit; the lights only add the glint.
+- Time is a global shader uniform fed by `TimeManager`, not `TIME`. Water that kept flowing at full speed while the world crawled would have broken the one rule of the game.
+- The pool is a real hole. Floor slabs are generated with the pool cut out and are 2.6 m thick so their cut faces are the pool walls. The bottom sits outside the navmesh parent; otherwise `map_get_closest_point` could hand a dude a spot on the pool floor and leave him stuck.
+- The player can fall in. Drowning the player would be a cheap death, so he swims: hold jump to rise, and at the surface against a wall the same key hauls him out. Dudes cannot swim, which makes the wet deck round the pool a weapon.
+- Wet cells are now full-cell quads. At 96 percent they showed a grid of seams.

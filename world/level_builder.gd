@@ -50,6 +50,7 @@ static func build(data: LevelData) -> Node3D:
 	_place_breakables(data, nav, entities)
 	_place_exit_and_triggers(data, nav, entities)
 	_place_hazards(data, entities)
+	_build_pools(data, level, entities)
 	return level
 
 
@@ -198,12 +199,110 @@ static func make_box(size: Vector3, material: Material, layer: int = LAYER_WORLD
 	return body
 
 
+## Merges every cell that passes `wanted` into rectangles, the same way walls are merged.
+static func cell_rects(data: LevelData, wanted: Callable) -> Array[Rect2i]:
+	var rects: Array[Rect2i] = []
+	var open: Dictionary[Vector2i, int] = {}
+	for y: int in data.height:
+		var next_open: Dictionary[Vector2i, int] = {}
+		var x: int = 0
+		while x < data.width:
+			if not wanted.call(data.rows[y][x]):
+				x += 1
+				continue
+			var x0: int = x
+			while x < data.width and wanted.call(data.rows[y][x]):
+				x += 1
+			var key := Vector2i(x0, x)
+			if open.has(key):
+				var index: int = open[key]
+				rects[index] = Rect2i(rects[index].position, rects[index].size + Vector2i(0, 1))
+				next_open[key] = index
+			else:
+				rects.append(Rect2i(x0, y, x - x0, 1))
+				next_open[key] = rects.size() - 1
+		open = next_open
+	return rects
+
+
+static func _rect_box(data: LevelData, rect: Rect2i, top: float, thickness: float, material: Material) -> StaticBody3D:
+	var size := Vector3(rect.size.x * data.cell_size, thickness, rect.size.y * data.cell_size)
+	var body: StaticBody3D = make_box(size, material)
+	body.position = Vector3((rect.position.x + rect.size.x * 0.5) * data.cell_size, top - thickness * 0.5,
+		(rect.position.y + rect.size.y * 0.5) * data.cell_size)
+	return body
+
+
 static func _build_floor(data: LevelData, parent: Node3D) -> void:
-	var size := Vector3(data.width * data.cell_size, 0.5, data.height * data.cell_size)
-	var body: StaticBody3D = make_box(size, floor_material)
-	body.name = "Floor"
-	body.position = Vector3(size.x * 0.5, -0.25, size.z * 0.5)
-	parent.add_child(body)
+	if data.deep_cells.is_empty():
+		var size := Vector3(data.width * data.cell_size, 0.5, data.height * data.cell_size)
+		var body: StaticBody3D = make_box(size, floor_material)
+		body.name = "Floor"
+		body.position = Vector3(size.x * 0.5, -0.25, size.z * 0.5)
+		parent.add_child(body)
+		return
+	# A floor with a pool in it: slabs everywhere except over the water, and thick enough
+	# that their cut sides are the pool walls.
+	var thick: float = T.pool_depth + 0.4
+	for rect: Rect2i in cell_rects(data, func(c: String) -> bool: return c != "W"):
+		var slab: StaticBody3D = _rect_box(data, rect, 0.0, thick, floor_material)
+		slab.name = "Floor"
+		parent.add_child(slab)
+
+
+## The basin under each pool: tiled bottom with lane lines, the water itself, and ladder rails.
+## The bottom is NOT under the navmesh parent, so dudes never try to path across it.
+static func _build_pools(data: LevelData, level: Node3D, entities: Node3D) -> void:
+	for rect: Rect2i in cell_rects(data, func(c: String) -> bool: return c == "W"):
+		var bottom: StaticBody3D = _rect_box(data, rect, -T.pool_depth, 0.4, Mats.pool_tile())
+		bottom.name = "PoolBottom"
+		level.add_child(bottom)
+		var centre := Vector3((rect.position.x + rect.size.x * 0.5) * data.cell_size, 0.0, (rect.position.y + rect.size.y * 0.5) * data.cell_size)
+		var long_x: bool = rect.size.x >= rect.size.y
+		var lanes: int = maxi(2, int((rect.size.y if long_x else rect.size.x) * data.cell_size / 2.5))
+		for i: int in range(1, lanes):
+			var line := MeshInstance3D.new()
+			var mesh := BoxMesh.new()
+			var across: float = (rect.size.y if long_x else rect.size.x) * data.cell_size
+			var along: float = (rect.size.x if long_x else rect.size.y) * data.cell_size - 3.0
+			mesh.size = Vector3(along, 0.02, 0.25) if long_x else Vector3(0.25, 0.02, along)
+			mesh.material = Mats.pool_line()
+			line.mesh = mesh
+			var offset: float = -across * 0.5 + across * i / lanes
+			line.position = centre + Vector3(0.0 if long_x else offset, -T.pool_depth + 0.012, offset if long_x else 0.0)
+			level.add_child(line)
+		# Pale tile lining the four walls, so the sides are not the colour of the deck.
+		for side: int in 4:
+			var lining := MeshInstance3D.new()
+			var mesh := BoxMesh.new()
+			var along_x: bool = side < 2
+			var length: float = (rect.size.x if along_x else rect.size.y) * data.cell_size
+			mesh.size = Vector3(length, T.pool_depth, 0.04) if along_x else Vector3(0.04, T.pool_depth, length)
+			mesh.material = Mats.pool_tile()
+			lining.mesh = mesh
+			var half: float = (rect.size.y if along_x else rect.size.x) * data.cell_size * 0.5 - 0.02
+			var sign: float = -1.0 if side % 2 == 0 else 1.0
+			lining.position = centre + Vector3(0.0 if along_x else half * sign, -T.pool_depth * 0.5, half * sign if along_x else 0.0)
+			level.add_child(lining)
+		# Ladder rails at two corners.
+		for corner: Vector2 in [Vector2(-1, -1), Vector2(1, 1)]:
+			for rail: float in [-0.25, 0.25]:
+				var tube := MeshInstance3D.new()
+				var mesh := CylinderMesh.new()
+				mesh.top_radius = 0.025
+				mesh.bottom_radius = 0.025
+				mesh.height = 1.9
+				mesh.material = Mats.steel()
+				tube.mesh = mesh
+				tube.position = centre + Vector3(corner.x * (rect.size.x * data.cell_size * 0.5 - 0.12), -0.25,
+					corner.y * (rect.size.y * data.cell_size * 0.5 - 1.0) + rail)
+				level.add_child(tube)
+		var water := DeepWater.new()
+		water.name = "Pool"
+		water.rect = rect
+		water.cell_size = data.cell_size
+		water.position = centre
+		entities.add_child(water)
 
 
 static func _build_ceiling(data: LevelData, parent: Node3D) -> void:

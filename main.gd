@@ -211,7 +211,7 @@ func _capture(path: String, after: float) -> void:
 				centre = d.cell_center(Vector2i(int(parts[2]), int(parts[3])), 0.05)
 		Game.player.global_position = front
 		Game.player.look_at(Vector3(centre.x, front.y, centre.z))
-		Game.player.head.rotation.x = -0.10
+		Game.player.head.rotation.x = float(_arg("pitch", "-0.10"))
 		Game.player.hands.visible = false
 		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 			(node as PinkDude).sense_override = true

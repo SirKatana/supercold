@@ -88,6 +88,12 @@ extends Resource
 @export var slip_speed: float = 1.6
 @export var slip_seconds: float = 2.4
 @export var slip_again_after: float = 4.0
+## Deep water: how far down the pool goes, and how the player moves in it.
+@export var pool_depth: float = 2.2
+@export var swim_speed: float = 3.0
+@export var swim_up_speed: float = 3.2
+@export var swim_sink_speed: float = 1.4
+@export var swim_hop_out: float = 5.4
 ## Fart cloud: drifting it is small, shot it fills a room. A dude who breathes it this long dies.
 @export var fart_small_radius: float = 1.5
 @export var fart_big_radius: float = 6.5

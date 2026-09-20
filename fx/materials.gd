@@ -199,13 +199,57 @@ static func ice() -> StandardMaterial3D:
 		return m)
 
 
-static func water() -> StandardMaterial3D:
-	return _cached(&"water", func() -> StandardMaterial3D:
+static var _water_shallow: ShaderMaterial
+static var _water_deep: ShaderMaterial
+
+
+## A wet patch of floor: a film of water. Ripples, glints and bends what is under it, no foam
+## and no waves, because there is a centimetre of it.
+static func water() -> ShaderMaterial:
+	if _water_shallow == null:
+		_water_shallow = ShaderMaterial.new()
+		_water_shallow.shader = preload("res://fx/water.gdshader")
+		_water_shallow.set_shader_parameter(&"wave_height", 0.0)
+		_water_shallow.set_shader_parameter(&"ripple", 0.75)
+		_water_shallow.set_shader_parameter(&"refraction", 0.012)
+		_water_shallow.set_shader_parameter(&"foam_width", 0.0)
+		_water_shallow.set_shader_parameter(&"clarity", 0.35)
+		_water_shallow.set_shader_parameter(&"caustics", 0.0)
+		_water_shallow.set_shader_parameter(&"shallow_color", Color(0.55, 0.78, 0.88))
+		_water_shallow.set_shader_parameter(&"deep_color", Color(0.20, 0.45, 0.62))
+	return _water_shallow
+
+
+## The pool: two metres of it.
+static func water_deep() -> ShaderMaterial:
+	if _water_deep == null:
+		_water_deep = ShaderMaterial.new()
+		_water_deep.shader = preload("res://fx/water.gdshader")
+	return _water_deep
+
+
+static func splash() -> StandardMaterial3D:
+	return _cached(&"splash", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()
-		m.albedo_color = Color(0.25, 0.55, 0.85, 0.55)
+		m.albedo_color = Color(0.85, 0.95, 1.0, 0.85)
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		m.metallic = 0.3
-		m.roughness = 0.04
+		m.roughness = 0.05
+		return m)
+
+
+static func pool_tile() -> StandardMaterial3D:
+	return _cached(&"pool_tile", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.72, 0.90, 0.93)
+		m.roughness = 0.35
+		return m)
+
+
+static func pool_line() -> StandardMaterial3D:
+	return _cached(&"pool_line", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.05, 0.18, 0.36)
+		m.roughness = 0.4
 		return m)
 
 

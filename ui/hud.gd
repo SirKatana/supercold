@@ -14,6 +14,7 @@ var _hint: Label
 var _helper_clock: Label
 var _scope: ColorRect
 var _boss_name: Label
+var _underwater: float = 0.0
 var _boss_back: ColorRect
 var _boss_bar: ColorRect
 var _scope_material: ShaderMaterial
@@ -147,6 +148,10 @@ func _process(delta: float) -> void:
 		_boss_bar.size.x = 516.0 * clampf(float(health.x) / maxf(health.y, 1), 0.0, 1.0)
 	var stink: float = Game.player.in_stink if Game.player != null and is_instance_valid(Game.player) else 0.0
 	_slowmo_material.set_shader_parameter(&"stink", clampf(stink / 0.3, 0.0, 1.0))
+	var under: bool = Game.player != null and is_instance_valid(Game.player) and Game.player.head_under_water()
+	_underwater = move_toward(_underwater, 1.0 if under else 0.0, delta * 6.0)
+	_slowmo_material.set_shader_parameter(&"underwater", _underwater)
+	_slowmo_material.set_shader_parameter(&"wobble_time", Time.get_ticks_msec() / 1000.0)
 	var scoped: float = Game.player.fx.scope_amount if Game.player != null and is_instance_valid(Game.player) else 0.0
 	_scope.visible = scoped > 0.02
 	_crosshair.visible = scoped < 0.5
