@@ -47,6 +47,10 @@ var helper: Helper = null
 var has_super_gun: bool = false
 ## Furthest floor reached, for Continue on the title screen.
 var best_floor: int = 0
+## A run started from the command line for testing. Nothing is saved.
+var testing: bool = false
+## Testing: the helper is hired for free on every floor of this run.
+var free_helper: bool = false
 
 const PROGRESS_PATH: String = "user://progress.cfg"
 ## Tests and the smoke bot: doors are already open and rides take a blink.
@@ -88,6 +92,8 @@ func start_run(from_floor: int = 0) -> void:
 ## Tests: forget the run so one test's deaths and helper do not leak into the next.
 func start_run_state_for_tests() -> void:
 	has_super_gun = false
+	testing = false
+	free_helper = false
 	deaths = 0
 	deaths_this_floor = 0
 	helper_time_left = 0.0
@@ -216,6 +222,8 @@ func load_level(name_of_level: String) -> bool:
 		save_progress()
 	TimeManager.reset()
 	_set_state(State.PLAYING)
+	if free_helper and helper_time_left <= 0.0:
+		helper_time_left = T.helper_seconds
 	if helper_time_left > 0.0:
 		# Still under contract from before the last death: he rides up with you.
 		var out: Vector3 = -arrival.basis.z
@@ -245,6 +253,8 @@ func _arm_player_with_super_gun() -> void:
 
 
 func save_progress() -> void:
+	if testing:
+		return
 	var cfg := ConfigFile.new()
 	cfg.set_value("run", "best_floor", best_floor)
 	cfg.set_value("run", "has_super_gun", has_super_gun)
@@ -282,6 +292,15 @@ func _place_helper_capsule() -> void:
 	level.get_node(^"Nav").add_child(capsule)
 	var toward_lift: Vector3 = data.cell_center(data.front_cell(data.player_start)) - data.cell_center(cell)
 	capsule.transform = Transform3D(Basis(Vector3.UP, atan2(-toward_lift.x, -toward_lift.z)), data.cell_center(cell))
+
+
+## Testing shortcut: the helper, fully paid up, standing outside the lift.
+func give_free_helper() -> Helper:
+	if data == null or (helper != null and is_instance_valid(helper)):
+		return helper
+	var arrival: Transform3D = LevelBuilder.elevator_transform(data, data.player_start)
+	var at: Vector3 = data.cell_center(data.front_cell(data.player_start), 0.05) - arrival.basis.z * 0.6 + arrival.basis.x * 0.9
+	return hire_helper(at, arrival.basis)
 
 
 ## Called by the capsule once the ad has been watched.

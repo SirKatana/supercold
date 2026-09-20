@@ -49,6 +49,18 @@ Things worth knowing:
 - The super gun is a laser. It goes through everyone in line, shields too, and they melt.
 - The Director takes three bullets and calls a wave each time he is hit.
 
+## Testing shortcuts
+
+```bash
+./build/SuperCold.x86_64 9                  # start on level 9 (any number from 1 to 30)
+./build/SuperCold.x86_64 9 --helper=true    # with the helper hired for free: no deaths, no ad
+./build/SuperCold.x86_64 14 --god=true      # cannot die
+```
+
+A run started this way saves nothing, so it never moves your real Continue point. From level 11
+up you are given the super gun, as you would have it by then. With `--helper=true` he is hired
+again on every floor you reach.
+
 ## Develop
 
 ```bash

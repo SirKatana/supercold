@@ -230,3 +230,32 @@ func test_helper_survives_your_death_but_not_the_next_floor() -> void:
 	check_eq(Game.level_name, "f3_servers", "next floor")
 	check(Game.helper == null, "he did not come along")
 	check_eq(Game.deaths_this_floor, 0, "and the death count starts over")
+
+
+func test_free_helper_for_testing_needs_no_deaths_and_no_ad() -> void:
+	Game.god_mode = true
+	var ads_before: int = AdService.requests
+	check(Game.load_floor(8), "level 9 loads")
+	await wait_physics(2)
+	check_eq(Game.deaths_this_floor, 0, "nobody died")
+	var helper: Helper = Game.give_free_helper()
+	check(helper != null and is_instance_valid(helper), "helper is here")
+	check_near(Game.helper_time_left, T.helper_seconds, 1.0, "with the full three minutes")
+	check_eq(AdService.requests, ads_before, "and no ad was shown")
+	var front: Vector3 = Game.data.cell_center(Game.data.front_cell(Game.data.player_start))
+	check(helper.global_position.distance_to(front) < 3.0, "standing just outside the lift")
+	check(Game.give_free_helper() == helper, "asking twice does not make two of him")
+
+
+func test_a_test_run_never_touches_saved_progress() -> void:
+	Game.god_mode = false
+	Game.best_floor = 2
+	Game.testing = false
+	Game.save_progress()
+	Game.testing = true
+	check(Game.load_floor(20), "level 21 loads")
+	Game.best_floor = 0
+	Game.load_progress()
+	check_eq(Game.best_floor, 2, "the real Continue point is still level 3")
+	Game.testing = false
+	Game.erase_progress()

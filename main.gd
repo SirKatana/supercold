@@ -29,15 +29,36 @@ func _ready() -> void:
 	Game.state_changed.connect(_on_state_changed)
 	Game.floor_loaded.connect(_apply_theme)
 
-	Game.god_mode = _arg("god", "") != ""
+	Game.god_mode = _flag("god")
 	var level: String = _arg("level", "")
-	if level != "":
+	var level_number: int = _level_from_args()
+	if level_number > 0:
+		_start_test_run(level_number)
+	elif level != "":
 		_title.visible = false
 		Game.load_level(level)
 	else:
 		Game.state_changed.emit(Game.State.TITLE)
 	if _arg("shot", "") != "":
 		_capture.call_deferred(_arg("shot", ""), float(_arg("shot-after", "1.0")))
+
+
+## Testing: jump straight to a level, skipping the title.
+##   ./SuperCold.x86_64 9                  level 9
+##   ./SuperCold.x86_64 9 --helper=true    level 9 with the helper hired for free, no deaths, no ad
+##   ./SuperCold.x86_64 14 --god=true      cannot die
+## Progress is not saved in a test run, so it never moves your real Continue point. From level 11
+## on you get the super gun, as you would have by then.
+func _start_test_run(level_number: int) -> void:
+	_title.visible = false
+	Game.testing = true
+	if level_number >= 11:
+		Game.has_super_gun = true
+	Game.start_run(level_number - 1)
+	if _flag("helper"):
+		Game.free_helper = true
+		Game.give_free_helper()
+	print("TEST RUN level=%d (%s) helper=%s god=%s" % [level_number, Game.level_name, _flag("helper"), Game.god_mode])
 
 
 ## Every floor has its own colours and light. The first five keep the white look.
@@ -65,12 +86,33 @@ func _on_state_changed(state: Game.State) -> void:
 		_ending.show_stats(Game.run_seconds, Game.deaths)
 
 
-## Reads `--name=value` from the arguments after `--` on the command line.
+## Every argument the game was started with: the ones before a `--` and the ones after it.
+func _all_args() -> PackedStringArray:
+	var args: PackedStringArray = OS.get_cmdline_args()
+	args.append_array(OS.get_cmdline_user_args())
+	return args
+
+
+## Reads `--name=value` from the command line. A bare `--name` reads as "true".
 func _arg(arg_name: String, fallback: String) -> String:
-	for a: String in OS.get_cmdline_user_args():
+	for a: String in _all_args():
 		if a.begins_with("--%s=" % arg_name):
 			return a.trim_prefix("--%s=" % arg_name)
+		if a == "--%s" % arg_name:
+			return "true"
 	return fallback
+
+
+func _flag(arg_name: String) -> bool:
+	return _arg(arg_name, "false").to_lower() in ["true", "1", "yes", "on"]
+
+
+## Testing shortcut: `./SuperCold.x86_64 9` starts on level 9. Returns 0 if no level was given.
+func _level_from_args() -> int:
+	for a: String in _all_args():
+		if a.is_valid_int() and int(a) >= 1 and int(a) <= Game.FLOORS.size():
+			return int(a)
+	return 0
 
 
 ## Debug aid: `godot4 --path . -- --shot=/tmp/f.png --shot-after=1.5` saves one frame and quits.
