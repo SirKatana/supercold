@@ -146,6 +146,16 @@ extends Resource
 @export var warden_scale: float = 1.45
 @export var warden_glass_hits: int = 3
 
+@export_group("Security")
+## The guard waits this far outside the arrival lift, and shoots once an armed player is this far past him.
+@export var guard_distance: float = 5.0
+@export var guard_line: float = 1.2
+## He takes a weapon off a player who comes this close, or off the floor within this reach.
+@export var guard_take_range: float = 2.4
+@export var guard_floor_reach: float = 7.0
+@export var guard_cadence: float = 0.32
+@export var guard_bullet_speed: float = 2.2
+
 @export_group("Helper")
 ## Die this many times on one floor and the helper capsule is waiting outside the lift.
 @export var helper_deaths_needed: int = 3

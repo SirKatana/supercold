@@ -95,6 +95,8 @@ func primary() -> void:
 		var gun: Gun = held
 		var shot: Array[Vector3] = _shot_from_muzzle(gun)
 		if gun.fire(shot[0], shot[1], player):
+			if gun.contraband and Game.guard != null and is_instance_valid(Game.guard):
+				Game.guard._open_fire()      # you do not fire a weapon you were told to hand over
 			TimeManager.burst(T.burst_action, gun.burst_strength)
 			player.fx.kick(gun.kick)
 			_kick()
@@ -155,6 +157,11 @@ func interact() -> void:
 		held.drop(player.aim_origin() + player.aim_direction() * 0.4)
 		_set_held(null)
 	pick_up(target)
+
+
+## Security takes whatever is in the hand. The hand is simply empty afterwards.
+func surrender() -> void:
+	_set_held(null)
 
 
 ## F: take the nearest shield off the floor and wear it, or drop the one being worn.

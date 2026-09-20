@@ -24,6 +24,18 @@ static func create() -> Ram:
 	return r
 
 
+func is_weapon() -> bool:
+	return true
+
+
+func carry_state() -> Dictionary:
+	return {"kind": kind, "durability": durability}
+
+
+func apply_carry_state(state: Dictionary) -> void:
+	durability = int(state.get("durability", durability))
+
+
 func _build_mesh(root: Node3D) -> void:
 	var body := Node3D.new()
 	body.position = Vector3(0, 0.0, -0.12)

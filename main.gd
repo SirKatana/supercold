@@ -118,7 +118,7 @@ func _level_from_args() -> int:
 ## Debug aid: `godot4 --path . -- --shot=/tmp/f.png --shot-after=1.5` saves one frame and quits.
 func _capture(path: String, after: float) -> void:
 	await get_tree().create_timer(after, true, false, true).timeout
-	if _arg("do", "").begins_with("lift") and Game.player != null:
+	if _arg("do", "").begins_with("lift") and _arg("do", "") != "liftarrive" and Game.player != null:
 		var lift: Elevator = get_tree().get_first_node_in_group(&"elevator") as Elevator
 		if lift != null:
 			for node: Node in get_tree().get_nodes_in_group(&"enemies"):
@@ -169,11 +169,12 @@ func _capture(path: String, after: float) -> void:
 		var cam_at: Vector3 = Game.player.global_position
 		var ahead: Vector3 = -Game.player.global_transform.basis.z
 		var side: Vector3 = Game.player.global_transform.basis.x
+		var near: float = float(_arg("near", "3.4"))
 		var kinds: PackedStringArray = _arg("do", "").trim_prefix("dude:").split(",")
 		for i: int in kinds.size():
-			var dude: PinkDude = Game.spawn_dude(cam_at + ahead * 3.4 + side * (i - (kinds.size() - 1) * 0.5) * 1.5, kinds[i] != "none", StringName(kinds[i]))
+			var dude: PinkDude = Game.spawn_dude(cam_at + ahead * near + side * (i - (kinds.size() - 1) * 0.5) * 1.1, kinds[i] != "none", StringName(kinds[i]))
 			dude.sense_override = true
-			dude.look_at(Vector3(cam_at.x, dude.global_position.y, cam_at.z) + side * 3.0)
+			dude.look_at(Vector3(cam_at.x, dude.global_position.y, cam_at.z) + side * float(_arg("turn", "3.0")))
 			dude.aiming = i % 2 == 0
 			dude.desired_velocity = Vector3.ZERO if i % 2 == 0 else -dude.global_transform.basis.z * 3.0
 			dude._walk_phase = 1.3
@@ -181,6 +182,13 @@ func _capture(path: String, after: float) -> void:
 			for f: int in 30:
 				dude._animate(1.0 / 60.0)
 		Game.player.hands.visible = false
+		if _flag("kill"):
+			# Shoot everyone in the line-up, then wait a moment so things are in the air.
+			TimeManager.override_scale = 1.0
+			for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+				if not node.is_queued_for_deletion():
+					(node as PinkDude).on_bullet_hit(null, (node as PinkDude).global_position + Vector3.UP, Vector3.UP)
+			await get_tree().create_timer(0.45, true, false, true).timeout
 		await get_tree().create_timer(0.2, true, false, true).timeout
 	if (_arg("do", "") == "barrel" or _arg("do", "").begins_with("boom")) and Game.player != null:
 		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
@@ -345,6 +353,30 @@ func _capture(path: String, after: float) -> void:
 		pool.fire(eye + ahead * 1.1 - side * 1.2, (side + ahead * 0.15).normalized(), null)
 		pool.fire(eye + ahead * 1.5 - side * 1.0 + Vector3.UP * 0.2, (side + ahead * 0.1).normalized(), null, 0.6)
 		await get_tree().create_timer(0.30, true, false, true).timeout
+	if _arg("do", "") == "guard" and Game.player != null:
+		Game.fast_elevators = true
+		Game.carried = {"kind": &"rifle", "ammo": 30}
+		Game.load_level(Game.level_name)
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			(node as PinkDude).sense_override = true
+		var g: SecurityGuard = Game.guard
+		Game.player.global_position = g.global_position - g.global_transform.basis.z * float(_arg("near", "3.0")) + Vector3(0, 0.05, 0)
+		Game.player.look_at(g.global_position)
+		Game.player.head.rotation.x = 0.0
+		await get_tree().create_timer(0.6, true, false, true).timeout
+	if _arg("do", "") == "liftarrive" and Game.player != null:
+		Game.fast_elevators = false
+		var exit_lift: Elevator = get_tree().get_first_node_in_group(&"elevator") as Elevator
+		var out: Vector3 = -exit_lift.global_transform.basis.z
+		Game.player.global_position = exit_lift.global_position + out * 4.2 + exit_lift.global_transform.basis.x * 1.2 + Vector3(0, 0.05, 0)
+		Game.player.look_at(exit_lift.global_position + Vector3(0, 0.2, 0))
+		Game.player.hands.visible = false
+		if _arg("at", "") != "before":
+			for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+				(node as PinkDude).die()
+			await get_tree().create_timer(float(_arg("at", "1.2")), true, false, true).timeout
+		else:
+			await get_tree().create_timer(0.3, true, false, true).timeout
 	if _arg("do", "") == "pour" and Game.player != null:
 		Game.player.global_position = Game.data.cell_center(Vector2i(3, 8), 0.05)
 		Game.player.look_at(Game.data.cell_center(Vector2i(12, 8), 0.05))

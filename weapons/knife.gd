@@ -14,6 +14,10 @@ static func create() -> Knife:
 	return k
 
 
+func is_weapon() -> bool:
+	return true
+
+
 func _build_mesh(root: Node3D) -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = MeshKit.cached(&"knife", _model)

@@ -30,6 +30,11 @@ func voice_name_id() -> StringName:
 	return &"name_zombie"
 
 
+## He came out of the floor. He lost his a long time ago.
+func wears_shades() -> bool:
+	return false
+
+
 func seeks_cover() -> bool:
 	return false
 

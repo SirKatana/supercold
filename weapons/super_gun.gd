@@ -22,6 +22,11 @@ static func create(rounds: int = -1) -> SuperGun:
 	return g
 
 
+## It is yours. You won it. Security has been told.
+func is_weapon() -> bool:
+	return false
+
+
 func mesh_key() -> StringName:
 	return &"super_gun"
 

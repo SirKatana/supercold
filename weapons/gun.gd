@@ -42,6 +42,18 @@ var enemy_range: float = 16.0
 var enemy_aim_time: float = 0.7
 
 
+func is_weapon() -> bool:
+	return true
+
+
+func carry_state() -> Dictionary:
+	return {"kind": kind, "ammo": ammo}
+
+
+func apply_carry_state(state: Dictionary) -> void:
+	ammo = int(state.get("ammo", ammo))
+
+
 func mesh_key() -> StringName:
 	return &""
 

@@ -20,6 +20,14 @@ static func create() -> WaterBucket:
 	return b
 
 
+func carry_state() -> Dictionary:
+	return {"kind": kind, "full": full}
+
+
+func apply_carry_state(state: Dictionary) -> void:
+	full = bool(state.get("full", full))
+
+
 func _build_mesh(root: Node3D) -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = MeshKit.cached(&"water_bucket", _model)

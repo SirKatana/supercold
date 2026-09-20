@@ -13,6 +13,16 @@ var _age: float = 0.0
 var _resting: bool = false
 
 
+## A loose object with a ready-made mesh, like a pair of sunglasses.
+static func spawn_mesh(parent: Node, at: Transform3D, initial_velocity: Vector3, mesh: Mesh) -> Debris:
+	var d: Debris = spawn(parent, at, initial_velocity)
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	d.add_child(mi)
+	return d
+
+
 static func spawn(parent: Node, at: Transform3D, initial_velocity: Vector3) -> Debris:
 	var d := Debris.new()
 	parent.add_child(d)
@@ -42,6 +52,10 @@ func _physics_process(delta: float) -> void:
 		rotation += spin * wd
 		return
 	var normal: Vector3 = hit["normal"]
+	if normal.length() < 0.5:
+		# A ray that starts inside something reports no normal. Treat it as the floor and stop.
+		normal = Vector3.UP
+		velocity = Vector3.ZERO
 	global_position = (hit["position"] as Vector3) + normal * rest_height
 	velocity = velocity.bounce(normal) * 0.3
 	spin *= 0.5

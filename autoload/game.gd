@@ -49,6 +49,9 @@ var has_super_gun: bool = false
 var best_floor: int = 0
 ## A run started from the command line for testing. Nothing is saved.
 var testing: bool = false
+## What the player was holding when the lift doors closed. It rides up with them.
+var carried: Dictionary = {}
+var guard: SecurityGuard = null
 ## Testing: the helper is hired for free on every floor of this run.
 var free_helper: bool = false
 
@@ -92,6 +95,7 @@ func start_run(from_floor: int = 0) -> void:
 ## Tests: forget the run so one test's deaths and helper do not leak into the next.
 func start_run_state_for_tests() -> void:
 	has_super_gun = false
+	carried = {}
 	testing = false
 	free_helper = false
 	deaths = 0
@@ -144,6 +148,9 @@ func announce_floor() -> void:
 
 
 func next_floor() -> void:
+	carried = {}
+	if player != null and is_instance_valid(player) and player.hands.held != null and is_instance_valid(player.hands.held):
+		carried = player.hands.held.carry_state()
 	var index: int = FLOORS.find(level_name)
 	if index < 0 or index >= FLOORS.size() - 1:
 		_set_state(State.ENDING)
@@ -177,6 +184,7 @@ func unload_level() -> void:
 	level = null
 	player = null
 	helper = null
+	guard = null
 	alive_enemies = 0
 	_pending_waves.clear()
 
@@ -195,6 +203,8 @@ func load_level(name_of_level: String) -> bool:
 		helper_time_left = 0.0
 	level_name = name_of_level
 	kills = 0
+	# Set before anything is built, so nothing in the new level sees the old floor's "cleared".
+	state = State.PLAYING
 	level = LevelBuilder.build(data)
 	level_root.add_child(level)
 	_place_helper_capsule()
@@ -215,6 +225,7 @@ func load_level(name_of_level: String) -> bool:
 	for wave: Dictionary in data.waves:
 		_pending_waves.append(wave.duplicate())
 
+	_hand_back_what_was_carried()
 	_arm_player_with_super_gun()
 	var index: int = FLOORS.find(level_name)
 	if index > best_floor and not god_mode:
@@ -249,7 +260,46 @@ func _arm_player_with_super_gun() -> void:
 		return
 	var gun: SuperGun = SuperGun.create()
 	entities_root(self).add_child(gun)
-	player.hands.pick_up(gun)
+	if not player.hands.pick_up(gun):
+		# Hands already full with something brought up in the lift. It waits at their feet.
+		gun.global_position = player.global_position + Vector3(0.3, Pickup.REST_HEIGHT, 0.2)
+
+
+## Whatever rode up in the lift is back in the player's hand. If it is a weapon, security is waiting.
+func _hand_back_what_was_carried() -> void:
+	guard = null
+	if carried.is_empty() or quick_arrival or player == null:
+		carried = {}
+		return
+	var state: Dictionary = carried
+	carried = {}
+	if StringName(state.get("kind", &"")) == &"super":
+		return      # the next floor hands over a fresh one anyway
+	var item: Pickup = LevelBuilder.create_pickup(StringName(state["kind"]))
+	item.apply_carry_state(state)
+	entities_root(self).add_child(item)
+	if not player.hands.pick_up(item):
+		item.queue_free()
+		return
+	if item.is_weapon():
+		item.contraband = true
+		_post_guard()
+
+
+func _post_guard() -> void:
+	var lift: Transform3D = LevelBuilder.elevator_transform(data, data.player_start)
+	var out: Vector3 = -lift.basis.z
+	var doors: Vector3 = data.cell_center(data.front_cell(data.player_start), 0.05)
+	# As far out as the corridor lets him stand, up to the tuned distance.
+	var space: PhysicsDirectSpaceState3D = level.get_world_3d().direct_space_state
+	var reach: float = T.guard_distance
+	var hit: Dictionary = space.intersect_ray(PhysicsRayQueryParameters3D.create(doors + Vector3.UP, doors + Vector3.UP + out * (T.guard_distance + 1.0), 1))
+	if not hit.is_empty():
+		reach = clampf(doors.distance_to(hit["position"]) - 1.2, 1.6, T.guard_distance)
+	guard = SecurityGuard.new()
+	guard.name = "SecurityGuard"
+	entities_root(self).add_child(guard)
+	guard.post(doors + out * reach, lift.origin, out)
 
 
 func save_progress() -> void:

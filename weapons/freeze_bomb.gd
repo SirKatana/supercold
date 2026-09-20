@@ -15,6 +15,10 @@ static func create() -> FreezeBomb:
 	return b
 
 
+func is_weapon() -> bool:
+	return true
+
+
 func _build_mesh(root: Node3D) -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = MeshKit.cached(&"freeze_bomb", _model)

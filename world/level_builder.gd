@@ -95,10 +95,10 @@ static func elevator_transform(data: LevelData, cell: Vector2i) -> Transform3D:
 static func _add_elevator(data: LevelData, cell: Vector2i, mode: Elevator.Mode, node_name: String,
 		geometry: Node3D, entities: Node3D) -> void:
 	var xform: Transform3D = elevator_transform(data, cell)
-	Elevator.build_shell(geometry, xform)
 	var lift := Elevator.new()
 	lift.name = node_name
 	lift.mode = mode
+	lift.shell = Elevator.build_shell(geometry, xform)
 	lift.transform = xform
 	entities.add_child(lift)
 

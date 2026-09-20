@@ -28,6 +28,8 @@ var blunt_damage: int = 1
 var hold_offset: Vector3 = Vector3.ZERO
 ## Heavy things do not fly as fast.
 var throw_speed_scale: float = 1.0
+## Brought up in the lift from the floor below. Security wants it.
+var contraband: bool = false
 
 var _mesh_root: Node3D
 
@@ -75,6 +77,20 @@ func add_box(root: Node3D, size: Vector3, at: Vector3, material: Material = null
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(mi)
 	return mi
+
+
+## Would a security guard take this off you?
+func is_weapon() -> bool:
+	return false
+
+
+## What has to survive a lift ride: enough to rebuild this exact item on the next floor.
+func carry_state() -> Dictionary:
+	return {"kind": kind}
+
+
+func apply_carry_state(_state: Dictionary) -> void:
+	pass
 
 
 func is_available() -> bool:
@@ -170,6 +186,8 @@ func step_flight(wd: float) -> void:
 
 
 func _on_flight_hit(collider: Object, point: Vector3, normal: Vector3) -> void:
+	if normal.length() < 0.5:
+		normal = Vector3.UP      # started inside something: no normal to bounce off
 	global_position = point + normal * REST_HEIGHT
 	if dangerous and collider.has_method(&"on_thrown_hit"):
 		collider.call(&"on_thrown_hit", self)

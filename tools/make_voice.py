@@ -31,8 +31,12 @@ for key, text in lines.items():
     with wave.open(wav, "wb") as f:
         voice.synthesize_wav(text, f, syn_config=config)
     # Trim the silence Piper leaves at both ends so clips can be chained into one sentence.
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", wav, "-af",
-        "silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse",
+    trim = "silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse"
+    if key.startswith("guard_"):
+        # The security guard is the same voice pitched down and slowed a little, so he is
+        # plainly a different, heavier man than the helper.
+        trim += ",asetrate=22050*0.84,aresample=22050,atempo=1.10"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", wav, "-af", trim,
         "-ac", "1", "-c:a", "libvorbis", "-q:a", "4", ogg], check=True)
     os.remove(wav)
     stamps[key] = digest

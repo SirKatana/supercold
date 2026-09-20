@@ -16,6 +16,10 @@ static func create() -> FartGrenade:
 	return g
 
 
+func is_weapon() -> bool:
+	return true
+
+
 func _build_mesh(root: Node3D) -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = MeshKit.cached(&"fart_grenade", _model)

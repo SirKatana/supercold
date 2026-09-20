@@ -41,6 +41,8 @@ Things worth knowing:
 - The wall breaker opens doors in one bash and interior walls in two. It has five hits.
 - The AK-47 is automatic: hold the trigger. The shotgun throws eight pellets.
 - Die three times on a floor and a capsule with a red figure waits outside the lift. Hit its button, watch the ad, and a red helper with an AK fights beside you for four minutes or until the floor is clear.
+- The exit elevator is not on the floor while anyone is alive. Clear the floor and it arrives with a ding.
+- Whatever you hold rides up with you. Bring a weapon and a security guard is waiting outside the lift. Walk up to him or drop it with Q and he takes it and leaves. Walk past him armed, shoot him, or fire it, and he shoots you. Mugs, bottles, buckets and the super gun are not his business.
 - Freeze bombs turn dudes to ice. Anything shatters a frozen dude, even a thrown mug.
 - Dudes running over water or ice fall over and lose their guns. You never slip.
 - A water bucket is one pour. Tip it over a dude and he goes straight down. The spill stays slippery for a minute and a half.

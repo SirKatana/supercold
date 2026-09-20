@@ -15,6 +15,8 @@ signal stepped_out
 enum Mode { EXIT, ARRIVAL }
 enum Phase { LOCKED, READY, OPENING, OPEN, CLOSING, RIDING, WAITING, DONE }
 
+const ARRIVE_SECONDS: float = 0.7
+
 const T: Tuning = preload("res://data/tuning.tres")
 const DOOR_WIDTH: float = 1.2
 const DOOR_HEIGHT: float = 2.2
@@ -24,6 +26,11 @@ var mode: Mode = Mode.EXIT
 var phase: Phase = Phase.LOCKED
 var door_open: float = 0.0
 var button: ElevatorButton
+## The solid cabin walls LevelBuilder made for this lift. An exit lift switches them on when it arrives.
+var shell: Array[StaticBody3D] = []
+## An exit lift is not there at all until the floor is clear.
+var present: bool = true
+var _arriving: float = -1.0
 
 var _panels: Array[MeshInstance3D] = []
 var _door_body: StaticBody3D
@@ -48,10 +55,11 @@ func _ready() -> void:
 	_build_sensor()
 
 	if mode == Mode.EXIT:
+		_set_present(false)
 		Game.floor_cleared.connect(_on_floor_cleared)
 		Game.enemy_killed.connect(func(_left: int) -> void: _refresh_screens())
-		if Game.state == Game.State.CLEARED:
-			_on_floor_cleared()
+		# No check of Game.state here. While a floor is being built the state still belongs to
+		# the floor before it, and "cleared" there must not bring this lift in.
 	else:
 		phase = Phase.WAITING
 		_timer = _seconds(0.25 if Game.quick_arrival else 1.1)
@@ -70,7 +78,8 @@ func _seconds(normal: float) -> float:
 
 ## The solid cabin walls, built by LevelBuilder under the navmesh parent so dudes path
 ## around the cabin. `xform` is the elevator's transform in level space.
-static func build_shell(parent: Node3D, xform: Transform3D) -> void:
+static func build_shell(parent: Node3D, xform: Transform3D) -> Array[StaticBody3D]:
+	var made: Array[StaticBody3D] = []
 	var h: float = T.wall_height
 	var jamb: float = (2.0 - DOOR_WIDTH) * 0.5
 	var boxes: Array = [
@@ -86,6 +95,8 @@ static func build_shell(parent: Node3D, xform: Transform3D) -> void:
 		body.name = "ElevatorShell"
 		body.transform = xform * Transform3D(Basis.IDENTITY, entry[1])
 		parent.add_child(body)
+		made.append(body)
+	return made
 
 
 func _visual_box(size: Vector3, at: Vector3, material: Material) -> MeshInstance3D:
@@ -198,11 +209,36 @@ func _build_sensor() -> void:
 
 # ---------------------------------------------------------------- behaviour
 
+## There or not there: drawn, solid, and able to be hit, all together.
+func _set_present(on: bool) -> void:
+	present = on
+	visible = on
+	for body: StaticBody3D in shell:
+		if is_instance_valid(body):
+			body.visible = on
+			body.collision_layer = 1 if on else 0
+	if _door_body != null:
+		_door_body.collision_layer = 1 if on else 0
+	if button != null:
+		button.collision_layer = 32 if on else 0
+	if _inside != null:
+		_inside.monitoring = on
+
+
+## The last enemy is dead: the lift arrives. It rises into place, then waits for its button.
 func _on_floor_cleared() -> void:
-	if phase == Phase.LOCKED:
-		phase = Phase.READY
-		Sfx.play(&"ding", global_position)
-		_refresh_screens()
+	if phase != Phase.LOCKED or present:
+		return
+	_set_present(true)
+	_arriving = 0.0
+	phase = Phase.READY
+	Sfx.play(&"ding", global_position)
+	Shatter.burst(Game.entities_root(self), global_position + Vector3.UP * 1.4, 18, Mats.accent(), Vector3(0.9, 1.3, 0.9), Vector3.UP * 1.5, 0.08)
+	_refresh_screens()
+	# Standing where it lands would leave the player shut inside with the button outside.
+	var p: Player = get_tree().get_first_node_in_group(&"player") as Player
+	if p != null and p.global_position.distance_to(global_position) < 1.6:
+		phase = Phase.OPENING
 
 
 ## The call button was punched, shot, or hit by something thrown.
@@ -223,6 +259,18 @@ func _process(delta: float) -> void:
 		_flash_left -= delta
 		if _flash_left <= 0.0:
 			_refresh_screens()
+	if _arriving >= 0.0:
+		# Grows up out of the floor over most of a second.
+		_arriving += delta
+		var t: float = clampf(_arriving / _seconds(ARRIVE_SECONDS), 0.0, 1.0)
+		var rise: float = 1.0 - pow(1.0 - t, 3.0)
+		scale = Vector3(1.0, maxf(rise, 0.02), 1.0)
+		for body: StaticBody3D in shell:
+			if is_instance_valid(body):
+				(body.get_child(1) as MeshInstance3D).scale.y = maxf(rise, 0.02)
+				(body.get_child(1) as MeshInstance3D).position.y = -(1.0 - rise) * 0.5 * T.wall_height
+		if t >= 1.0:
+			_arriving = -1.0
 	var door_speed: float = delta / _seconds(0.9)
 	match phase:
 		Phase.OPENING:

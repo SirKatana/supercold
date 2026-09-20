@@ -23,6 +23,15 @@ func _armed_player_facing(target: Vector3, from: Vector3) -> Ram:
 	return ram
 
 
+## Pieces of broken ram. Sunglasses knocked off a dude are debris too, and are not counted.
+func _halves() -> int:
+	var n: int = 0
+	for node: Node in get_tree().get_nodes_in_group(&"debris"):
+		if not node.is_in_group(&"lost_shades"):
+			n += 1
+	return n
+
+
 func _cool(ram: Ram) -> void:
 	ram.cooldown_left = 0.0
 
@@ -128,7 +137,7 @@ func test_ram_cracks_in_half_after_its_last_hit() -> void:
 	check(state["cracked"], "cracked signal")
 	check(not is_instance_valid(ram), "the ram is gone")
 	check(Game.player.hands.held == null, "hands are empty")
-	check_eq(get_tree().get_nodes_in_group(&"debris").size(), 2, "two halves on the floor")
+	check_eq(_halves(), 2, "two halves on the floor")
 
 
 func test_bashing_an_unbreakable_wall_is_free() -> void:
@@ -159,7 +168,7 @@ func test_thrown_ram_kills_a_dude_and_cracks_in_half() -> void:
 	await wait_physics(60)
 	check(not is_instance_valid(dude) or not dude.alive, "the dude is dead")
 	check(not is_instance_valid(ram), "the ram broke")
-	check_eq(get_tree().get_nodes_in_group(&"debris").size(), 2, "into two halves")
+	check_eq(_halves(), 2, "into two halves")
 
 
 func test_ram_bash_kills_a_dude() -> void:

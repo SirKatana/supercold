@@ -295,6 +295,23 @@ static func fart() -> StandardMaterial3D:
 		return m)
 
 
+static func security_suit() -> StandardMaterial3D:
+	return _cached(&"security_suit", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.07, 0.10, 0.20)
+		m.roughness = 0.75
+		return m)
+
+
+static func shades_lens() -> StandardMaterial3D:
+	return _cached(&"shades_lens", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.02, 0.02, 0.03)
+		m.metallic = 0.6
+		m.roughness = 0.06
+		return m)
+
+
 static func grenade_olive() -> StandardMaterial3D:
 	return _cached(&"grenade_olive", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

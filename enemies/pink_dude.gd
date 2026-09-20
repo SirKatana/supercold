@@ -91,6 +91,7 @@ func _ready() -> void:
 		body_material = Mats.pink()
 	skin = Humanoid.create(self, body_material, body_scale)
 	skin.bulk = body_bulk()
+	skin.set_sunglasses(wears_shades())
 	hand_anchor = _make_anchor("HandAnchor")
 	off_hand_anchor = _make_anchor("OffHandAnchor")
 	_build_laser()
@@ -178,6 +179,11 @@ func reposition_time() -> float:
 
 func body_bulk() -> float:
 	return 1.0
+
+
+## Evil pink dudes wear sunglasses. Indoors.
+func wears_shades() -> bool:
+	return true
 
 
 func engage_distance() -> float:
@@ -589,6 +595,7 @@ func die(_at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: Strin
 	collision_layer = 0
 	collision_mask = 0
 	_laser.visible = false
+	_lose_shades(push, style)
 	skin.visible = false
 	match style:
 		&"melt":
@@ -609,6 +616,21 @@ func die(_at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: Strin
 	TimeManager.hit_pause(0.05)
 	died.emit(self)
 	queue_free()
+
+
+## The sunglasses do not die with him. They come off and clatter to the floor.
+func _lose_shades(push: Vector3, style: StringName) -> void:
+	if not skin.has_sunglasses():
+		return
+	var fling: Vector3 = Vector3(push.x, 0, push.z).normalized() * 1.8 + Vector3.UP * 2.6 \
+		+ Vector3(randf_range(-0.8, 0.8), 0, randf_range(-0.8, 0.8))
+	if style == &"melt":
+		fling = Vector3(randf_range(-0.3, 0.3), 0.4, randf_range(-0.3, 0.3))      # he melts out from under them
+	var loose: Debris = Debris.spawn_mesh(Game.entities_root(self), skin.shades_transform(), fling, Humanoid.shades_mesh())
+	loose.add_to_group(&"lost_shades")
+	loose.rest_height = 0.02
+	loose.life = 20.0
+	skin.set_sunglasses(false)
 
 
 # ---------------------------------------------------------------- looks

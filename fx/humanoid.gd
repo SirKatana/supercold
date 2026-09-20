@@ -73,6 +73,8 @@ var bulk: float = 1.0
 var _part_nodes: Array[MeshInstance3D] = []
 var _ball_nodes: Array[MeshInstance3D] = []
 var _head: MeshInstance3D
+var _shades: MeshInstance3D
+var _shades_at: Transform3D = Transform3D.IDENTITY
 var _groups: Dictionary[StringName, Array] = {}
 
 
@@ -131,6 +133,43 @@ func _instance(mesh: Mesh, group: StringName) -> MeshInstance3D:
 
 ## Hides a whole group: &"head", &"arms", &"legs" or &"torso". The player hides head and arms
 ## so the first-person camera and viewmodel arms are not fighting the body.
+## Wraparound sunglasses, modelled for a head of radius 0.112 m looking down -Z, origin at the
+## centre of the skull. Two lenses, a brow bar, a bridge, and two arms back to the ears.
+static func shades_mesh() -> ArrayMesh:
+	return MeshKit.cached(&"sunglasses", func(kit: MeshKit) -> void:
+		var lens: Material = Mats.shades_lens()
+		var frame: Material = Mats.polymer()
+		for side: float in [-1.0, 1.0]:
+			kit.box(Vector3(0.066, 0.036, 0.008), Vector3(0.041 * side, 0.022, -0.110), lens, Vector3(0, -0.20 * side, 0))
+			kit.box(Vector3(0.070, 0.006, 0.010), Vector3(0.041 * side, 0.042, -0.110), frame, Vector3(0, -0.20 * side, 0))
+			kit.box(Vector3(0.006, 0.010, 0.120), Vector3(0.080 * side, 0.036, -0.048), frame, Vector3(0, 0.06 * side, 0))
+			kit.box(Vector3(0.006, 0.022, 0.010), Vector3(0.082 * side, 0.026, 0.012), frame)       # ear hook
+		kit.box(Vector3(0.022, 0.008, 0.010), Vector3(0, 0.030, -0.116), frame))                     # bridge
+
+
+## Puts a pair of sunglasses on, or takes them off.
+func set_sunglasses(on: bool) -> void:
+	if on and _shades == null:
+		_shades = MeshInstance3D.new()
+		_shades.mesh = shades_mesh()
+		_shades.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_shades)
+		if not _groups.has(&"head"):
+			_groups[&"head"] = []
+		_groups[&"head"].append(_shades)
+	if _shades != null:
+		_shades.visible = on
+
+
+func has_sunglasses() -> bool:
+	return _shades != null and _shades.visible
+
+
+## Where the sunglasses are right now, for when they come off.
+func shades_transform() -> Transform3D:
+	return _shades_at
+
+
 func set_material(next: Material) -> void:
 	material = next
 	for node: MeshInstance3D in _part_nodes:
@@ -208,8 +247,12 @@ func apply(joints: PackedVector3Array) -> void:
 		head_x = Vector3.RIGHT
 	var head_z: Vector3 = head_x.cross(neck_dir).normalized()
 	var r: float = 0.112 * body_scale
-	_head.global_transform = Transform3D(Basis(head_x * r * 0.92, neck_dir * r * 1.16, head_z * r * 1.02),
-		joints[index_of(&"head")] + neck_dir * 0.03 * body_scale)
+	var skull: Vector3 = joints[index_of(&"head")] + neck_dir * 0.03 * body_scale
+	_head.global_transform = Transform3D(Basis(head_x * r * 0.92, neck_dir * r * 1.16, head_z * r * 1.02), skull)
+	# The glasses ride on the skull at true scale, not the skull's squash.
+	_shades_at = Transform3D(Basis(head_x, neck_dir, head_z) * body_scale, skull)
+	if _shades != null:
+		_shades.global_transform = _shades_at
 
 
 ## Stretches a unit-height mesh (its Y axis) from `a` to `b`. `side` fixes the roll.

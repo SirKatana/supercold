@@ -138,6 +138,7 @@ func _process(delta: float) -> void:
 		_debug.visible = not _debug.visible
 	if Game.player != null and is_instance_valid(Game.player) and Game.player.alive:
 		_prompt_shield()
+		_prompt_security()
 	var boss: Node = get_tree().get_first_node_in_group(&"bosses")
 	var show_boss: bool = boss != null and is_instance_valid(boss) and boss.get(&"alive") == true
 	_boss_back.visible = show_boss
@@ -169,7 +170,7 @@ func _on_state_changed(state: Game.State) -> void:
 	match state:
 		Game.State.CLEARED:
 			_hint.text = "FLOOR CLEAR. GET TO THE HELIPAD." if Game.data != null and Game.data.exit_kind == &"helipad" \
-				else "FLOOR CLEAR. HIT THE ELEVATOR BUTTON."
+				else "FLOOR CLEAR. THE ELEVATOR HAS ARRIVED. HIT ITS BUTTON."
 			_words.flash(["SUPER", "COLD"], 0.42, 2)
 		Game.State.DEAD:
 			_hint.text = "R TO RESTART"
@@ -217,6 +218,19 @@ func _show_intro(text: String) -> void:
 	var tween: Tween = create_tween()
 	tween.tween_interval(2.4)
 	tween.tween_property(_intro, ^"modulate:a", 0.0, 0.8)
+
+
+## While security is waiting for a weapon, say what he wants and how to give it to him.
+func _prompt_security() -> void:
+	var guard: SecurityGuard = Game.guard
+	var waiting: bool = guard != null and is_instance_valid(guard) and guard.mode != SecurityGuard.Mode.LEAVING
+	var line: String = "SECURITY: HAND OVER YOUR WEAPON, OR PRESS Q TO DROP IT"
+	if waiting and guard.mode == SecurityGuard.Mode.FIRING:
+		line = "DROP IT! PRESS Q"
+	if waiting and (_hint.text == "" or _hint.text.begins_with("SECURITY") or _hint.text.begins_with("DROP IT")):
+		_hint.text = line
+	elif not waiting and (_hint.text.begins_with("SECURITY") or _hint.text.begins_with("DROP IT")):
+		_hint.text = ""
 
 
 ## "F  TAKE SHIELD" while one lies in reach, "F  DROP SHIELD" is never nagged.
