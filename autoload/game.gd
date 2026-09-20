@@ -198,7 +198,7 @@ func load_level(name_of_level: String) -> bool:
 	if helper_time_left > 0.0:
 		# Still under contract from before the last death: he rides up with you.
 		var out: Vector3 = -arrival.basis.z
-		_spawn_helper(data.cell_center(data.front_cell(data.player_start), 0.05) + out * 0.6 + arrival.basis.x * 0.9, arrival.basis)
+		_spawn_helper(data.cell_center(data.front_cell(data.player_start), 0.05) + out * 0.6 + arrival.basis.x * 0.9, arrival.basis).greet_again()
 	floor_loaded.emit(data)
 	return true
 
@@ -226,7 +226,9 @@ func _place_helper_capsule() -> void:
 ## Called by the capsule once the ad has been watched.
 func hire_helper(at: Vector3, facing: Basis) -> Helper:
 	helper_time_left = T.helper_seconds
-	return _spawn_helper(at, facing)
+	var hired: Helper = _spawn_helper(at, facing)
+	hired.greet()
+	return hired
 
 
 func _spawn_helper(at: Vector3, facing: Basis) -> Helper:
@@ -240,10 +242,10 @@ func _spawn_helper(at: Vector3, facing: Basis) -> Helper:
 	return helper
 
 
-func dismiss_helper() -> void:
+func dismiss_helper(floor_is_clear: bool = false) -> void:
 	helper_time_left = 0.0
 	if helper != null and is_instance_valid(helper):
-		helper.leave()
+		helper.leave(floor_is_clear)
 	helper = null
 	helper_changed.emit(false)
 
@@ -329,7 +331,7 @@ func _on_dude_died(_dude: PinkDude) -> void:
 	if is_floor_clear() and state == State.PLAYING:
 		_set_state(State.CLEARED)
 		floor_cleared.emit()
-		dismiss_helper()      # the job is done
+		dismiss_helper(true)      # the job is done
 
 
 func _on_player_died() -> void:

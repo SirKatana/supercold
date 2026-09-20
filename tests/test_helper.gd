@@ -196,7 +196,7 @@ func test_contract_runs_on_real_time_and_he_leaves_when_it_ends() -> void:
 	await wait_physics(10)
 	check(helper.leaving, "time is up, he is leaving")
 	check(Game.helper == null, "and Game has let him go")
-	await wait_physics(100)
+	await wait_physics(190)      # the goodbye takes 2.4 s
 	check(not is_instance_valid(helper), "gone")
 
 

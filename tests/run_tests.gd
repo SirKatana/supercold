@@ -19,6 +19,8 @@ func _run() -> void:
 	await process_frame
 	root.get_node(^"Game").set(&"fast_elevators", true)
 	root.get_node(^"AdService").set(&"auto_result", 1)
+	# No talking computer during automated runs. Loaded at runtime: see the note on -s scripts.
+	(load("res://allies/helper_voice.gd") as GDScript).set(&"tts_enabled", false)
 	var only: String = ""
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="):

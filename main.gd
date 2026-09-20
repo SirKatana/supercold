@@ -177,6 +177,7 @@ func _capture(path: String, after: float) -> void:
 			(node as PinkDude).sense_override = true
 		if _arg("do", "") == "helper":
 			AdService.auto_result = 1
+			HelperVoice.tts_enabled = false
 			capsule.press()
 			await get_tree().create_timer(0.9, true, false, true).timeout
 		else:

@@ -63,6 +63,10 @@ var _links: Array = []
 var _skin: Humanoid
 var _ground: PackedFloat32Array = []
 var _touching: PackedByteArray = []
+## The wall each joint struck this step, as a plane (normal, distance). The solver clamps
+## against it, or the second solve pass pushes joints back into the wall they just hit.
+var _wall_normal: PackedVector3Array = []
+var _wall_d: PackedFloat32Array = []
 var _still_frames: int = 0
 var _age: float = 0.0
 var _last_dt: float = 0.0
@@ -187,6 +191,9 @@ func step(dt: float) -> void:
 
 	_touching.resize(count)
 	_touching.fill(0)
+	_wall_normal.resize(count)
+	_wall_normal.fill(Vector3.ZERO)
+	_wall_d.resize(count)
 	_solve(ITERATIONS)
 	for i: int in count:
 		_hit_walls(space, i)
@@ -219,6 +226,10 @@ func _solve(iterations: int) -> void:
 			if pos[i].y < _ground[i]:
 				pos[i].y = _ground[i]
 				_touching[i] = 1
+			if _wall_normal[i] != Vector3.ZERO:
+				var depth: float = _wall_d[i] - pos[i].dot(_wall_normal[i])
+				if depth > 0.0:
+					pos[i] += _wall_normal[i] * depth
 
 
 ## Sweeps the joint from where it was to where it wants to be and stops it on walls.
@@ -236,5 +247,7 @@ func _hit_walls(space: PhysicsDirectSpaceState3D, i: int) -> void:
 	if absf(normal.y) > 0.7:
 		return
 	pos[i] = (hit["position"] as Vector3) + normal * POINT_RADIUS
+	_wall_normal[i] = normal
+	_wall_d[i] = pos[i].dot(normal)
 	var v: Vector3 = pos[i] - prev[i]
 	prev[i] = pos[i] - (v - normal * v.dot(normal)) * (1.0 - FRICTION)

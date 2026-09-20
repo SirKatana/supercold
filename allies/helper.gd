@@ -17,6 +17,20 @@ var agent: NavigationAgent3D
 var target: PinkDude = null
 var kills: int = 0
 var leaving: bool = false
+var voice: HelperVoice
+
+const HIT_LINES: Array[String] = ["Ow!", "Hey, watch it!", "I felt that!", "Good thing I'm bulletproof!", "Rude!", "That tickles!", "Is that all you've got?"]
+const KILL_LINES: Array[String] = ["Got one!", "Target down!", "He's out!", "One less pink dude!", "Scratch one!"]
+const BLOCKED_LINES: Array[String] = ["Move! You're in my line of fire!", "Step aside, I can't shoot through you!", "You're blocking my shot!"]
+const QUIET_LINES: Array[String] = ["All quiet. Lead the way.", "Nobody here. After you.", "Clear for now. Keep moving."]
+
+var _called_out: Dictionary[int, bool] = {}
+var _hit_line_cooldown: float = 0.0
+var _blocked_cooldown: float = 0.0
+var _quiet_clock: float = 0.0
+var _said_minute: bool = false
+var _said_ten: bool = false
+var _warned_barrels: Dictionary[int, bool] = {}
 
 var _hand: Node3D
 var _walk_phase: float = 0.0
@@ -27,6 +41,7 @@ var _retarget: float = 0.0
 var _repath: float = 0.0
 var _desired: Vector3 = Vector3.ZERO
 var _leave_clock: float = -1.0
+var _flinch: float = 0.0
 
 
 func _ready() -> void:
@@ -54,14 +69,29 @@ func _ready() -> void:
 	add_child(_hand)
 	gun = Rifle.create()
 	gun.attach_to(_hand)
+	voice = HelperVoice.new()
+	voice.name = "Voice"
+	add_child(voice)
 	Game.enemy_killed.connect(_on_enemy_killed)
 	_pose(0.0)
+
+
+## Said once, when he steps out of the capsule.
+func greet() -> void:
+	voice.say("Hey, I'm your helper for %d minutes!" % int(T.helper_seconds / 60.0), HelperVoice.Priority.IMPORTANT)
+
+
+## Said when he rides the lift back up with the player after a death.
+func greet_again() -> void:
+	var left: int = int(Game.helper_time_left)
+	voice.say("Still with you! %d:%02d left." % [left / 60, left % 60], HelperVoice.Priority.IMPORTANT)
 
 
 func _on_enemy_killed(_remaining: int) -> void:
 	if target != null and (not is_instance_valid(target) or not target.alive):
 		kills += 1
 		target = null
+		voice.say(HelperVoice.pick(KILL_LINES) if kills < 3 else "That's %d!" % kills, HelperVoice.Priority.CHATTER)
 
 
 ## His bullets pass through the player he works for.
@@ -73,6 +103,10 @@ func bullet_excludes() -> Array[RID]:
 ## Rounds stop on him and do nothing.
 func on_bullet_hit(_bullet: Node, point: Vector3, normal: Vector3) -> bool:
 	Shatter.burst(Game.entities_root(self), point + normal * 0.04, 3, Mats.helper_red(), Vector3.ONE * 0.02, normal * 1.5, 0.04)
+	_flinch = 1.0
+	if _hit_line_cooldown <= 0.0 and not leaving:
+		_hit_line_cooldown = 2.5
+		voice.say(HelperVoice.pick(HIT_LINES), HelperVoice.Priority.CALLOUT)
 	return false
 
 
@@ -131,10 +165,15 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_cooldown = maxf(0.0, _cooldown - wd)
+	_hit_line_cooldown = maxf(0.0, _hit_line_cooldown - delta)
+	_blocked_cooldown = maxf(0.0, _blocked_cooldown - delta)
+	_flinch = move_toward(_flinch, 0.0, delta * 3.0)
+	_talk_about_the_clock()
 	_retarget -= wd
 	if _retarget <= 0.0 or target == null or not is_instance_valid(target) or not target.alive:
 		_retarget = 0.25
 		target = _pick_target()
+		_call_out(target)
 
 	var player: Player = get_tree().get_first_node_in_group(&"player") as Player
 	if target != null:
@@ -144,7 +183,12 @@ func _physics_process(delta: float) -> void:
 		_aim = move_toward(_aim, 1.0, wd * 6.0)
 		_aim_clock += wd
 		var facing: float = (-global_transform.basis.z).dot(((at - global_position) * Vector3(1, 0, 1)).normalized())
-		if _aim_clock >= T.helper_aim_time and _cooldown <= 0.0 and facing > 0.97 and not _player_in_the_way(muzzle(), at):
+		var blocked: bool = _player_in_the_way(muzzle(), at)
+		if blocked and _blocked_cooldown <= 0.0 and _aim_clock >= T.helper_aim_time:
+			_blocked_cooldown = 7.0
+			voice.say(HelperVoice.pick(BLOCKED_LINES), HelperVoice.Priority.CALLOUT)
+		_quiet_clock = 0.0
+		if _aim_clock >= T.helper_aim_time and _cooldown <= 0.0 and facing > 0.97 and not blocked:
 			gun.cooldown_left = 0.0
 			gun.fire(muzzle(), (at - muzzle()).normalized(), self, false)
 			_cooldown = T.helper_cadence
@@ -152,6 +196,10 @@ func _physics_process(delta: float) -> void:
 		_aim_clock = 0.0
 		_aim = move_toward(_aim, 0.42, wd * 4.0)      # rifle at the low ready
 		_follow(player, wd)
+		_quiet_clock += delta
+		if _quiet_clock > 9.0 and Game.alive_enemies > 0:
+			_quiet_clock = -12.0
+			voice.say(HelperVoice.pick(QUIET_LINES), HelperVoice.Priority.CHATTER)
 
 	var rate: float = wd / delta if delta > 0.0 else 0.0
 	velocity.x = _desired.x * rate
@@ -193,7 +241,7 @@ func _pose(wd: float) -> void:
 	# Leaving: one arm up, a wave goodbye.
 	var left_arm: float = _aim if _leave_clock < 0.0 else 0.0
 	var right_arm: float = _aim if _leave_clock < 0.0 else 1.15 + sin(Time.get_ticks_msec() / 110.0) * 0.12
-	joints = Humanoid.to_world(Humanoid.pose(_walk_phase, moving, right_arm, left_arm, 0.0), global_transform, 1.0)
+	joints = Humanoid.to_world(Humanoid.pose(_walk_phase, moving, right_arm, left_arm, _flinch * 0.6), global_transform, 1.0)
 	skin.apply(joints)
 	var wrist: Vector3 = joints[Humanoid.index_of(&"wrist_r")]
 	var forward: Vector3 = (wrist - joints[Humanoid.index_of(&"elbow_r")]).normalized()
@@ -201,14 +249,50 @@ func _pose(wd: float) -> void:
 	_hand.global_transform = Transform3D(Basis.looking_at(forward, up), wrist.lerp(joints[Humanoid.index_of(&"hand_r")], 0.5))
 
 
-## Contract over. He lowers the rifle, waves, and bursts into red shards.
-func leave() -> void:
+## Shouts where a newly spotted dude is, from the player's point of view. Once per dude.
+func _call_out(dude: PinkDude) -> void:
+	if dude == null or _called_out.has(dude.get_instance_id()):
+		return
+	var player: Player = get_tree().get_first_node_in_group(&"player") as Player
+	if player == null:
+		return
+	if voice.say(HelperVoice.callout(player.global_transform, dude, Game.data), HelperVoice.Priority.CALLOUT):
+		_called_out[dude.get_instance_id()] = true
+		return
+	_tip_about_barrels(dude)
+
+
+## A dude standing next to a red barrel is an invitation.
+func _tip_about_barrels(dude: PinkDude) -> void:
+	for node: Node in get_tree().get_nodes_in_group(&"barrels"):
+		var barrel: GasBarrel = node as GasBarrel
+		if barrel == null or _warned_barrels.has(barrel.get_instance_id()):
+			continue
+		if barrel.global_position.distance_to(dude.global_position) < T.barrel_radius * 0.7:
+			if voice.say("Shoot the red barrel next to him!", HelperVoice.Priority.CHATTER):
+				_warned_barrels[barrel.get_instance_id()] = true
+			return
+
+
+func _talk_about_the_clock() -> void:
+	var left: float = Game.helper_time_left
+	if not _said_minute and left <= 60.0 and left > 50.0:
+		_said_minute = true
+		voice.say("One minute left on my contract!", HelperVoice.Priority.IMPORTANT)
+	elif not _said_ten and left <= 10.0 and left > 0.0:
+		_said_ten = true
+		voice.say("Ten seconds! Make them count!", HelperVoice.Priority.IMPORTANT)
+
+
+## Contract over. He lowers the rifle, says goodbye, waves, and bursts into red shards.
+func leave(floor_cleared: bool = false) -> void:
 	if leaving:
 		return
 	leaving = true
+	voice.say("Floor clear! My work here is done." if floor_cleared else "Time's up. Good luck out there!", HelperVoice.Priority.IMPORTANT)
 	target = null
 	gun.visible = false
-	_leave_clock = 1.2
+	_leave_clock = 2.4      # long enough to hear the goodbye
 
 
 func _vanish() -> void:

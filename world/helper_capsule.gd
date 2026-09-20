@@ -105,7 +105,7 @@ func _build() -> void:
 
 func _refresh_sign() -> void:
 	if used:
-		_sign.text = "HIRED"
+		_sign.text = ""      # he is out and talking, the sign would show through his speech bubble
 	elif _waiting_for_ad:
 		_sign.text = "..."
 	else:
