@@ -45,6 +45,21 @@ static func build_all() -> Dictionary[StringName, AudioStream]:
 		&"fart": _render(0.95, func(t: float, n: float) -> float:
 			var buzz: float = signf(sin(TAU * (62.0 + 30.0 * sin(TAU * 3.1 * t) - t * 22.0) * t))
 			return (buzz * 0.55 + n * 0.25) * sin(PI * minf(t / 0.95, 1.0)) * (0.7 + 0.3 * sin(TAU * 17.0 * t))),
+		# Gagging: three strangled glottal pulses, each a burst of breath noise over a low voiced
+		# buzz that drops in pitch, with silence between as he fails to get air.
+		&"choke": _render(0.95, func(t: float, n: float) -> float:
+			var pulse: float = fmod(t, 0.31)
+			var gate: float = exp(-pulse * 13.0) * smoothstep(0.0, 0.012, pulse) * (1.0 if t < 0.9 else 0.0)
+			var pitch: float = 210.0 - t * 70.0 - pulse * 220.0
+			var voiced: float = signf(sin(TAU * pitch * t)) * 0.35 + sin(TAU * pitch * 0.5 * t) * 0.3
+			var breath: float = n * (0.55 + 0.45 * sin(TAU * 900.0 * t))
+			return (voiced + breath * 0.7) * gate * 0.85),
+		# The last one: a long rattling wheeze that runs out of air and drops away.
+		&"choke_die": _render(0.98, func(t: float, n: float) -> float:
+			var air: float = pow(1.0 - t / 0.98, 1.6)
+			var rattle: float = 0.5 + 0.5 * signf(sin(TAU * (34.0 - t * 18.0) * t))
+			var voiced: float = sin(TAU * (160.0 - t * 95.0) * t) * 0.45
+			return (n * 0.6 * rattle + voiced * rattle) * air * smoothstep(0.0, 0.03, t) * 0.9),
 		&"cough": _render(0.3, func(t: float, n: float) -> float:
 			return n * exp(-t * 16.0) * (0.6 + 0.4 * sin(TAU * 140.0 * t)) * 0.7),
 		&"stab": _render(0.16, func(t: float, n: float) -> float:

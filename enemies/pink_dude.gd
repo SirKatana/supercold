@@ -60,6 +60,8 @@ var _aim_raise: float = 0.0
 var _stagger: float = 0.0
 var _recline: float = 0.0
 var _cough_phase: float = 0.0
+var _clutch: float = 0.0
+var _bend: float = 0.0
 
 
 func _ready() -> void:
@@ -616,14 +618,19 @@ func _animate(wd: float) -> void:
 	_stagger = move_toward(_stagger, 1.0 if stunned else 0.0, wd * 6.0)
 
 	_recline = move_toward(_recline, 1.0 if slipped else 0.0, wd * (5.0 if slipped else 2.2))
-	var cough: float = 0.0
+	# Choking: both hands go to the throat and he doubles over, further the longer he is in
+	# it, jerking with every gag.
+	_clutch = move_toward(_clutch, 1.0 if choking else 0.0, wd * (6.0 if choking else 3.0))
+	var bend_target: float = 0.0
 	if choking:
-		_cough_phase += wd * 9.0
-		cough = 0.55 + sin(_cough_phase) * 0.3
-	var left_arm: float = maxf(aim_left_amount(), 0.75 if choking else 0.0)
-	var right_arm: float = maxf(maxf(_aim_raise, arm_raise_floor()), 0.7 if choking else 0.0)
+		_cough_phase += wd * 6.5
+		var spasm: float = pow(maxf(0.0, sin(_cough_phase)), 3.0) * 0.22
+		bend_target = clampf(0.45 + 0.5 * choke_exposure / T.fart_kill_time + spasm, 0.0, 1.0)
+	_bend = move_toward(_bend, bend_target, wd * (3.5 if choking else 2.0))
+	var left_arm: float = aim_left_amount() * (1.0 - _clutch)
+	var right_arm: float = maxf(_aim_raise, arm_raise_floor()) * (1.0 - _clutch)
 	var local: PackedVector3Array = Humanoid.pose(_walk_phase, moving, right_arm, left_arm,
-		maxf(_stagger, cough) * (0.0 if slipped else 1.0), arm_raise_floor() > 0.5)
+		_stagger * (0.0 if slipped else 1.0) * (1.0 - _clutch), arm_raise_floor() > 0.5, _clutch, _bend)
 	if _recline > 0.01:
 		# Flat on his back: the whole pose tips over about the heels.
 		var tip := Basis(Vector3.RIGHT, _recline * 1.48)

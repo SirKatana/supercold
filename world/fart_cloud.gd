@@ -1,6 +1,7 @@
 class_name FartCloud
 extends Area3D
-## A green stink drifting round the floor. Small, it makes a dude who walks through it gag.
+## A bank of green fog drifting round the floor. It is drawn as dozens of soft overlapping
+## puffs that always face the camera, denser near the floor, so it reads as fog and not a shape. Small, it makes a dude who walks through it gag.
 ## Shoot it (or punch, stab or hit it with anything) and it bursts to fill a room: every dude
 ## who stays in it chokes, and after a couple of seconds drops. Gas masks are immune. The
 ## player just gets a green screen and a cough.
@@ -14,12 +15,15 @@ var radius: float = 1.5
 
 var _blobs: Array[MeshInstance3D] = []
 var _offsets: PackedVector3Array = []
+var _sizes: PackedFloat32Array = []
+
+const PUFFS: int = 72
+const SMALL_PUFFS: int = 16
 var _shape: SphereShape3D
 var _goal: Vector3
 var _age: float = 0.0
 var _big_left: float = 0.0
 var _rng := RandomNumberGenerator.new()
-var _cough_clock: float = 0.0
 
 
 func _ready() -> void:
@@ -33,28 +37,45 @@ func _ready() -> void:
 	_shape.radius = radius
 	shape.shape = _shape
 	add_child(shape)
-	for i: int in 9:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	quad.material = Mats.fart()
+	for i: int in PUFFS:
 		var mi := MeshInstance3D.new()
-		var ball := SphereMesh.new()
-		ball.radius = 1.0
-		ball.height = 2.0
-		ball.radial_segments = 10
-		ball.rings = 5
-		mi.mesh = ball
-		mi.material_override = Mats.fart()
+		mi.mesh = quad
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visible = i < SMALL_PUFFS
 		add_child(mi)
 		_blobs.append(mi)
-		_offsets.append(Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-0.5, 0.6), _rng.randf_range(-1, 1)).normalized() * _rng.randf_range(0.2, 0.75))
+		# Spread across a disc, and low: fog lies on the floor and thins toward head height.
+		var angle: float = _rng.randf() * TAU
+		var reach: float = sqrt(_rng.randf())
+		var height: float = pow(_rng.randf(), 1.8)
+		_offsets.append(Vector3(cos(angle) * reach, height, sin(angle) * reach))
+		_sizes.append(_rng.randf_range(0.75, 1.35))
 	_goal = global_position
 	_layout()
 
 
 func _layout() -> void:
+	# The node floats at chest height. Puffs hang from just above it down to the floor.
+	var floor_y: float = -global_position.y + 0.25
+	var top_y: float = 1.3 if big else 0.7
+	var count: int = PUFFS if big else SMALL_PUFFS
 	for i: int in _blobs.size():
-		var wobble := Vector3(sin(_age * 1.3 + i), sin(_age * 0.9 + i * 2.0) * 0.5, cos(_age * 1.1 + i * 1.7)) * 0.12
-		_blobs[i].position = (_offsets[i] + wobble) * radius
-		_blobs[i].scale = Vector3.ONE * radius * (0.55 + 0.12 * sin(_age * 1.7 + i))
+		var puff: MeshInstance3D = _blobs[i]
+		puff.visible = i < count
+		if not puff.visible:
+			continue
+		var o: Vector3 = _offsets[i]
+		var drift := Vector3(sin(_age * 0.31 + i * 1.7), sin(_age * 0.23 + i) * 0.4, cos(_age * 0.27 + i * 2.3)) * 0.35
+		puff.position = Vector3(o.x * radius, lerpf(floor_y, top_y, o.y), o.z * radius) + drift
+		# Big soft puffs that breathe slowly. Lower ones are wider, like fog pooling.
+		var size: float = _sizes[i] * (1.9 if big else 1.25) * (1.25 - o.y * 0.45) * (1.0 + 0.10 * sin(_age * 0.6 + i))
+		puff.scale = Vector3(size, size, 1.0) * clampf(radius, 1.0, 2.6)
+		# Seventy puffs on top of each other go solid. The burst cloud is drawn much thinner per
+		# puff so you can still see the dudes choking inside it, thinnest at head height.
+		puff.transparency = clampf((0.88 + o.y * 0.08) if big else 0.0, 0.0, 1.0) if _big_left >= 1.5 or not big else maxf(puff.transparency, 1.0 - _big_left / 1.5)
 
 
 func on_bullet_hit(_bullet: Node, _point: Vector3, _normal: Vector3) -> void:
@@ -89,24 +110,17 @@ func _physics_process(delta: float) -> void:
 		if _big_left <= 0.0:
 			queue_free()
 			return
-		if _big_left < 1.5:
-			for blob: MeshInstance3D in _blobs:
-				blob.transparency = 1.0 - _big_left / 1.5
 	else:
 		_drift(wd)
 	_shape.radius = radius
 	global_position.y = 1.1 + sin(_age * 0.8) * 0.15
 	_layout()
 
-	_cough_clock -= wd
 	for body: Node3D in get_overlapping_bodies():
 		if body is PinkDude:
 			var dude: PinkDude = body
 			# A small puff only makes him gag as he passes. The big one can kill.
 			dude.breathe_gas(wd if big else wd * 0.35)
-			if _cough_clock <= 0.0 and dude.choking:
-				_cough_clock = 0.5
-				Sfx.play(&"cough", dude.global_position)
 		elif body is Player and big:
 			(body as Player).in_stink = 0.3
 

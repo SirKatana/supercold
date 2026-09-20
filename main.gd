@@ -249,6 +249,14 @@ func _capture(path: String, after: float) -> void:
 			"freeze":
 				FreezeBlast.go(Game.entities_root(self), base + ahead * 4.2 + Vector3.UP * 0.5)
 				await get_tree().create_timer(0.35, true, false, true).timeout
+			"choke":
+				for d: PinkDude in cast:
+					d.set_physics_process(true)
+				var stink := FartCloud.new()
+				Game.entities_root(self).add_child(stink)
+				stink.global_position = base + ahead * 4.6 + Vector3.UP * 1.1
+				stink.burst()
+				await get_tree().create_timer(float(_arg("at", "1.5")), true, false, true).timeout
 			"zombie":
 				for d: PinkDude in cast:
 					d.queue_free()

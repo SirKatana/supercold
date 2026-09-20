@@ -13,6 +13,8 @@ var _music: AudioStreamPlayer
 var _music_task: int = -1
 var _music_wanted: bool = false
 var _music_tween: Tween
+## The last few sounds asked for, newest last. Tests read this.
+var history: Array[StringName] = []
 
 
 func _ready() -> void:
@@ -82,6 +84,9 @@ func has_sound(sound: StringName) -> bool:
 
 ## Pass a position for a sound in the world, omit it for a sound in the player's head.
 func play(sound: StringName, at: Vector3 = Vector3.INF) -> void:
+	history.append(sound)
+	if history.size() > 32:
+		history.pop_front()
 	var stream: AudioStream = _streams.get(sound)
 	if stream == null:
 		return

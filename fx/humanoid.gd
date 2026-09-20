@@ -229,6 +229,22 @@ func _stretch(node: MeshInstance3D, a: Vector3, b: Vector3, side: Vector3, depth
 
 # ---------------------------------------------------------------- posing
 
+## Two-bone reach: where the middle joint goes so that a limb of lengths `a` then `b`, rooted
+## at `root`, touches `goal`. `pole` says which way the joint should bulge. Returns
+## [middle joint, end]. The end is pulled in if the goal is out of reach.
+static func two_bone(root: Vector3, goal: Vector3, a: float, b: float, pole: Vector3) -> Array[Vector3]:
+	var to_goal: Vector3 = goal - root
+	var distance: float = clampf(to_goal.length(), absf(a - b) + 0.001, a + b - 0.001)
+	var axis: Vector3 = to_goal.normalized() if to_goal.length() > 0.0001 else Vector3.FORWARD
+	# Law of cosines: how far along the root-goal line the joint sits, and how far off it.
+	var along: float = (a * a - b * b + distance * distance) / (2.0 * distance)
+	var off: float = sqrt(maxf(0.0, a * a - along * along))
+	var side: Vector3 = pole - axis * pole.dot(axis)
+	side = side.normalized() if side.length() > 0.0001 else axis.cross(Vector3.UP).normalized()
+	var middle: Vector3 = root + axis * along + side * off
+	return [middle, root + axis * distance]
+
+
 static func rest_local() -> PackedVector3Array:
 	var out := PackedVector3Array()
 	for joint: StringName in JOINTS:
@@ -259,8 +275,10 @@ const ARM: Dictionary[StringName, Array] = {
 
 ##   reach_straight: raised arms go straight out from the shoulders (a biter's grab) instead
 ##   of turning in to meet on a gun
+##   clutch: 0 to 1, both hands go to the throat
+##   bend: 0 to 1, doubled over forward at the waist, knees giving
 static func pose(walk_phase: float, walk_amount: float, aim_right: float, aim_left: float, stagger: float,
-		reach_straight: bool = false) -> PackedVector3Array:
+		reach_straight: bool = false, clutch: float = 0.0, bend: float = 0.0) -> PackedVector3Array:
 	var j: Dictionary[StringName, Vector3] = {}
 	var pelvis_rest: Vector3 = REST[&"pelvis"]
 	j[&"pelvis"] = pelvis_rest
@@ -275,20 +293,22 @@ static func pose(walk_phase: float, walk_amount: float, aim_right: float, aim_le
 		var thigh_len: float = hip.distance_to(knee_rest)
 		var shin_len: float = knee_rest.distance_to(ankle_rest)
 		var swing: float = sin(phase) * 0.62 * walk_amount
-		var bend: float = (0.06 + maxf(0.0, -cos(phase)) * 1.05) * walk_amount + 0.03 + stagger * 0.35
+		var knee_bend: float = (0.06 + maxf(0.0, -cos(phase)) * 1.05) * walk_amount + 0.03 + stagger * 0.35 + bend * 0.75
+		# Bent over, the thighs come forward so the knees can fold without the feet leaving the floor.
+		swing += bend * 0.38
 		var knee: Vector3 = hip + Basis(Vector3.RIGHT, swing) * Vector3.DOWN * thigh_len
-		var ankle: Vector3 = knee + Basis(Vector3.RIGHT, swing - bend) * Vector3.DOWN * shin_len
-		var toe: Vector3 = ankle + Basis(Vector3.RIGHT, (swing - bend) * 0.6) * Vector3(0, -0.03, -0.22)
+		var ankle: Vector3 = knee + Basis(Vector3.RIGHT, swing - knee_bend) * Vector3.DOWN * shin_len
+		var toe: Vector3 = ankle + Basis(Vector3.RIGHT, (swing - knee_bend) * 0.6) * Vector3(0, -0.03, -0.22)
 		j[leg[0]] = hip
 		j[leg[1]] = knee
 		j[leg[2]] = ankle
 		j[leg[3]] = toe
 
 	# Upper body leans: forward a touch when running, back hard when staggered.
-	var lean := Basis(Vector3.RIGHT, -0.10 * walk_amount + 0.45 * stagger)
+	var lean := Basis(Vector3.RIGHT, -0.10 * walk_amount + 0.45 * stagger - 0.95 * bend)
 	for joint: StringName in [&"spine", &"chest", &"neck", &"head", &"shoulder_l", &"shoulder_r"]:
 		j[joint] = pelvis_rest + lean * (REST[joint] - pelvis_rest)
-	j[&"head"] = j[&"neck"] + lean * Basis(Vector3.RIGHT, 0.35 * stagger) * (REST[&"head"] - REST[&"neck"])
+	j[&"head"] = j[&"neck"] + lean * Basis(Vector3.RIGHT, 0.35 * stagger - 0.35 * bend) * (REST[&"head"] - REST[&"neck"])
 
 	# Arms: shoulder raise, elbow bend, and a turn toward the centre line for a two-handed hold.
 	for side: StringName in [&"l", &"r"]:
@@ -310,6 +330,17 @@ static func pose(walk_phase: float, walk_amount: float, aim_right: float, aim_le
 		j[arm[1]] = elbow
 		j[arm[2]] = elbow + fore_dir * fore_len
 		j[arm[3]] = elbow + fore_dir * (fore_len + hand_len)
+		if clutch > 0.001:
+			# Hands to the throat. The hand's goal slides from where the swing had it to the side
+			# of the neck, and the elbow is solved for, so limb lengths stay exact the whole way.
+			var throat: Vector3 = j[&"neck"] + lean * Vector3(0.055 * sign, -0.02, -0.075)
+			var goal: Vector3 = (j[arm[3]] as Vector3).lerp(throat, clutch)
+			var pole: Vector3 = lean * Vector3(sign * 0.38, -0.85, -0.36)     # elbows down and a little out, like a man grabbing his own throat
+			var solved: Array[Vector3] = two_bone(shoulder, goal, upper_len, fore_len + hand_len, pole)
+			j[arm[1]] = solved[0]
+			var along: Vector3 = (solved[1] - solved[0]).normalized()
+			j[arm[2]] = solved[0] + along * fore_len
+			j[arm[3]] = solved[0] + along * (fore_len + hand_len)
 
 	# Plant the lower foot on the ground. This is also what makes the body bob as it walks.
 	var lowest: float = minf(j[&"ankle_l"].y, j[&"ankle_r"].y)

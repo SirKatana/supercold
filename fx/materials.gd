@@ -219,13 +219,35 @@ static func ice_floor() -> StandardMaterial3D:
 		return m)
 
 
+## Green fog. One soft round puff on a camera-facing quad; a cloud is dozens of them overlapping.
 static func fart() -> StandardMaterial3D:
 	return _cached(&"fart", func() -> StandardMaterial3D:
+		var falloff := Gradient.new()
+		falloff.offsets = PackedFloat32Array([0.0, 0.35, 0.72, 1.0])
+		falloff.colors = PackedColorArray([Color(1, 1, 1, 1.0), Color(1, 1, 1, 0.62), Color(1, 1, 1, 0.16), Color(1, 1, 1, 0.0)])
+		var soft := GradientTexture2D.new()
+		soft.gradient = falloff
+		soft.fill = GradientTexture2D.FILL_RADIAL
+		soft.fill_from = Vector2(0.5, 0.5)
+		soft.fill_to = Vector2(1.0, 0.5)
+		soft.width = 128
+		soft.height = 128
 		var m := StandardMaterial3D.new()
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		m.albedo_color = Color(0.55, 0.72, 0.12, 0.30)
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(0.46, 0.74, 0.10, 0.34)
+		m.albedo_texture = soft
+		m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		m.billboard_keep_scale = true
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.disable_receive_shadows = true
+		# Fog should thin out where it meets a wall or a body instead of showing a hard edge.
+		m.proximity_fade_enabled = true
+		m.proximity_fade_distance = 0.6
+		# Puffs right in front of the lens vanish, or standing in the fog is a flat green screen.
+		m.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
+		m.distance_fade_min_distance = 0.8
+		m.distance_fade_max_distance = 4.5
 		return m)
 
 

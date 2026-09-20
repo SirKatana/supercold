@@ -124,3 +124,9 @@ One line per call made in auto mode, with why.
 - Scope: right click was already "throw", so Q became a throw key for everything and right click scopes only when the held gun has `has_scope`. Mouse sensitivity is multiplied by `scope_fov / fov` while scoped.
 - Tests iterate over dudes that may have been freed with an untyped array. A typed `Array[PinkDude]` literal containing a freed instance is an engine error.
 - Each new floor has a colour theme. The first five keep the white look the user approved. Pink stays reserved for enemies in every theme.
+- Playtest 10 (user): the fart should be green fog, and choking dudes should make a choking sound, hold their necks, bend down and die from the smell.
+- Fog is billboard puffs with a radial gradient, not `FogVolume`. Volumetric fog only exists in Forward+, cannot be checked on the offscreen OpenGL renderer used for verification, and costs a full-screen pass. Puffs look like fog in both renderers.
+- Density took three passes. 72 puffs at 34 percent each made a solid green wall, and with the camera inside the cloud the nearest puffs filled the screen. Burst puffs are now about 10 percent each, the material fades within 4.5 m of the camera, and the player's green screen tint was halved.
+- Hands to the throat needed inverse kinematics. `Humanoid.two_bone` solves the elbow with the law of cosines and a pole vector. The hand goal is blended from the swing pose to the throat and the arm is always solved, so limb lengths stay exact through the blend. First pole pointed sideways and folded arms looked like a short-armed T-pose; the pole now points down and slightly out.
+- Choking dudes drop their gun. Two hands on a throat cannot hold a rifle, and it gives the player guns to grab out of the fog.
+- `Sfx.history` records the last 32 sound names so a test can assert the gag and the death wheeze were actually asked for.
