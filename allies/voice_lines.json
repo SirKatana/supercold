@@ -105,8 +105,8 @@
  "count_11": "That's eleven!",
  "count_12": "That's twelve!",
  "count_many": "Another one!",
- "guard_halt": "Security. Hand over your weapon.",
+ "guard_halt": "Security. Throw me your weapon.",
  "guard_thanks": "Thank you. Move along.",
- "guard_stop": "Stop! Drop it, now!",
+ "guard_stop": "Stop! Throw it over, now!",
  "guard_clear": "You're clear. Go ahead."
 }

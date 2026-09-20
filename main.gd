@@ -363,6 +363,12 @@ func _capture(path: String, after: float) -> void:
 		Game.player.global_position = g.global_position - g.global_transform.basis.z * float(_arg("near", "3.0")) + Vector3(0, 0.05, 0)
 		Game.player.look_at(g.global_position)
 		Game.player.head.rotation.x = 0.0
+		if _flag("chase"):
+			g._open_fire()
+			TimeManager.override_scale = 1.0
+			await get_tree().create_timer(0.45, true, false, true).timeout
+			Game.player.look_at(g.global_position)
+			Game.player.head.rotation.x = 0.0
 		await get_tree().create_timer(0.6, true, false, true).timeout
 	if _arg("do", "") == "liftarrive" and Game.player != null:
 		Game.fast_elevators = false

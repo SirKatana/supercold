@@ -43,7 +43,7 @@ func _ready() -> void:
 
 	_sensor = Area3D.new()
 	_sensor.collision_layer = 0
-	_sensor.collision_mask = 4
+	_sensor.collision_mask = 4 | 256      # dudes, and the helper and security
 	var sensor_shape := CollisionShape3D.new()
 	var sensor_box := BoxShape3D.new()
 	sensor_box.size = Vector3(width, HEIGHT, 3.2) if along_x else Vector3(3.2, HEIGHT, width)

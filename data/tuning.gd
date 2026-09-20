@@ -150,9 +150,16 @@ extends Resource
 ## The guard waits this far outside the arrival lift, and shoots once an armed player is this far past him.
 @export var guard_distance: float = 5.0
 @export var guard_line: float = 1.2
-## He takes a weapon off a player who comes this close, or off the floor within this reach.
-@export var guard_take_range: float = 2.4
-@export var guard_floor_reach: float = 7.0
+## He catches a thrown weapon that comes this close to his chest, and picks one up off the floor
+## once he has walked to within `guard_floor_reach` of it.
+@export var guard_catch_range: float = 1.7
+@export var guard_floor_reach: float = 1.3
+## Walking to a dropped weapon (real time) and running an armed player down (world time, and
+## faster than the player walks, so running away does not work).
+@export var guard_fetch_speed: float = 3.4
+@export var guard_chase_speed: float = 5.8
+## Under fire he closes to this distance and keeps shooting from there.
+@export var guard_chase_keep: float = 4.5
 @export var guard_cadence: float = 0.32
 @export var guard_bullet_speed: float = 2.2
 

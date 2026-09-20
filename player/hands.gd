@@ -159,11 +159,6 @@ func interact() -> void:
 	pick_up(target)
 
 
-## Security takes whatever is in the hand. The hand is simply empty afterwards.
-func surrender() -> void:
-	_set_held(null)
-
-
 ## F: take the nearest shield off the floor and wear it, or drop the one being worn.
 func toggle_shield() -> bool:
 	if player.shield != null and is_instance_valid(player.shield):

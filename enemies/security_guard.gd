@@ -4,15 +4,17 @@ extends CharacterBody3D
 ## not count toward clearing the floor. He is posted outside the arrival lift only when the
 ## player rode up holding a weapon.
 ##
-## He asks for it. Walk up to him, or drop it, and he takes it, says thank you, and walks into
-## the lift you came out of. Walk past him still holding it, or fire it, and he shoots, and he
-## does not stop until you drop it or you are dead. Nothing the player has can hurt him.
+## He asks for it, hand out. Throw it to him and he catches it, says thank you, and walks into
+## the lift you came out of. Drop it anywhere and he walks over and picks it up. Walk past him
+## still holding it, shoot him, or fire it, and he shoots, and he comes after you: he is faster
+## than you are, so he does not stop until you throw it away or you are dead. Nothing the
+## player has can hurt him.
 
 signal weapon_taken(kind: StringName)
 signal opened_fire
 signal left
 
-enum Mode { WAITING, FIRING, LEAVING }
+enum Mode { WAITING, FIRING, FETCHING, LEAVING }
 
 const T: Tuning = preload("res://data/tuning.tres")
 
@@ -34,6 +36,10 @@ var _moving: float = 0.0
 var _cap: MeshInstance3D
 var _vest: MeshInstance3D
 var _warned: bool = false
+var _agent: NavigationAgent3D
+var _caught: float = 0.0      # seconds left of the catching reach
+var _leaving_for: float = 0.0
+var _fetching_for: float = 0.0
 
 
 func _ready() -> void:
@@ -69,6 +75,12 @@ func _ready() -> void:
 	gun = Pistol.create()
 	gun.attach_to(_hand)
 	gun.bullet_speed_scale = T.guard_bullet_speed
+
+	_agent = NavigationAgent3D.new()
+	_agent.path_desired_distance = 0.6
+	_agent.target_desired_distance = 0.4
+	_agent.avoidance_enabled = false
+	add_child(_agent)
 
 	voice = HelperVoice.new()
 	voice.name = "Voice"
@@ -170,6 +182,7 @@ func _say_now(id: StringName) -> void:
 
 func _take(item: Pickup) -> void:
 	taken += 1
+	_caught = 0.4
 	weapon_taken.emit(item.kind)
 	Sfx.play(&"pickup", global_position)
 	item.queue_free()
@@ -178,6 +191,7 @@ func _take(item: Pickup) -> void:
 func _physics_process(delta: float) -> void:
 	var wd: float = TimeManager.world_delta(delta)
 	_cooldown = maxf(0.0, _cooldown - wd)
+	_caught = maxf(0.0, _caught - delta)
 	var p: Player = player()
 	_moving = 0.0
 	if p == null or not p.alive:
@@ -194,65 +208,106 @@ func _physics_process(delta: float) -> void:
 		_warned = true
 		voice.say_line(&"guard_halt", HelperVoice.Priority.IMPORTANT)
 
-	# Anything he is owed that is lying about, he picks up.
+	# A weapon thrown his way he catches out of the air. One on the floor he has to walk to.
+	var owed: Pickup = null
 	for node: Node in get_tree().get_nodes_in_group(&"pickups"):
 		var item: Pickup = node as Pickup
-		if item != null and item.contraband and item.state != Pickup.State.HELD \
-				and item.global_position.distance_to(global_position) <= T.guard_floor_reach:
+		if item == null or not item.contraband or item.state == Pickup.State.HELD or item.is_queued_for_deletion():
+			continue
+		var flying: bool = item.state == Pickup.State.FLYING
+		if flying and item.global_position.distance_to(global_position + Vector3(0, 1.2, 0)) <= T.guard_catch_range:
 			_take(item)
+		elif _flat_distance(item.global_position) <= T.guard_floor_reach and item.global_position.y < global_position.y + 1.4:
+			_take(item)
+		elif owed == null or _flat_distance(item.global_position) < _flat_distance(owed.global_position):
+			owed = item
 
 	var armed: Pickup = _contraband_in_hand(p)
-	if armed != null and p.global_position.distance_to(global_position) <= T.guard_take_range and mode == Mode.WAITING:
-		# Close enough to hand it over. He takes it out of the player's hand.
-		p.hands.surrender()
-		_take(armed)
-		armed = null
-
-	if armed == null and not _anything_still_owed():
-		mode = Mode.LEAVING
-		_say_now(&"guard_thanks" if taken > 0 else &"guard_clear")
+	if armed == null:
+		_aim = move_toward(_aim, 0.0, wd * 4.0)
+		if owed == null:
+			mode = Mode.LEAVING
+			_say_now(&"guard_thanks" if taken > 0 else &"guard_clear")
+		else:
+			mode = Mode.FETCHING      # it is out of his hand: that will do. Go and get it.
+			_fetching_for += delta
+			if _fetching_for > 12.0:
+				_take(owed)      # somewhere he cannot walk to. He is not going to stand there all day.
+				_fetching_for = 0.0
+			if owed.state == Pickup.State.RESTING:
+				_walk_toward(owed.global_position, T.guard_fetch_speed, delta, delta)
+			else:
+				_face(owed.global_position, delta)
 		_pose(wd)
 		return
 
-	_face(p.global_position, wd)
-	if mode == Mode.WAITING and armed != null and _progress(p) > _progress_of_post() + T.guard_line:
+	if mode == Mode.FETCHING:
+		mode = Mode.WAITING      # he picked it back up
+	if mode == Mode.WAITING and _progress(p) > _progress_of_post() + T.guard_line:
 		_open_fire()      # he walked on with it
 	if mode == Mode.FIRING:
-		if armed == null:
-			mode = Mode.WAITING      # it is on the floor now: that will do
+		var sees: bool = _sees(p)
+		if not sees or _flat_distance(p.global_position) > T.guard_chase_keep:
+			_walk_toward(p.global_position, T.guard_chase_speed, wd, delta)      # he comes after you
 		else:
-			_aim = move_toward(_aim, 1.0, wd * 8.0)
-			if _aim > 0.9 and _cooldown <= 0.0:
-				_cooldown = T.guard_cadence
-				var flight: float = muzzle().distance_to(p.chest_position()) / (T.bullet_speed * T.guard_bullet_speed)
-				var at: Vector3 = p.chest_position() + p.get_real_velocity() * flight
-				gun.cooldown_left = 0.0
-				gun.fire(muzzle(), (at - muzzle()).normalized(), self, false)
+			_face(p.global_position, wd)
+		_aim = move_toward(_aim, 1.0, wd * 8.0)
+		if sees and _aim > 0.9 and _cooldown <= 0.0:
+			_cooldown = T.guard_cadence
+			var flight: float = muzzle().distance_to(p.chest_position()) / (T.bullet_speed * T.guard_bullet_speed)
+			var at: Vector3 = p.chest_position() + p.get_real_velocity() * flight
+			gun.cooldown_left = 0.0
+			gun.fire(muzzle(), (at - muzzle()).normalized(), self, false)
 	else:
+		_face(p.global_position, wd)
 		_aim = move_toward(_aim, 0.0, wd * 4.0)
 	_pose(wd)
+
+
+func _flat_distance(point: Vector3) -> float:
+	return Vector2(point.x - global_position.x, point.z - global_position.z).length()
+
+
+func _sees(p: Player) -> bool:
+	var from: Vector3 = global_position + Vector3(0, 1.5, 0)
+	var query := PhysicsRayQueryParameters3D.create(from, p.chest_position(), 1 | 32)
+	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
+
+## One step along the navmesh toward `target`. `step` is the time that passes for him (world
+## time when he is chasing, real time when he is tidying up), `delta` the real frame time.
+func _walk_toward(target: Vector3, speed: float, step: float, delta: float) -> void:
+	_agent.target_position = target
+	var next: Vector3 = _agent.get_next_path_position()
+	var flat := Vector3(next.x - global_position.x, 0, next.z - global_position.z)
+	if flat.length() < 0.05:
+		flat = Vector3(target.x - global_position.x, 0, target.z - global_position.z)      # no path: go straight
+	if flat.length() < 0.05 or delta <= 0.0:
+		return
+	_face(global_position + flat, step)
+	velocity = flat.normalized() * speed * (step / delta)
+	move_and_slide()
+	_moving = clampf(speed / 3.4, 0.7, 1.6)
+	_walk_phase += step * 8.0 * _moving
 
 
 func _progress_of_post() -> float:
 	return (_post - _lift).dot(_out)
 
 
-func _anything_still_owed() -> bool:
-	for node: Node in get_tree().get_nodes_in_group(&"pickups"):
-		var item: Pickup = node as Pickup
-		if item != null and item.contraband and not item.is_queued_for_deletion():
-			return true
-	return false
-
-
-## Job done. He walks into the lift the player came out of and is gone. Real time: he should
+## Job done. He walks back to the lift the player came out of and is gone. Real time: he should
 ## not take a quarter of an hour because the player is standing still.
 func _walk_to_lift(wd: float, delta: float) -> void:
 	_aim = move_toward(_aim, 0.0, wd * 4.0)
+	_leaving_for += delta
 	var flat := Vector3(_lift.x - global_position.x, 0, _lift.z - global_position.z)
-	if flat.length() < 0.5:
+	if flat.length() < 0.5 or _leaving_for > 30.0:
 		left.emit()
 		queue_free()
+		return
+	var door: Vector3 = _lift + _out * 2.2
+	if flat.length() > 3.2 and _flat_distance(door) > 0.6 and absf((global_position - _lift).cross(_out).y) > 0.5:
+		_walk_toward(door, T.guard_fetch_speed, delta, delta)      # round the corners first
 		return
 	_face(global_position + flat, delta)
 	global_position += flat.normalized() * 2.6 * delta
@@ -268,7 +323,7 @@ func _face(point: Vector3, step: float) -> void:
 
 func _pose(_wd: float) -> void:
 	# One hand out, palm up, while he waits for the weapon.
-	var asking: float = 0.62 if mode == Mode.WAITING and _warned else 0.0
+	var asking: float = 1.0 if _caught > 0.0 else (0.62 if mode == Mode.WAITING and _warned else 0.0)
 	joints = Humanoid.to_world(Humanoid.pose(_walk_phase, _moving, _aim, asking * (1.0 - _aim), 0.0, true), global_transform, 1.04)
 	skin.apply(joints)
 	_cap.global_transform = skin.shades_transform()

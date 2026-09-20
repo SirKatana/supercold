@@ -129,35 +129,74 @@ func test_guard_is_posted_outside_the_lift_facing_it() -> void:
 	check_eq(Game.alive_enemies, Game.data.initial_enemy_count(), "enemy count unchanged")
 
 
-func test_walking_up_to_him_hands_it_over_and_he_leaves() -> void:
+func test_throwing_it_to_him_is_how_you_hand_it_over() -> void:
 	await _ride_up_holding(Rifle.create())
 	var guard: SecurityGuard = Game.guard
-	var state: Dictionary = {"taken": &""}
-	guard.weapon_taken.connect(func(kind: StringName) -> void: state["taken"] = kind)
-	Game.player.global_position = guard.global_position - guard.global_transform.basis.z * 1.6
-	await wait_physics(5)
-	check_eq(state["taken"], &"rifle", "he took the rifle")
+	var state: Dictionary = {"taken": &"", "at": Vector3.ZERO}
+	guard.weapon_taken.connect(func(kind: StringName) -> void:
+		state["taken"] = kind
+		state["at"] = guard.global_position)
+	var post: Vector3 = guard.global_position
+	Game.player.global_position = guard.global_position - guard.global_transform.basis.z * 3.4
+	Game.player.look_at(guard.global_position + Vector3(0, 0.0, 0))
+	await wait_physics(3)
+	TimeManager.override_scale = 1.0
+	Game.player.hands.throw_held()
+	await wait_physics(40)
+	check_eq(state["taken"], &"rifle", "he caught the rifle")
+	check(state["at"].distance_to(post) < 0.2, "out of the air, without leaving his post")
 	check(Game.player.hands.held == null, "hands are empty")
-	check_eq(guard.mode, SecurityGuard.Mode.LEAVING, "and he is on his way")
-	check_eq(guard.voice.last_line, HelperVoice.line(&"guard_thanks"), "with a thank you")
+	check_eq(guard.voice.history.has(HelperVoice.line(&"guard_thanks")), true, "with a thank you")
 	check(Game.player.alive, "nobody got shot")
-	for i: int in 400:
+	for i: int in 500:
 		await wait_physics(1)
 		if not is_instance_valid(guard):
 			break
 	check(not is_instance_valid(guard), "he walked into the lift and is gone")
 
 
-func test_dropping_it_is_also_accepted() -> void:
+func test_standing_next_to_him_is_not_enough() -> void:
 	await _ride_up_holding(Pistol.create())
 	var guard: SecurityGuard = Game.guard
-	Game.player.global_position = guard.global_position - guard.global_transform.basis.z * 3.4
-	await wait_physics(3)
+	Game.player.global_position = guard.global_position - guard.global_transform.basis.z * 1.3
+	await wait_physics(20)
+	check(Game.player.hands.held != null, "he does not take it out of your hand: you throw it")
+	check_eq(guard.taken, 0, "nothing taken")
+
+
+func test_a_weapon_dropped_out_of_reach_he_walks_to() -> void:
+	await _ride_up_holding(Pistol.create())
+	var guard: SecurityGuard = Game.guard
+	var post: Vector3 = guard.global_position
+	var gun: Pickup = Game.player.hands.held
 	Game.player.hands.throw_held()
-	await wait_physics(30)
+	gun.global_position = post - guard.global_transform.basis.z * 3.6 + Vector3(0, 0.3, 0)
+	gun.velocity = Vector3.ZERO
+	await wait_physics(10)
+	check_eq(guard.mode, SecurityGuard.Mode.FETCHING, "he goes to get it")
+	check_eq(guard.taken, 0, "and has not got it yet: no reaching across the room")
+	for i: int in 300:
+		await wait_physics(1)
+		if guard.taken > 0:
+			break
 	check(guard.taken >= 1, "he picked it up off the floor")
-	check(guard.mode == SecurityGuard.Mode.LEAVING or not is_instance_valid(guard), "and left")
+	check(guard.global_position.distance_to(post) > 1.0, "by walking over to it")
 	check(Game.player.alive, "unharmed")
+
+
+func test_running_away_armed_does_not_work_he_chases() -> void:
+	await _ride_up_holding(Pistol.create())
+	var guard: SecurityGuard = Game.guard
+	var post: Vector3 = guard.global_position
+	guard._open_fire()
+	TimeManager.override_scale = 1.0
+	# Somewhere far off on this floor: the exit end.
+	Game.player.global_position = Game.data.cell_center(Game.data.front_cell(Game.data.exit_cell), 0.05)
+	var start: float = guard.global_position.distance_to(Game.player.global_position)
+	await wait_physics(90)
+	check(guard.global_position.distance_to(post) > 2.0, "he left his post")
+	check(guard.global_position.distance_to(Game.player.global_position) < start - 2.0, "and is closing on the player")
+	check(T.guard_chase_speed > T.walk_speed, "faster than the player can walk")
 
 
 func test_walking_past_him_armed_gets_you_shot() -> void:
@@ -169,9 +208,6 @@ func test_walking_past_him_armed_gets_you_shot() -> void:
 	var side: Vector3 = lift.basis.x
 	# Round him, well out of arm's reach, and on past.
 	Game.player.global_position = guard.global_position + out * 3.0 + side * 0.0 + Vector3(0, 0.05, 0)
-	# Stay out of take range: he must not simply take it.
-	if Game.player.global_position.distance_to(guard.global_position) <= T.guard_take_range:
-		Game.player.global_position += out * 1.0
 	var fired: Dictionary = {"yes": false}
 	guard.opened_fire.connect(func() -> void: fired["yes"] = true)
 	for i: int in 400:

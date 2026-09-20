@@ -224,12 +224,12 @@ func _show_intro(text: String) -> void:
 func _prompt_security() -> void:
 	var guard: SecurityGuard = Game.guard
 	var waiting: bool = guard != null and is_instance_valid(guard) and guard.mode != SecurityGuard.Mode.LEAVING
-	var line: String = "SECURITY: HAND OVER YOUR WEAPON, OR PRESS Q TO DROP IT"
+	var line: String = "SECURITY: THROW HIM YOUR WEAPON (Q)"
 	if waiting and guard.mode == SecurityGuard.Mode.FIRING:
-		line = "DROP IT! PRESS Q"
-	if waiting and (_hint.text == "" or _hint.text.begins_with("SECURITY") or _hint.text.begins_with("DROP IT")):
+		line = "THROW HIM THE WEAPON! PRESS Q"
+	if waiting and (_hint.text == "" or _hint.text.begins_with("SECURITY") or _hint.text.begins_with("THROW HIM")):
 		_hint.text = line
-	elif not waiting and (_hint.text.begins_with("SECURITY") or _hint.text.begins_with("DROP IT")):
+	elif not waiting and (_hint.text.begins_with("SECURITY") or _hint.text.begins_with("THROW HIM")):
 		_hint.text = ""
 
 
