@@ -10,10 +10,13 @@ var icy: bool = false
 var radius: float = 0.0
 ## Above zero: real seconds until it has dried up. It shrinks away over the last few.
 var life: float = -1.0
+## A spill of coffee instead of water. It is just as slippery.
+var coffee: bool = false
 
 var _mesh: MeshInstance3D
 var _age: float = 0.0
 const DRY_OFF: float = 6.0
+var _fade: float = DRY_OFF
 
 
 func _ready() -> void:
@@ -32,7 +35,7 @@ func _ready() -> void:
 		disc.bottom_radius = radius
 		disc.height = 0.012
 		disc.radial_segments = 28
-		disc.material = Mats.water()
+		disc.material = Mats.coffee_spill() if coffee else Mats.water()
 		_mesh.mesh = disc
 	else:
 		var box := BoxShape3D.new()
@@ -50,6 +53,12 @@ func _ready() -> void:
 	add_child(_mesh)
 
 
+## The cleaner's mop: whatever is left of this spill is gone in `seconds`.
+func mop_up(seconds: float) -> void:
+	_fade = maxf(0.05, seconds)
+	life = _age + _fade
+
+
 ## A spill dries on the player's clock, not the world's: a minute and a half is a minute and a half.
 func _process(delta: float) -> void:
 	if life <= 0.0:
@@ -57,8 +66,8 @@ func _process(delta: float) -> void:
 	_age += delta
 	if _age >= life:
 		queue_free()
-	elif _age > life - DRY_OFF:
-		var left: float = (life - _age) / DRY_OFF
+	elif _age > life - _fade:
+		var left: float = (life - _age) / _fade
 		_mesh.scale = Vector3(left, 1.0, left)
 		(get_child(0) as CollisionShape3D).scale = Vector3(left, 1.0, left)
 

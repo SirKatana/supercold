@@ -28,6 +28,20 @@ func _build_mesh(root: Node3D) -> void:
 			add_box(root, Vector3.ONE * 0.15, Vector3.ZERO)
 
 
+## A mug goes, and what was in it goes on the floor.
+func shatter() -> void:
+	if kind == &"mug":
+		var spill := Puddle.new()
+		spill.name = "Coffee"
+		spill.coffee = true
+		spill.radius = T.coffee_radius
+		spill.life = T.coffee_seconds
+		Game.entities_root(self).add_child(spill)
+		spill.global_position = Vector3(global_position.x, 0.0, global_position.z)
+		Game.report_spill(spill)
+	super()
+
+
 func shard_material() -> Material:
 	return Mats.tumbler() if kind == &"bottle" else Mats.ceramic() if kind == &"mug" else Mats.black()
 

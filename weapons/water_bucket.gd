@@ -119,6 +119,7 @@ func splash(at: Vector3, direction: Vector3) -> Puddle:
 	spill.life = T.spill_seconds
 	world.add_child(spill)
 	spill.global_position = Vector3(at.x, 0.0, at.z)
+	Game.report_spill(spill)
 	Shatter.burst(world, Vector3(at.x, 0.4, at.z), 26, Mats.splash(), Vector3(0.9, 0.2, 0.9), direction * 2.5 + Vector3.UP * 1.5, 0.07)
 	Sfx.play(&"splash", at)
 	Game.emit_noise(at, T.dude_hearing * 0.6)

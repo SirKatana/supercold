@@ -146,6 +146,20 @@ extends Resource
 @export var warden_scale: float = 1.45
 @export var warden_glass_hits: int = 3
 
+@export_group("Cleaner")
+## He mops up after the player and keeps count. On this many spills on one floor he attacks.
+@export var cleaner_strikes: int = 5
+@export var cleaner_speed: float = 3.0
+## Slower than the player's 5.0 on purpose: he is a threat in a small room, not across a floor.
+@export var cleaner_chase_speed: float = 4.2
+@export var cleaner_mop_seconds: float = 2.4
+@export var cleaner_swing_range: float = 1.9
+@export var cleaner_windup: float = 0.6
+@export var cleaner_hp: int = 3
+## A smashed mug leaves this much coffee, for this many real seconds.
+@export var coffee_radius: float = 0.6
+@export var coffee_seconds: float = 60.0
+
 @export_group("Security")
 ## The guard waits this far outside the arrival lift, and shoots once an armed player is this far past him.
 @export var guard_distance: float = 5.0

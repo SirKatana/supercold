@@ -32,6 +32,9 @@ for key, text in lines.items():
         voice.synthesize_wav(text, f, syn_config=config)
     # Trim the silence Piper leaves at both ends so clips can be chained into one sentence.
     trim = "silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse"
+    if key.startswith("cleaner_"):
+        # The cleaner: older, higher and tired of everybody.
+        trim += ",asetrate=22050*1.10,aresample=22050,atempo=0.94"
     if key.startswith("guard_"):
         # The security guard is the same voice pitched down and slowed a little, so he is
         # plainly a different, heavier man than the helper.

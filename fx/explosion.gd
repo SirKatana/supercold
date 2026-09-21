@@ -144,6 +144,10 @@ func _blast(source: Node) -> int:
 			dude.on_explosion(here)
 			if not dude.alive:
 				killed += 1
+	for node: Node in get_tree().get_nodes_in_group(&"cleaners"):
+		var bystander: Node3D = node as Node3D
+		if bystander.global_position.distance_to(here) <= _radius and _reaches(bystander.global_position + Vector3.UP * 1.1):
+			bystander.call(&"on_explosion", here)
 	var player: Player = get_tree().get_first_node_in_group(&"player") as Player
 	if player != null and player.alive:
 		var d: float = player.chest_position().distance_to(here)

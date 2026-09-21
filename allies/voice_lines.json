@@ -108,5 +108,11 @@
  "guard_halt": "Security. Throw me your weapon.",
  "guard_thanks": "Thank you. Move along.",
  "guard_stop": "Stop! Throw it over, now!",
- "guard_clear": "You're clear. Go ahead."
+ "guard_clear": "You're clear. Go ahead.",
+ "cleaner_1": "Oh, come on. I just did this floor.",
+ "cleaner_2": "Again? Watch what you're doing.",
+ "cleaner_3": "That's three. I am counting.",
+ "cleaner_4": "One more. Go on. I dare you.",
+ "cleaner_snap": "That's it! Come here!",
+ "cleaner_done": "Wet floor. Mind your step."
 }

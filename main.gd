@@ -3,6 +3,7 @@ extends Node3D
 
 const HUD_SCENE: PackedScene = preload("res://ui/hud.tscn")
 const TITLE_SCENE: PackedScene = preload("res://ui/title.tscn")
+const T: Tuning = preload("res://data/tuning.tres")
 const PAUSE_SCENE: PackedScene = preload("res://ui/pause.tscn")
 const ENDING_SCENE: PackedScene = preload("res://ui/ending.tscn")
 
@@ -162,6 +163,28 @@ func _capture(path: String, after: float) -> void:
 			Game.player.hands.primary()
 			TimeManager.override_scale = 0.5
 			await get_tree().create_timer(0.7, true, false, true).timeout
+	if _arg("do", "") == "cleaner" and Game.player != null:
+		# Spill something in front of the player and let the cleaner get to work. `--angry=true`
+		# makes it the fifth spill.
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			node.queue_free()
+		var me: Player = Game.player
+		me.global_position += -me.global_transform.basis.z * 3.2
+		var spot: Vector3 = me.global_position - me.global_transform.basis.z * 3.0
+		if _flag("angry"):
+			Game.spills_this_floor = T.cleaner_strikes - 1
+		var pool := Puddle.new()
+		pool.radius = T.spill_radius
+		pool.life = T.spill_seconds
+		Game.entities_root(self).add_child(pool)
+		pool.global_position = Vector3(spot.x, 0, spot.z)
+		Game.report_spill(pool)
+		if Game.cleaner != null:
+			Game.cleaner.global_position = spot + me.global_transform.basis.x * (0.0 if _flag("angry") else 0.9) + me.global_transform.basis.z * (0.6 if _flag("angry") else 0.0)
+		me.head.rotation.x = -0.12
+		me.hands.visible = false
+		TimeManager.override_scale = 1.0
+		await get_tree().create_timer(float(_arg("at", "3.0")), true, false, true).timeout
 	if _arg("do", "") == "view" and Game.player != null:
 		# Stand on one grid cell and look at another: `--cell=12,1 --look=12,5 [--pitch=-5]`.
 		var from: PackedStringArray = _arg("cell", "1,1").split(",")

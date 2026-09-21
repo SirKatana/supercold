@@ -52,6 +52,11 @@ var testing: bool = false
 ## What the player was holding when the lift doors closed. It rides up with them.
 var carried: Dictionary = {}
 var guard: SecurityGuard = null
+## Spills on this floor so far, and the cleaner while he is out. See `report_spill`.
+var spills_this_floor: int = 0
+var cleaner: Cleaner = null
+var _cleaner_is_dead: bool = false
+signal spilled(puddle: Puddle, count: int)
 ## Testing: the helper is hired for free on every floor of this run.
 var free_helper: bool = false
 
@@ -185,6 +190,9 @@ func unload_level() -> void:
 	player = null
 	helper = null
 	guard = null
+	cleaner = null
+	spills_this_floor = 0
+	_cleaner_is_dead = false
 	alive_enemies = 0
 	_pending_waves.clear()
 
@@ -284,6 +292,41 @@ func _hand_back_what_was_carried() -> void:
 	if item.is_weapon():
 		item.contraband = true
 		_post_guard()
+
+
+## Does this floor have anything to spill? Then it has a cleaner on call.
+func floor_has_a_cleaner() -> bool:
+	if data == null:
+		return false
+	for entry: Dictionary in data.pickups:
+		if entry["kind"] == &"bucket" or entry["kind"] == &"mug":
+			return true
+	return false
+
+
+## A bucket was poured or a mug of coffee smashed. The cleaner comes out of the arrival lift
+## and deals with it; he is the same man for the whole floor, and he is counting.
+func report_spill(puddle: Puddle) -> void:
+	if level == null or state != State.PLAYING and state != State.CLEARED:
+		return
+	spills_this_floor += 1
+	spilled.emit(puddle, spills_this_floor)
+	if not floor_has_a_cleaner():
+		return
+	if cleaner == null or not is_instance_valid(cleaner) or not cleaner.alive:
+		if cleaner != null and is_instance_valid(cleaner) and not cleaner.alive:
+			return      # the player killed him. Nobody else is coming to mop.
+		if _cleaner_is_dead:
+			return
+		cleaner = Cleaner.new()
+		cleaner.name = "Cleaner"
+		entities_root(self).add_child(cleaner)
+		var home: Vector3 = data.cell_center(data.front_cell(data.player_start), 0.05)
+		cleaner.report_for_duty(home)
+		cleaner.tree_exiting.connect(func() -> void:
+			if cleaner != null and is_instance_valid(cleaner) and not cleaner.alive:
+				_cleaner_is_dead = true)
+	cleaner.call_out(puddle, spills_this_floor)
 
 
 func _post_guard() -> void:

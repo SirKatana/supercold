@@ -47,6 +47,7 @@ Things worth knowing:
 - Dudes running over water or ice fall over and lose their guns. You never slip.
 - A water bucket is one pour. Tip it over a dude and he goes straight down. The spill stays slippery for a minute and a half.
 - Throw a stink grenade into a room and green fog fills it. Dudes grab their throats, double over and drop. Troopers wear gas masks. Levels 15 and 18 are full of them.
+- Spill something (pour a bucket, smash a coffee mug) and the cleaner comes out of the lift to mop it up. He keeps count. The fifth spill on a floor is one too many and he comes for you with the broom. He is slower than you, and a bullet stops him.
 - A knife kills in one stab. Runners are faster than you, so keep one.
 - Biters wait under the floor and climb out when you get close. They do not count toward clearing a floor until they are up.
 - The super gun is a laser. It goes through everyone in line, shields too, and they melt.

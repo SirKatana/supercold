@@ -97,6 +97,33 @@ static func book(index: int) -> StandardMaterial3D:
 	return _plain(StringName("book_%d" % (index % colours.size())), colours[index % colours.size()], 0.85)
 
 
+## The cleaner's overalls, their darker bib and cap, his gloves and his broom.
+static func overalls() -> StandardMaterial3D:
+	return _plain(&"overalls", Color(0.20, 0.42, 0.50), 0.9)
+
+
+static func overalls_dark() -> StandardMaterial3D:
+	return _plain(&"overalls_dark", Color(0.12, 0.26, 0.33), 0.9)
+
+
+static func rubber_yellow() -> StandardMaterial3D:
+	return _plain(&"rubber_yellow", Color(0.98, 0.80, 0.10), 0.6)
+
+
+static func bristle() -> StandardMaterial3D:
+	return _plain(&"bristle", Color(0.78, 0.66, 0.36), 1.0)
+
+
+## Spilt coffee: a thin dark film on the floor.
+static func coffee_spill() -> StandardMaterial3D:
+	return _cached(&"coffee_spill", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.22, 0.12, 0.06, 0.82)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.roughness = 0.15
+		return m)
+
+
 static func paper() -> StandardMaterial3D:
 	return _plain(&"paper", Color(0.97, 0.97, 0.95), 1.0)
 
