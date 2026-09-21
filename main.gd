@@ -162,6 +162,21 @@ func _capture(path: String, after: float) -> void:
 			Game.player.hands.primary()
 			TimeManager.override_scale = 0.5
 			await get_tree().create_timer(0.7, true, false, true).timeout
+	if _arg("do", "") == "door" and Game.player != null:
+		# Stand in front of the first door. `--dude=1` puts someone behind it so it swings open.
+		var d: Door = get_tree().get_first_node_in_group(&"doors") as Door
+		var face: Vector3 = Vector3(0, 0, 1) if d.along_x else Vector3(1, 0, 0)
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			node.queue_free()
+		Game.player.global_position = d.global_position + face * float(_arg("back", "3.0")) + Vector3(float(_arg("side", "0.9")), 0.05, 0).rotated(Vector3.UP, 0.0 if d.along_x else PI * 0.5)
+		Game.player.look_at(Vector3(d.global_position.x, Game.player.global_position.y, d.global_position.z))
+		Game.player.head.rotation.x = -0.08
+		Game.player.hands.visible = false
+		if _flag("dude"):
+			var visitor: PinkDude = Game.spawn_dude(d.global_position - face * 1.0, true)
+			visitor.sense_override = true
+			TimeManager.override_scale = 1.0
+		await get_tree().create_timer(float(_arg("at", "0.4")), true, false, true).timeout
 	if _arg("do", "") == "doorbreak" and Game.player != null:
 		if _flag("multimesh"):
 			Shatter.plain_meshes = false      # compare against the desktop MultiMesh path
