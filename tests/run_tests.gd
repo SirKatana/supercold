@@ -18,6 +18,7 @@ func _initialize() -> void:
 func _run() -> void:
 	await process_frame
 	root.get_node(^"Game").set(&"fast_elevators", true)
+	root.get_node(^"Settings").call(&"use_defaults_for_tests")      # not the player's own preferences
 	root.get_node(^"AdService").set(&"auto_result", 1)
 	# No talking computer during automated runs. Loaded at runtime: see the note on -s scripts.
 	(load("res://allies/helper_voice.gd") as GDScript).set(&"tts_enabled", false)

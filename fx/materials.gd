@@ -68,6 +68,15 @@ static func _plain(key: StringName, colour: Color, roughness: float = 0.8, metal
 		return m)
 
 
+## The lift's ceiling light: bright, but never past 1.0, so it cannot bloom into a white screen.
+static func lift_light() -> StandardMaterial3D:
+	return _cached(&"lift_light", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.albedo_color = Color(0.90, 0.96, 1.0)
+		return m)
+
+
 static func paper() -> StandardMaterial3D:
 	return _plain(&"paper", Color(0.97, 0.97, 0.95), 1.0)
 

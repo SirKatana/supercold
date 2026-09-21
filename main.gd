@@ -436,6 +436,12 @@ func _capture(path: String, after: float) -> void:
 		Game.entities_root(self).add_child(thing)
 		Game.player.hands.pick_up(thing)
 		await get_tree().create_timer(0.2, true, false, true).timeout
+	if _arg("do", "") == "cabin" and Game.player != null:
+		# Inside the arrival lift: `--step` metres toward the doors, `--pitch` and `--yaw` in degrees.
+		Game.player.global_position += -Game.player.global_transform.basis.z * float(_arg("step", "0"))
+		Game.player.rotation.y += deg_to_rad(float(_arg("yaw", "0")))
+		Game.player.head.rotation.x = deg_to_rad(float(_arg("pitch", "0")))
+		await get_tree().create_timer(0.3, true, false, true).timeout
 	if _arg("do", "") == "props" and Game.player != null:
 		# A desk, a cabinet and the three throwables, lined up close to the camera.
 		for group: StringName in [&"enemies"]:

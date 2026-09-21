@@ -377,6 +377,7 @@ rtk proxy tools/shot.sh out.png test_room 1.5 --do=punch   # also --do=hold
 ```
 
 `tools/shot.sh` uses the OpenGL compatibility renderer on llvmpipe, so colours differ a little from Forward+.
+For anything about glow, bloom, exposure or SSAO use `rtk proxy tools/shot_vk.sh out.png <level> <seconds> [args]`: the same capture with the real Forward+ renderer on software Vulkan (slow, still no window). The elevator white-out was invisible in `shot.sh` and obvious in `shot_vk.sh`. `--do=cabin --step= --yaw= --pitch=` looks around inside the arrival lift. Tests and the smoke bot call `Settings.use_defaults_for_tests()`: never let a test read or write the player's `user://settings.cfg`.
 Frame-time numbers need the real GPU and a real window: ask the user before running
 `godot4 --disable-vsync --path . -s tests/smoke_bot.gd -- --perf --floor=f5_executive`.
 Never claim a milestone done without the test output in hand.

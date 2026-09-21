@@ -113,7 +113,13 @@ func _visual_box(size: Vector3, at: Vector3, material: Material) -> MeshInstance
 func _build_cabin() -> void:
 	_visual_box(Vector3(1.8, 0.04, 1.8), Vector3(0, 0.02, 0), Mats.polymer())                # cabin floor
 	_visual_box(Vector3(1.8, 0.06, 1.8), Vector3(0, 2.5, 0), Mats.wall())                    # cabin ceiling
-	_visual_box(Vector3(1.0, 0.03, 1.0), Vector3(0, 2.46, 0), Mats.accent())                 # light panel
+	_visual_box(Vector3(1.0, 0.03, 1.0), Vector3(0, 2.46, 0), Mats.lift_light())             # light panel
+	# Everything that makes the cabin read as a room and not a white screen: wainscot, rails,
+	# seams, cornice, a framed ceiling light and a button panel. One merged mesh.
+	var trim_mesh := MeshInstance3D.new()
+	trim_mesh.mesh = MeshKit.cached(&"lift_cabin_trim", _model_cabin_trim)
+	trim_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(trim_mesh)
 	_visual_box(Vector3(1.7, 0.05, 0.05), Vector3(0, 1.0, 0.86), Mats.steel())               # handrail
 	for x: float in [-0.6, 0.0, 0.6]:                                                        # wall panel seams
 		_visual_box(Vector3(0.015, 2.3, 0.01), Vector3(x, 1.25, 0.895), Mats.locked())
@@ -128,10 +134,56 @@ func _build_cabin() -> void:
 	var lamp := OmniLight3D.new()
 	lamp.position = Vector3(0, 2.2, 0)
 	lamp.omni_range = 3.2
-	lamp.light_energy = 0.7
+	# Gentle, and with no specular. At 0.7 with a highlight, the steel doors threw a white bloom
+	# across the view and the white walls burned out to a blank screen.
+	lamp.light_energy = 0.3
+	lamp.light_specular = 0.0
 	lamp.light_color = Color(0.8, 0.95, 1.0)
 	lamp.shadow_enabled = false
 	add_child(lamp)
+
+
+static func _model_door_detail(kit: MeshKit) -> void:
+	var w: float = DOOR_WIDTH * 0.5
+	for face: float in [-1.0, 1.0]:
+		kit.box(Vector3(w * 0.92, 0.22, 0.004), Vector3(0, -DOOR_HEIGHT * 0.5 + 0.13, 0.027 * face), Mats.gunmetal())   # kick plate
+		kit.box(Vector3(w * 0.70, DOOR_HEIGHT * 0.52, 0.003), Vector3(0, 0.14, 0.0265 * face), Mats.gunmetal())        # inset panel
+		kit.box(Vector3(w * 0.62, DOOR_HEIGHT * 0.46, 0.003), Vector3(0, 0.14, 0.0285 * face), Mats.steel())
+
+
+static func _model_cabin_trim(kit: MeshKit) -> void:
+	var dark: Material = Mats.gunmetal()
+	var seam: Material = Mats.locked()
+	var metal: Material = Mats.steel()
+	var black: Material = Mats.polymer()
+	# Wainscot and kick strip on the back wall and both sides.
+	kit.box(Vector3(1.80, 0.95, 0.012), Vector3(0, 0.555, 0.893), dark)
+	kit.box(Vector3(1.80, 0.08, 0.016), Vector3(0, 0.08, 0.891), black)
+	kit.box(Vector3(1.80, 0.02, 0.020), Vector3(0, 1.04, 0.889), metal)
+	for side: float in [-1.0, 1.0]:
+		kit.box(Vector3(0.012, 0.95, 1.80), Vector3(0.893 * side, 0.555, 0), dark)
+		kit.box(Vector3(0.016, 0.08, 1.80), Vector3(0.891 * side, 0.08, 0), black)
+		kit.box(Vector3(0.020, 0.02, 1.80), Vector3(0.889 * side, 1.04, 0), metal)
+		kit.box(Vector3(0.05, 0.05, 1.50), Vector3(0.84 * side, 1.0, 0.05), metal)           # side handrail
+		for z: float in [-0.55, 0.65]:
+			kit.box(Vector3(0.06, 0.03, 0.03), Vector3(0.87 * side, 1.0, z), metal)          # its brackets
+		for z: float in [-0.3, 0.3]:
+			kit.box(Vector3(0.010, 1.36, 0.015), Vector3(0.895 * side, 1.74, z), seam)       # upper panel seams
+		kit.box(Vector3(0.02, 0.06, 1.80), Vector3(0.885 * side, 2.44, 0), dark)             # cornice
+	kit.box(Vector3(1.80, 0.06, 0.02), Vector3(0, 2.44, 0.885), dark)
+	# The ceiling light sits in a frame with two bars across it.
+	for side: float in [-1.0, 1.0]:
+		kit.box(Vector3(1.10, 0.04, 0.05), Vector3(0, 2.45, 0.525 * side), dark)
+		kit.box(Vector3(0.05, 0.04, 1.10), Vector3(0.525 * side, 2.45, 0), dark)
+		kit.box(Vector3(0.02, 0.02, 1.00), Vector3(0.17 * side, 2.44, 0), dark)
+	# Button panel inside, right of the doors.
+	var panel_z: float = FRONT_Z + 0.075
+	kit.box(Vector3(0.20, 0.52, 0.015), Vector3(0.76, 1.28, panel_z), metal)
+	kit.box(Vector3(0.14, 0.07, 0.006), Vector3(0.76, 1.48, panel_z + 0.009), black)         # little display
+	for row: int in 4:
+		for column: int in 2:
+			kit.tube(0.016, 0.016, 0.008, Vector3(0.735 + column * 0.05, 1.38 - row * 0.065, panel_z + 0.010), Mats.ceramic(), true, 10)
+	kit.tube(0.018, 0.018, 0.010, Vector3(0.76, 1.09, panel_z + 0.011), Mats.icon(2), true, 10)   # alarm
 
 
 func _build_doors() -> void:
@@ -145,6 +197,11 @@ func _build_doors() -> void:
 		seam.mesh = seam_mesh
 		seam.position.x = -side * (DOOR_WIDTH * 0.25 - 0.03)
 		panel.add_child(seam)
+		# Brushed door leaves have a darker kick plate and an inset panel, inside and out, so a
+		# door filling the view is still plainly a door.
+		var detail := MeshInstance3D.new()
+		detail.mesh = MeshKit.cached(&"lift_door_detail", _model_door_detail)
+		panel.add_child(detail)
 		_panels.append(panel)
 	_door_body = StaticBody3D.new()
 	_door_body.collision_layer = 1
