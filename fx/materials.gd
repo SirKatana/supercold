@@ -55,6 +55,50 @@ static func gunmetal() -> StandardMaterial3D:
 		return m)
 
 
+static func _plain(key: StringName, colour: Color, roughness: float = 0.8, metallic: float = 0.0, glow: float = 0.0) -> StandardMaterial3D:
+	return _cached(key, func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = colour
+		m.roughness = roughness
+		m.metallic = metallic
+		if glow > 0.0:
+			m.emission_enabled = true
+			m.emission = colour
+			m.emission_energy_multiplier = glow
+		return m)
+
+
+static func paper() -> StandardMaterial3D:
+	return _plain(&"paper", Color(0.97, 0.97, 0.95), 1.0)
+
+
+static func ceramic() -> StandardMaterial3D:
+	return _plain(&"ceramic", Color(0.95, 0.95, 0.93), 0.35)
+
+
+static func coffee() -> StandardMaterial3D:
+	return _plain(&"coffee", Color(0.20, 0.11, 0.06), 0.3)
+
+
+## Powder-coated tumbler body.
+static func tumbler() -> StandardMaterial3D:
+	return _plain(&"tumbler", Color(0.36, 0.62, 0.60), 0.55, 0.1)
+
+
+static func aluminium() -> StandardMaterial3D:
+	return _plain(&"aluminium", Color(0.78, 0.79, 0.81), 0.35, 0.6)
+
+
+static func screen_lit() -> StandardMaterial3D:
+	return _plain(&"screen_lit", Color(0.16, 0.30, 0.62), 0.2, 0.0, 1.1)
+
+
+## App icons on the tablet's home screen.
+static func icon(index: int) -> StandardMaterial3D:
+	var colours: Array[Color] = [Color(0.25, 0.85, 0.45), Color(1.0, 0.72, 0.20), Color(1.0, 0.30, 0.35), Color(0.95, 0.95, 1.0)]
+	return _plain(StringName("icon_%d" % (index % 4)), colours[index % 4], 0.3, 0.0, 1.4)
+
+
 static func steel() -> StandardMaterial3D:
 	return _cached(&"steel", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

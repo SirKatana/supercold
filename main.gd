@@ -436,6 +436,35 @@ func _capture(path: String, after: float) -> void:
 		Game.entities_root(self).add_child(thing)
 		Game.player.hands.pick_up(thing)
 		await get_tree().create_timer(0.2, true, false, true).timeout
+	if _arg("do", "") == "props" and Game.player != null:
+		# A desk, a cabinet and the three throwables, lined up close to the camera.
+		for group: StringName in [&"enemies"]:
+			for node: Node in get_tree().get_nodes_in_group(group):
+				node.queue_free()
+		var eye: Player = Game.player
+		eye.global_position += -eye.global_transform.basis.z * 3.4      # out of the lift
+		var ahead: Vector3 = -eye.global_transform.basis.z
+		var right: Vector3 = eye.global_transform.basis.x
+		var at: Vector3 = eye.global_position + ahead * 2.6
+		var desk: StaticBody3D = LevelBuilder.make_box(Furniture.DESK_SIZE, LevelBuilder.prop_material)
+		Furniture.dress(desk, Furniture.desk_mesh(), LevelBuilder.prop_material)
+		Game.entities_root(self).add_child(desk)
+		desk.global_position = at - right * 0.75 + Vector3(0, 0.5, 0)
+		desk.rotation.y = eye.rotation.y + 0.5
+		var cabinet: StaticBody3D = LevelBuilder.make_box(Furniture.CABINET_SIZE, LevelBuilder.prop_material)
+		Furniture.dress(cabinet, Furniture.cabinet_mesh(), LevelBuilder.prop_material)
+		Game.entities_root(self).add_child(cabinet)
+		cabinet.global_position = at + right * 0.95 - ahead * 0.5 + Vector3(0, 0.45, 0)
+		cabinet.rotation.y = eye.rotation.y - 0.35
+		var kinds: Array[StringName] = [&"bottle", &"keyboard", &"mug"]
+		for i: int in kinds.size():
+			var item: Pickup = LevelBuilder.create_pickup(kinds[i])
+			Game.entities_root(self).add_child(item)
+			item.global_position = cabinet.global_position + Vector3(0, 0.45 + Pickup.REST_HEIGHT, 0) + right * (i - 1) * 0.2 - ahead * (0.1 if i == 1 else -0.12)
+			item.rotation.y = eye.rotation.y + 0.6
+		eye.head.rotation.x = -0.32
+		eye.hands.visible = false
+		await get_tree().create_timer(0.3, true, false, true).timeout
 	if _arg("do", "").begins_with("gun:") and Game.player != null:
 		var gun: Gun = PinkDude.create_gun(StringName(_arg("do", "").trim_prefix("gun:")))
 		Game.entities_root(self).add_child(gun)

@@ -90,3 +90,25 @@ func test_frozen_dude_keeps_his_shades_black() -> void:
 	d.freeze(3.0)
 	check(d.skin.has_sunglasses(), "still on")
 	check_eq(d.skin._shades.material_override, null, "and not turned to ice")
+
+
+func test_the_pause_menu_can_take_them_off_everyone_and_put_them_back() -> void:
+	var dude: PinkDude = Game.spawn_dude(Vector3(0, 0.05, -4), true) if Game.level != null else null
+	if dude == null:
+		check(Game.load_level("test_room"), "test room loads")
+		dude = Game.spawn_dude(Vector3(0, 0.05, -4), true)
+	await wait_physics(2)
+	check(dude.skin.has_sunglasses(), "on by default")
+	Settings.sunglasses = false
+	Settings.changed.emit()
+	check(not dude.skin.has_sunglasses(), "off the moment the setting changes")
+	var later: PinkDude = Game.spawn_dude(Vector3(2, 0.05, -4), true)
+	await wait_physics(2)
+	check(not later.skin.has_sunglasses(), "and new dudes arrive without them")
+	var before: int = get_tree().get_nodes_in_group(&"lost_shades").size()
+	later.die()
+	check_eq(get_tree().get_nodes_in_group(&"lost_shades").size(), before, "nothing falls off a dude who had none")
+	Settings.sunglasses = true
+	Settings.changed.emit()
+	check(dude.skin.has_sunglasses(), "back on")
+	Game.unload_level()

@@ -56,7 +56,8 @@ func _ready() -> void:
 
 	skin = Humanoid.create(self, Mats.security_suit(), 1.04)
 	skin.bulk = 1.12
-	skin.set_sunglasses(true)
+	skin.set_sunglasses(Settings.sunglasses)
+	Settings.changed.connect(func() -> void: skin.set_sunglasses(Settings.sunglasses))
 	_cap = _accessory(MeshKit.cached(&"guard_cap", _model_cap))
 	_vest = _accessory(MeshKit.cached(&"guard_vest", _model_vest))
 	var label := Label3D.new()

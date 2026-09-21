@@ -213,8 +213,13 @@ func _come_to_rest() -> void:
 	landed.emit()
 
 
+## What the pieces are made of when a fragile one breaks.
+func shard_material() -> Material:
+	return Mats.black()
+
+
 func shatter() -> void:
-	Shatter.burst(Game.entities_root(self), global_position, 8, Mats.black(), Vector3.ONE * 0.08,
+	Shatter.burst(Game.entities_root(self), global_position, 8, shard_material(), Vector3.ONE * 0.08,
 		velocity * 0.15, 0.07)
 	Sfx.play(&"shatter", global_position)
 	queue_free()

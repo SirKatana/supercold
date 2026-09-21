@@ -35,6 +35,18 @@ func _ready() -> void:
 	_slider(box, "FIELD OF VIEW", 60.0, 110.0, 1.0, Settings.fov, func(v: float) -> void: Settings.fov = v)
 	_slider(box, "VOLUME", 0.0, 1.0, 0.05, Settings.volume, func(v: float) -> void: Settings.volume = v)
 
+	var shades := CheckButton.new()
+	shades.text = "SUNGLASSES ON ENEMIES"
+	shades.button_pressed = Settings.sunglasses
+	shades.add_theme_color_override(&"font_color", Color(0.04, 0.04, 0.05))
+	shades.add_theme_color_override(&"font_pressed_color", Color(0.04, 0.04, 0.05))
+	shades.add_theme_color_override(&"font_hover_color", Color(0.04, 0.04, 0.05))
+	shades.add_theme_color_override(&"font_hover_pressed_color", Color(0.04, 0.04, 0.05))
+	shades.toggled.connect(func(on: bool) -> void:
+		Settings.sunglasses = on
+		Settings.apply())
+	box.add_child(shades)
+
 	_button(box, "RESUME", close)
 	_button(box, "RESTART FLOOR", func() -> void:
 		close()

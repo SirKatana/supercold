@@ -154,6 +154,7 @@ static func _place_pickups(data: LevelData, geometry: Node3D, entities: Node3D) 
 			continue
 		var pedestal: StaticBody3D = make_box(Vector3(0.7, 0.9, 0.7), prop_material)
 		pedestal.name = "Pedestal"
+		Furniture.dress(pedestal, Furniture.cabinet_mesh(), prop_material)
 		pedestal.position = data.cell_center(entry["cell"], 0.45)
 		geometry.add_child(pedestal)
 		var item: Pickup = create_pickup(entry["kind"])
@@ -371,5 +372,7 @@ static func _build_props(data: LevelData, parent: Node3D) -> void:
 			size = Vector3(1.1, T.wall_height, 1.1)
 		var body: StaticBody3D = make_box(size, prop_material)
 		body.name = String(kind).capitalize()
+		if kind == &"desk":
+			Furniture.dress(body, Furniture.desk_mesh(), prop_material)
 		body.position = data.cell_center(prop["cell"], size.y * 0.5)
 		parent.add_child(body)

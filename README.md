@@ -25,7 +25,7 @@ godot4 --path .                 # or run from source with Godot 4.7
 | Q | | Throw it (always) |
 | Right click, sniper rifle | | Hold to look down the scope |
 | R | Restart the floor | |
-| Esc | Pause: sensitivity, field of view, volume | |
+| Esc | Pause: sensitivity, field of view, volume, sunglasses on or off | |
 | F3 | Debug readout (source runs only) | |
 
 Things worth knowing:

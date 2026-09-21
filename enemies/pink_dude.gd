@@ -104,7 +104,8 @@ func _ready() -> void:
 		body_material = Mats.pink()
 	skin = Humanoid.create(self, body_material, body_scale)
 	skin.bulk = body_bulk()
-	skin.set_sunglasses(wears_shades())
+	skin.set_sunglasses(wears_shades() and Settings.sunglasses)
+	Settings.changed.connect(_on_settings_changed)
 	hand_anchor = _make_anchor("HandAnchor")
 	off_hand_anchor = _make_anchor("OffHandAnchor")
 	_build_laser()
@@ -237,8 +238,15 @@ func body_bulk() -> float:
 
 
 ## Evil pink dudes wear sunglasses. Indoors.
+## Whether this kind of dude wears them at all. The player can still switch them off in the
+## pause menu (`Settings.sunglasses`), which takes them off everyone at once.
 func wears_shades() -> bool:
 	return true
+
+
+func _on_settings_changed() -> void:
+	if alive and skin != null:
+		skin.set_sunglasses(wears_shades() and Settings.sunglasses)
 
 
 func engage_distance() -> float:

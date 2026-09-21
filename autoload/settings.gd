@@ -8,6 +8,8 @@ const PATH: String = "user://settings.cfg"
 var mouse_sensitivity: float = 0.12
 var fov: float = 85.0
 var volume: float = 0.8
+## Pink dudes and security wear sunglasses. Some people would rather they did not.
+var sunglasses: bool = true
 
 
 func _ready() -> void:
@@ -21,6 +23,7 @@ func load_settings() -> void:
 	mouse_sensitivity = float(cfg.get_value("input", "mouse_sensitivity", mouse_sensitivity))
 	fov = float(cfg.get_value("video", "fov", fov))
 	volume = float(cfg.get_value("audio", "volume", volume))
+	sunglasses = bool(cfg.get_value("video", "sunglasses", sunglasses))
 	_apply_volume()
 
 
@@ -29,6 +32,7 @@ func save_settings() -> void:
 	cfg.set_value("input", "mouse_sensitivity", mouse_sensitivity)
 	cfg.set_value("video", "fov", fov)
 	cfg.set_value("audio", "volume", volume)
+	cfg.set_value("video", "sunglasses", sunglasses)
 	cfg.save(PATH)
 
 
