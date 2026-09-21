@@ -1,6 +1,10 @@
 class_name Shatter
 extends Node3D
 ## A burst of shards in one MultiMesh. Motion is scripted and runs on world time.
+##
+## In a browser the shards are ordinary MeshInstance3D nodes instead. They look and move the
+## same. A MultiMesh rewritten every frame is the one thing in this effect that WebGL drivers
+## are known to mishandle (flicker, stale instances), and a door is only six panels.
 
 const T: Tuning = preload("res://data/tuning.tres")
 const FLOOR_Y: float = 0.04
@@ -15,6 +19,10 @@ var _age: float = 0.0
 var _life: float = 3.0
 
 static var _meshes: Dictionary[Material, PrismMesh] = {}
+## Tests flip this to cover the browser path on the desktop.
+static var plain_meshes: bool = OS.has_feature("web")
+
+var _parts: Array[MeshInstance3D] = []
 
 
 ## `half_extents` is the volume shards start in, `impulse` pushes them all one way.
@@ -30,14 +38,22 @@ static func burst(parent: Node, origin: Vector3, count: int, material: Material,
 		shared.material = material
 		_meshes[material] = shared
 	var mesh: PrismMesh = _meshes[material]
-	s._multimesh = MultiMesh.new()
-	s._multimesh.transform_format = MultiMesh.TRANSFORM_3D
-	s._multimesh.mesh = mesh
-	s._multimesh.instance_count = count
-	var instance := MultiMeshInstance3D.new()
-	instance.multimesh = s._multimesh
-	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	s.add_child(instance)
+	if plain_meshes:
+		for i: int in count:
+			var part := MeshInstance3D.new()
+			part.mesh = mesh
+			part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			s.add_child(part)
+			s._parts.append(part)
+	else:
+		s._multimesh = MultiMesh.new()
+		s._multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		s._multimesh.mesh = mesh
+		s._multimesh.instance_count = count
+		var instance := MultiMeshInstance3D.new()
+		instance.multimesh = s._multimesh
+		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		s.add_child(instance)
 	for i: int in count:
 		var offset := Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)) * half_extents
 		s._pos.append(offset)
@@ -76,4 +92,7 @@ func _write() -> void:
 	var fade: float = clampf((_life - _age) / 0.6, 0.0, 1.0)
 	for i: int in _pos.size():
 		var b := Basis.from_euler(_rot[i]).scaled(_scale[i] * fade)
-		_multimesh.set_instance_transform(i, Transform3D(b, _pos[i]))
+		if _multimesh != null:
+			_multimesh.set_instance_transform(i, Transform3D(b, _pos[i]))
+		else:
+			_parts[i].transform = Transform3D(b, _pos[i])

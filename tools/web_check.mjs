@@ -9,7 +9,7 @@ const [url, out, seconds = '40', click = ''] = process.argv.slice(2);
 const port = 9300 + Math.floor(Math.random() * 500);
 const profile = mkdtempSync(join(process.env.CLAUDE_JOB_DIR ? process.env.CLAUDE_JOB_DIR + '/tmp' : tmpdir(), 'chrome-'));
 const chrome = spawn('google-chrome', ['--headless=new', '--no-sandbox', `--user-data-dir=${profile}`,
-	'--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--mute-audio',
+	...(process.env.GPU ? ['--use-angle=gl', '--enable-gpu', '--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']), '--mute-audio',
 	'--autoplay-policy=no-user-gesture-required', '--window-size=1280,720', `--remote-debugging-port=${port}`, 'about:blank'],
 	{ stdio: 'ignore' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -21,17 +21,22 @@ for (let i = 0; i < 50 && !target; i++) {
 const ws = new WebSocket(target.webSocketDebuggerUrl);
 await new Promise((r) => (ws.onopen = r));
 let id = 0; const waiting = new Map();
+let sawMarker = false;
+const marker = process.env.WAIT_FOR || '';
 const send = (method, params = {}) => new Promise((r) => { waiting.set(++id, r); ws.send(JSON.stringify({ id, method, params })); });
 ws.onmessage = (m) => {
 	const msg = JSON.parse(m.data);
 	if (msg.id && waiting.has(msg.id)) { waiting.get(msg.id)(msg.result); waiting.delete(msg.id); }
+	if (msg.method === 'Runtime.consoleAPICalled' && marker && msg.params.args.some((a) => String(a.value ?? '').includes(marker))) sawMarker = true;
 	if (msg.method === 'Runtime.consoleAPICalled') console.log(`[${msg.params.type}]`, msg.params.args.map((a) => a.value ?? a.description ?? '').join(' ').slice(0, 300));
 	if (msg.method === 'Runtime.exceptionThrown') console.log('[exception]', (msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text).slice(0, 400));
 	if (msg.method === 'Log.entryAdded') console.log(`[log:${msg.params.entry.level}]`, msg.params.entry.text.slice(0, 300));
 };
 await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
 await send('Page.navigate', { url });
-await sleep(Number(seconds) * 1000);
+// With WAIT_FOR=<text> the picture is taken as soon as the page logs that text (or after `seconds`).
+const deadline = Date.now() + Number(seconds) * 1000;
+while (Date.now() < deadline && !(marker && sawMarker)) await sleep(20);
 if (click) {
 	for (const type of ['mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x: Number(process.env.CLICK_X || 640), y: Number(process.env.CLICK_Y || 360), button: 'left', clickCount: 1 });
 	await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });

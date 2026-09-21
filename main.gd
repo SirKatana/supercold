@@ -147,6 +147,21 @@ func _capture(path: String, after: float) -> void:
 			Game.player.hands.primary()
 			TimeManager.override_scale = 0.5
 			await get_tree().create_timer(0.7, true, false, true).timeout
+	if _arg("do", "") == "doorbreak" and Game.player != null:
+		if _flag("multimesh"):
+			Shatter.plain_meshes = false      # compare against the desktop MultiMesh path
+		var door: Door = get_tree().get_first_node_in_group(&"doors") as Door
+		if door != null:
+			var facing: Vector3 = Vector3(0, 0, 1) if door.along_x else Vector3(1, 0, 0)
+			Game.player.global_position = door.global_position + facing * 3.2 + Vector3(0, 0.05, 0)
+			Game.player.look_at(door.global_position)
+			Game.player.head.rotation.x = 0.0
+			for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+				node.queue_free()
+			await get_tree().create_timer(0.4, true, false, true).timeout
+			TimeManager.override_scale = 0.5
+			door.shatter(-facing)
+			await get_tree().create_timer(float(_arg("at", "0.5")), true, false, true).timeout
 	if _arg("do", "").begins_with("die") and Game.player != null:
 		Game.god_mode = false
 		Game.player.global_position = Game.data.cell_center(Vector2i(5, 7), 0.05)
@@ -431,6 +446,9 @@ func _capture(path: String, after: float) -> void:
 		Game.player.hands.punch()
 		await get_tree().create_timer(0.06, true, false, true).timeout
 	await RenderingServer.frame_post_draw
+	if OS.has_feature("web"):
+		print("CAPTURE_READY")      # tools/web_check.mjs takes the picture when it sees this
+		return
 	get_viewport().get_texture().get_image().save_png(path)
 	get_tree().quit()
 
