@@ -89,6 +89,9 @@ tag = '<script src="index.js"></script>'
 assert tag in html, "export shell changed: no engine script tag"
 html = html.replace(tag, stores + "\n" + shim + "<script>\n" + engine + "\n</script>")
 
+# The loading bar in the game's pink, on the game's white.
+html = html.replace("</style>", "#status-progress { accent-color: #ff2d95; }\nbody { background-color: #f0f3f8; }\n</style>", 1)
+
 left = re.findall(r'(?:src|href)="(index\.[^"]+)"', html)
 assert not left, "still loaded from outside: %s" % left
 out.parent.mkdir(parents=True, exist_ok=True)

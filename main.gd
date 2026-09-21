@@ -30,6 +30,8 @@ func _ready() -> void:
 	Game.floor_loaded.connect(_apply_theme)
 
 	Game.god_mode = _flag("god")
+	if _flag("perfprint"):
+		_perf_print()
 	var level: String = _arg("level", "")
 	var level_number: int = _level_from_args()
 	if level_number > 0:
@@ -116,6 +118,19 @@ func _level_from_args() -> int:
 
 
 ## Debug aid: `godot4 --path . -- --shot=/tmp/f.png --shot-after=1.5` saves one frame and quits.
+## `--perfprint=1`: once a second, what a frame costs. Works in the web build too.
+func _perf_print() -> void:
+	TimeManager.override_scale = 1.0
+	while true:
+		await get_tree().create_timer(1.0, true, false, true).timeout
+		print("PERF fps %d  process %.1f ms  physics %.1f ms  draws %d  objects %d  prims %d  dudes %d" % [
+			Performance.get_monitor(Performance.TIME_FPS), Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+			Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+			Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+			Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), Game.alive_enemies])
+
+
 func _capture(path: String, after: float) -> void:
 	await get_tree().create_timer(after, true, false, true).timeout
 	if _arg("do", "").begins_with("lift") and _arg("do", "") != "liftarrive" and Game.player != null:

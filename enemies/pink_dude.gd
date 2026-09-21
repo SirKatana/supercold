@@ -24,6 +24,19 @@ var can_see_player: bool = false
 var dist_to_player: float = INF
 var alerted: bool = false
 
+## Browsers have no occlusion culling and pay dearly for every draw call, and a dude is thirty
+## meshes. In the web build a dude that no ray from the camera can reach is simply not drawn.
+## He still thinks, walks and keeps his pose (a ragdoll is seeded from it), so nothing in the
+## game changes. Tests flip this to cover it on the desktop.
+static var cull_unseen: bool = OS.has_feature("web")
+const CULL_NEAR: float = 5.0          # always drawn this close
+const CULL_LINGER: float = 0.5        # real seconds he stays drawn after the last clear ray
+var drawn: bool = true
+var _cull_linger: float = 0.0
+var _cull_tick: int = 0
+var _pose_stale: bool = false
+var _moving: float = 0.0
+
 # Flags the states drive and the body animates from.
 var desired_velocity: Vector3 = Vector3.ZERO
 var aiming: bool = false
@@ -130,6 +143,48 @@ static func create_gun(gun_kind: StringName) -> Gun:
 	return Pistol.create()
 
 
+## Every fourth tick, staggered between dudes: can the camera see any of five points on him?
+func _update_cull(delta: float) -> void:
+	_cull_linger = maxf(0.0, _cull_linger - delta)
+	_cull_tick += 1
+	if (_cull_tick + get_instance_id()) % 4 != 0:
+		return
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if camera == null:
+		_set_drawn(true)
+		return
+	var eye: Vector3 = camera.global_position
+	var seen: bool = eye.distance_to(global_position) <= CULL_NEAR
+	if not seen:
+		var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+		var side: Vector3 = global_transform.basis.x * 0.45 * body_scale
+		var chest: Vector3 = global_position + Vector3(0, 1.15 * body_scale, 0)
+		for point: Vector3 in [eye_position(), chest, global_position + Vector3(0, 0.25, 0), chest + side, chest - side]:
+			if Sight.is_clear(space, eye, point):
+				seen = true
+				break
+	if seen:
+		_cull_linger = CULL_LINGER
+	_set_drawn(seen or _cull_linger > 0.0)
+
+
+func _set_drawn(on: bool) -> void:
+	if on == drawn:
+		return
+	drawn = on
+	skin.visible = on
+	hand_anchor.visible = on
+	off_hand_anchor.visible = on
+	if on:
+		_lay_out_pose()
+
+
+## Anything that reads `joints` or the hand anchors of a dude who may not be drawn calls this first.
+func ensure_pose() -> void:
+	if _pose_stale or joints.is_empty():
+		_lay_out_pose()
+
+
 func _make_anchor(anchor_name: String) -> Node3D:
 	var anchor := Node3D.new()
 	anchor.name = anchor_name
@@ -231,6 +286,8 @@ func _physics_process(delta: float) -> void:
 	velocity.z = (desired_velocity.z + push.z) * rate
 	velocity.y = 0.0 if is_on_floor() else -4.0 * rate
 	move_and_slide()
+	if cull_unseen:
+		_update_cull(delta)
 	if not frozen:      # ice holds the pose he froze in
 		_animate(wd)
 
@@ -404,6 +461,7 @@ func muzzle() -> Vector3:
 func shoot() -> void:
 	if not has_weapon():
 		return
+	ensure_pose()      # the muzzle rides on the hand
 	var p: Player = get_player()
 	var target: Vector3 = p.chest_position() if p != null else muzzle() - global_transform.basis.z
 	var origin: Vector3 = muzzle()
@@ -589,6 +647,7 @@ func die(_at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: Strin
 	if frozen and style == &"ragdoll":
 		style = &"ice"
 	alive = false
+	ensure_pose()      # the ragdoll, the ice and the melt all start from his joints
 	if has_weapon():
 		_release_weapon().drop(global_position + Vector3(0, 1.2, 0))
 	change_state(&"dead")
@@ -655,6 +714,22 @@ func _animate(wd: float) -> void:
 		var spasm: float = pow(maxf(0.0, sin(_cough_phase)), 3.0) * 0.22
 		bend_target = clampf(0.45 + 0.5 * choke_exposure / T.fart_kill_time + spasm, 0.0, 1.0)
 	_bend = move_toward(_bend, bend_target, wd * (3.5 if choking else 2.0))
+	_moving = moving
+	if not drawn and not (aiming or winding_up):
+		_pose_stale = true      # nobody can see him: `ensure_pose` lays him out when it matters
+		_laser.visible = false
+		return
+	_lay_out_pose()
+
+	_laser.visible = aiming and has_weapon()
+	if _laser.visible:
+		_aim_laser()
+
+
+## The expensive half of animating: 21 joints of forward kinematics, thirty transforms.
+func _lay_out_pose() -> void:
+	_pose_stale = false
+	var moving: float = _moving
 	var left_arm: float = aim_left_amount() * (1.0 - _clutch)
 	var right_arm: float = maxf(_aim_raise, arm_raise_floor()) * (1.0 - _clutch)
 	var local: PackedVector3Array = Humanoid.pose(_walk_phase, moving, right_arm, left_arm,
@@ -665,20 +740,21 @@ func _animate(wd: float) -> void:
 		for i: int in local.size():
 			local[i] = tip * local[i] + Vector3(0, 0.12 * _recline, 0)
 	joints = Humanoid.to_world(local, global_transform, body_scale)
-	skin.apply(joints)
+	if drawn:
+		skin.apply(joints)
 	_place_anchor(hand_anchor, &"elbow_r", &"wrist_r", &"hand_r")
 	_place_anchor(off_hand_anchor, &"elbow_l", &"wrist_l", &"hand_l")
 
-	_laser.visible = aiming and has_weapon()
-	if _laser.visible:
-		var from: Vector3 = muzzle()
-		var p: Player = get_player()
-		var to: Vector3 = p.chest_position() if p != null else from - global_transform.basis.z * 5.0
-		var length: float = from.distance_to(to)
-		if length > 0.1:
-			_laser.global_position = (from + to) * 0.5
-			_laser.look_at(to, Vector3.UP if absf((to - from).normalized().y) < 0.99 else Vector3.RIGHT)
-			_laser.scale = Vector3(1, 1, length)
+
+func _aim_laser() -> void:
+	var from: Vector3 = muzzle()
+	var p: Player = get_player()
+	var to: Vector3 = p.chest_position() if p != null else from - global_transform.basis.z * 5.0
+	var length: float = from.distance_to(to)
+	if length > 0.1:
+		_laser.global_position = (from + to) * 0.5
+		_laser.look_at(to, Vector3.UP if absf((to - from).normalized().y) < 0.99 else Vector3.RIGHT)
+		_laser.scale = Vector3(1, 1, length)
 
 
 ## Puts a weapon anchor in the palm, with -Z running down the forearm so a gun points where the arm does.
