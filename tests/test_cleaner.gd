@@ -107,16 +107,49 @@ func test_the_fifth_spill_is_one_too_many() -> void:
 	check(not Game.player.alive, "a broom across the head is a broom across the head")
 
 
-func test_he_can_be_outrun_and_he_can_be_killed() -> void:
+func test_he_can_be_outrun() -> void:
 	check(T.cleaner_chase_speed < T.walk_speed, "slower than the player")
+
+
+func test_shooting_him_only_makes_him_ask_why() -> void:
 	_spill(_out_of_the_lift())
 	var man: Cleaner = Game.cleaner
-	man.on_bullet_hit(null, man.global_position, Vector3.BACK)
-	await wait_physics(2)
-	check(not is_instance_valid(man) or not man.alive, "one bullet")
-	_spill(_out_of_the_lift() + Vector3(1, 0, 0))
-	await wait_physics(2)
-	check_eq(get_tree().get_nodes_in_group(&"cleaners").size(), 0, "and nobody replaces him on this floor")
+	var dude: PinkDude = Game.spawn_dude(man.global_position + Vector3(4, 0, 0), true)
+	dude.sense_override = true
+	var blamed: Array = []
+	man.outraged.connect(func(who: Node3D) -> void: blamed.append(who))
+	for i: int in 12:
+		var fake := Node.new()
+		fake.set_script(load("res://tests/fake_bullet.gd"))
+		fake.set(&"shooter", dude)
+		man.on_bullet_hit(fake, man.global_position + Vector3(0, 1.2, 0), Vector3.RIGHT)
+		fake.free()
+	await wait_physics(12)
+	check(is_instance_valid(man) and man.alive, "a dozen rounds and he is still standing")
+	check(not man.hostile, "and he has not gone for anybody")
+	check_eq(blamed.size(), 12, "he noticed every one")
+	check(blamed[0] == dude, "and he knows which pink dude it was")
+	check_eq(man.voice.last_line, HelperVoice.line(&"cleaner_why"), "WHY!")
+	var toward: Vector3 = (dude.global_position - man.global_position).normalized()
+	check((-man.global_transform.basis.z).dot(toward) > 0.7, "said to the dude's face")
+	check(dude.alive, "the dude is untouched: he shouts, he does not hit")
+	check(Game.player.alive, "and so is the player")
+	for i: int in 900:
+		await wait_physics(1)
+		if get_tree().get_nodes_in_group(&"puddles").filter(func(p: Puddle) -> bool: return p.radius > 0.0).is_empty():
+			break
+	check(get_tree().get_nodes_in_group(&"wet_floor_signs").size() >= 1, "then he gets on with the mopping")
+
+
+func test_the_player_shooting_him_does_not_start_a_fight_either() -> void:
+	_spill(_out_of_the_lift())
+	var man: Cleaner = Game.cleaner
+	for i: int in 5:
+		man.on_punched(Game.player, man.global_position)
+		man.on_laser(Vector3.FORWARD)
+		man.on_explosion(man.global_position + Vector3(1, 0, 0))
+	await wait_physics(5)
+	check(man.alive and not man.hostile, "punched, lasered and blown up: alive, and still only a cleaner")
 
 
 func test_a_new_floor_forgets_the_count() -> void:

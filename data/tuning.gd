@@ -155,7 +155,6 @@ extends Resource
 @export var cleaner_mop_seconds: float = 2.4
 @export var cleaner_swing_range: float = 1.9
 @export var cleaner_windup: float = 0.6
-@export var cleaner_hp: int = 3
 ## A smashed mug leaves this much coffee, for this many real seconds.
 @export var coffee_radius: float = 0.6
 @export var coffee_seconds: float = 60.0

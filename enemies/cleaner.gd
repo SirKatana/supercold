@@ -8,12 +8,13 @@ extends CharacterBody3D
 ## in, walks to the mess, mops it up, stands a wet-floor sign on it, says what he thinks, and
 ## goes back. He keeps count. On the fifth spill of a floor he has had enough: he comes for the
 ## player instead, and a swing of the broom kills. He is slower than the player, so he can be
-## outrun, and he dies like anyone else. Until then he is nobody's enemy and never counts toward
-## clearing the floor.
+## outrun. He cannot be killed: shoot him and he only turns on whoever did it and shouts WHY!
+## He is nobody's enemy until that fifth spill, and never counts toward clearing the floor.
 
 signal mopped(puddle: Puddle)
 signal snapped
 signal left
+signal outraged(at_whom: Node3D)
 
 enum Mode { WALKING_TO_SPILL, MOPPING, LEAVING, HUNTING, SWINGING, STAGGERED }
 
@@ -22,7 +23,6 @@ const T: Tuning = preload("res://data/tuning.tres")
 var mode: Mode = Mode.LEAVING
 var alive: bool = true
 var hostile: bool = false
-var hp: int = 3
 var skin: Humanoid
 var joints: PackedVector3Array = []
 var voice: HelperVoice
@@ -42,13 +42,15 @@ var _clock: float = 0.0
 var _sweep: float = 0.0
 var _raise: float = 0.0
 var _stagger: float = 0.0
+var _why_left: float = 0.0
+var _why_at: Vector3 = Vector3.ZERO
+var _last_why: int = -100000
 
 
 func _ready() -> void:
 	add_to_group(&"cleaners")
 	collision_layer = 256      # like the helper and the guard: bullets stop on him, nobody targets him
 	collision_mask = 1
-	hp = T.cleaner_hp
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
 	capsule.radius = 0.36
@@ -215,6 +217,12 @@ func _physics_process(delta: float) -> void:
 	if _stagger > 0.0:
 		_pose()
 		return
+	if _why_left > 0.0:
+		# Work stops while he tells whoever it was what he thinks of them.
+		_why_left -= wd
+		_face(_why_at, wd)
+		_pose()
+		return
 	match mode:
 		Mode.WALKING_TO_SPILL:
 			_next_job()
@@ -312,6 +320,8 @@ func _pose() -> void:
 	if mode == Mode.SWINGING:
 		right = lerpf(0.30, 1.0, _raise)
 	var left: float = 0.30 if mopping else 0.0
+	if _why_left > 0.0:
+		left = 0.82 + 0.10 * sin(Time.get_ticks_msec() * 0.02)      # the fist, shaken
 	var local: PackedVector3Array = Humanoid.pose(_walk_phase, _moving, right, left, clampf(_stagger, 0.0, 1.0), mode == Mode.SWINGING, 0.0, bend)
 	if mode == Mode.SWINGING:
 		# Right over the top: lift the whole arm a little more than an aim does.
@@ -352,39 +362,43 @@ func _roll_bucket() -> void:
 
 # ------------------------------------------------------------------ getting hurt
 
-func on_bullet_hit(_bullet: Node, _point: Vector3, normal: Vector3) -> bool:
-	_hurt(T.cleaner_hp, -normal)
+## Nothing hurts him. Shoot him, hit him, blow him up: he stops what he is doing, turns on
+## whoever did it, shakes his fist and wants to know WHY. He does not attack for it, however
+## often it happens. Only the fifth spill does that. If he is already after the player, a hit
+## does at least stop him in his tracks for a moment.
+
+func on_bullet_hit(bullet: Node, point: Vector3, normal: Vector3) -> bool:
+	var who: Variant = bullet.get(&"shooter") if bullet != null else null
+	Shatter.burst(Game.entities_root(self), point + normal * 0.04, 3, Mats.overalls(), Vector3.ONE * 0.02, normal * 2.0, 0.03)
+	_outraged(who as Node3D if who is Node3D and is_instance_valid(who) else null, -normal)
 	return false
 
 
 func on_thrown_hit(item: Pickup) -> void:
-	_hurt(1, item.velocity.normalized())
+	var who: Node = item.thrower if is_instance_valid(item.thrower) else null
+	_outraged(who as Node3D, item.velocity.normalized())
 
 
 func on_punched(by: Node, _at: Vector3) -> void:
-	_hurt(1, (global_position - (by as Node3D).global_position).normalized() if by is Node3D else Vector3.ZERO)
+	_outraged(by as Node3D, Vector3.ZERO)
 
 
 func on_laser(direction: Vector3) -> void:
-	_hurt(T.cleaner_hp, direction)
+	_outraged(_player(), direction)
 
 
 func on_explosion(centre: Vector3) -> void:
-	_hurt(T.cleaner_hp, (global_position - centre).normalized())
+	_outraged(null, (global_position - centre).normalized())
+	_stagger = 1.5
 
 
-func _hurt(amount: int, push: Vector3) -> void:
-	if not alive:
-		return
-	hp -= amount
-	if hp > 0:
-		_stagger = 1.0
-		_snap()      # hit a man who is mopping your mess and you have skipped to strike five
-		return
-	alive = false
-	collision_layer = 0
-	voice.shut_up()
-	Ragdoll.spawn(Game.entities_root(self), joints, 1.0, push * 3.0 + Vector3.UP, Mats.overalls(), 1.0)
-	_bucket.reparent(get_parent())      # the bucket outlives him
-	Sfx.play(&"death", global_position)
-	queue_free()
+func _outraged(who: Node3D, came_from: Vector3) -> void:
+	_why_left = 1.1
+	_why_at = who.global_position if who != null else global_position - came_from * 3.0
+	if hostile:
+		_stagger = maxf(_stagger, 1.2)
+	var now: int = Time.get_ticks_msec()
+	if now - _last_why >= 1500:
+		_last_why = now
+		say(&"cleaner_why")
+	outraged.emit(who)
