@@ -68,10 +68,6 @@ static func _model_pillar(kit: MeshKit, height: float) -> void:
 	var w: float = PILLAR_WIDTH
 	var floor_y: float = -height * 0.5
 	kit.box(Vector3(w, height, w), Vector3.ZERO, shaft)
-	# Shallow recessed face on every side, so the shaft is not a blank slab.
-	for i: int in 4:
-		var turn := Basis(Vector3.UP, i * PI * 0.5)
-		kit.box(Vector3(w * 0.62, height - 1.1, 0.012), turn * Vector3(0, 0.02, w * 0.5 + 0.004), shaft)
 	# The base: a plinth block, then mouldings stepping in to the shaft.
 	kit.box(Vector3(w + 0.26, 0.20, w + 0.26), Vector3(0, floor_y + 0.10, 0), stone)
 	kit.box(Vector3(w + 0.18, 0.09, w + 0.18), Vector3(0, floor_y + 0.245, 0), stone)

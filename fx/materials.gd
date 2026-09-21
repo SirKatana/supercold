@@ -98,12 +98,17 @@ static func book(index: int) -> StandardMaterial3D:
 
 
 ## The cleaner's overalls, their darker bib and cap, his gloves and his broom.
+## The cleaner: a grey-blue work shirt, navy work trousers and cap.
 static func overalls() -> StandardMaterial3D:
-	return _plain(&"overalls", Color(0.20, 0.42, 0.50), 0.9)
+	return _plain(&"overalls", Color(0.52, 0.60, 0.68), 0.9)
 
 
 static func overalls_dark() -> StandardMaterial3D:
-	return _plain(&"overalls_dark", Color(0.12, 0.26, 0.33), 0.9)
+	return _plain(&"overalls_dark", Color(0.10, 0.14, 0.26), 0.9)
+
+
+static func mop_bucket_yellow() -> StandardMaterial3D:
+	return _plain(&"mop_bucket_yellow", Color(0.96, 0.78, 0.08), 0.5)
 
 
 static func rubber_yellow() -> StandardMaterial3D:

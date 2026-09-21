@@ -185,6 +185,15 @@ func _capture(path: String, after: float) -> void:
 		me.hands.visible = false
 		TimeManager.override_scale = 1.0
 		await get_tree().create_timer(float(_arg("at", "3.0")), true, false, true).timeout
+	if _arg("do", "") == "sign" and Game.player != null:
+		# A wet floor sign a little way ahead, turned so both panels show.
+		var viewer: Player = Game.player
+		viewer.global_position += -viewer.global_transform.basis.z * 3.2
+		var placed: WetFloorSign = WetFloorSign.stand(Game.entities_root(self), viewer.global_position - viewer.global_transform.basis.z * 1.7)
+		placed.rotation.y = viewer.rotation.y + 1.0
+		viewer.head.rotation.x = -0.5
+		viewer.hands.visible = false
+		await get_tree().create_timer(0.3, true, false, true).timeout
 	if _arg("do", "") == "view" and Game.player != null:
 		# Stand on one grid cell and look at another: `--cell=12,1 --look=12,5 [--pitch=-5]`.
 		var from: PackedStringArray = _arg("cell", "1,1").split(",")

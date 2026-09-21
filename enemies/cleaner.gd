@@ -1,6 +1,8 @@
 class_name Cleaner
 extends CharacterBody3D
-## The building's cleaner, in overalls, cap and yellow gloves, with a broom.
+## The building's cleaner: a pink dude like the rest of the staff, in a grey-blue work shirt with
+## a name patch, navy work trousers and cap, yellow rubber gloves, keys on his belt, a yard
+## broom, and a yellow mop bucket on wheels that follows him about.
 ##
 ## Spill something (pour a bucket, smash a coffee mug) and he comes out of the lift you arrived
 ## in, walks to the mess, mops it up, stands a wet-floor sign on it, says what he thinks, and
@@ -32,6 +34,8 @@ var _hand: Node3D
 var _cap: MeshInstance3D
 var _belt: MeshInstance3D
 var _gloves: Array[MeshInstance3D] = []
+var _bucket: MeshInstance3D
+var _bucket_at: Vector3 = Vector3.INF
 var _walk_phase: float = 0.0
 var _moving: float = 0.0
 var _clock: float = 0.0
@@ -54,6 +58,12 @@ func _ready() -> void:
 	add_child(shape)
 
 	skin = Humanoid.create(self, Mats.overalls(), 1.0)
+	skin.set_group_material(&"legs", Mats.overalls_dark())      # trousers
+	skin.set_group_material(&"head", Mats.pink())               # he works here too
+	_bucket = MeshInstance3D.new()
+	_bucket.mesh = MeshKit.cached(&"cleaner_mop_bucket", _model_mop_bucket)
+	_bucket.top_level = true
+	add_child(_bucket)
 	_cap = _accessory(MeshKit.cached(&"cleaner_cap", _model_cap))
 	_belt = _accessory(MeshKit.cached(&"cleaner_belt", _model_belt))
 	for i: int in 2:
@@ -85,37 +95,76 @@ func _accessory(mesh: Mesh) -> MeshInstance3D:
 	return mi
 
 
-## A soft cap with a peak. Origin at the centre of the skull, -Z forward.
+## A work cap: rounded crown, button on top, a stiff peak. Origin at the centre of the skull, -Z forward.
 static func _model_cap(kit: MeshKit) -> void:
-	kit.tube(0.118, 0.124, 0.070, Vector3(0, 0.105, 0.0), Mats.overalls_dark(), false, 16)
-	kit.box(Vector3(0.160, 0.012, 0.100), Vector3(0, 0.078, -0.150), Mats.overalls_dark(), Vector3(0.16, 0, 0))
-	kit.box(Vector3(0.060, 0.030, 0.006), Vector3(0, 0.105, -0.122), Mats.paper())      # company patch
+	var cloth: Material = Mats.overalls_dark()
+	kit.tube(0.100, 0.122, 0.060, Vector3(0, 0.072, 0.004), cloth, false, 16)
+	kit.tube(0.060, 0.100, 0.030, Vector3(0, 0.117, 0.004), cloth, false, 16)
+	kit.tube(0.012, 0.012, 0.010, Vector3(0, 0.136, 0.004), cloth, false, 8)
+	kit.box(Vector3(0.150, 0.010, 0.095), Vector3(0, 0.050, -0.150), cloth, Vector3(0.12, 0, 0))
+	kit.box(Vector3(0.058, 0.028, 0.006), Vector3(0, 0.082, -0.121), Mats.paper())      # company patch
 
 
-## Bib, utility belt, spray bottle, rag and a name tag. Origin at the chest joint, -Z forward.
+## What a work shirt has on it, and a belt with a janitor's things. Origin at the chest joint, -Z forward.
 static func _model_belt(kit: MeshKit) -> void:
-	kit.box(Vector3(0.240, 0.260, 0.012), Vector3(0, 0.020, -0.128), Mats.overalls_dark())           # bib
+	var navy: Material = Mats.overalls_dark()
+	# Collar, a button placket, two chest pockets, the name patch.
 	for side: float in [-1.0, 1.0]:
-		kit.box(Vector3(0.030, 0.300, 0.250), Vector3(0.090 * side, 0.200, -0.010), Mats.overalls_dark(), Vector3(0.0, 0, 0))   # straps
-		kit.tube(0.010, 0.010, 0.010, Vector3(0.090 * side, 0.130, -0.136), Mats.brass(), true, 8)   # buckles
-	kit.box(Vector3(0.070, 0.028, 0.004), Vector3(-0.070, 0.090, -0.136), Mats.paper())              # name tag
-	kit.box(Vector3(0.390, 0.050, 0.290), Vector3(0, -0.235, 0), Mats.rubber())                      # belt
-	kit.tube(0.028, 0.034, 0.130, Vector3(0.175, -0.290, -0.060), Mats.tumbler(), false, 10)         # spray bottle
-	kit.box(Vector3(0.030, 0.040, 0.060), Vector3(0.175, -0.205, -0.080), Mats.ceramic())            # its trigger head
-	kit.box(Vector3(0.090, 0.170, 0.012), Vector3(-0.170, -0.320, -0.090), Mats.rubber_yellow(), Vector3(0.1, 0, 0.15))   # rag
+		kit.box(Vector3(0.070, 0.035, 0.012), Vector3(0.045 * side, 0.165, -0.118), navy, Vector3(0, 0, 0.5 * side))
+		kit.box(Vector3(0.095, 0.085, 0.008), Vector3(0.095 * side, 0.030, -0.128), navy)
+		kit.box(Vector3(0.095, 0.022, 0.010), Vector3(0.095 * side, 0.072, -0.129), navy)
+	kit.box(Vector3(0.016, 0.300, 0.006), Vector3(0, -0.010, -0.128), navy)
+	for i: int in 4:
+		kit.tube(0.006, 0.006, 0.004, Vector3(0, 0.110 - i * 0.075, -0.133), Mats.ceramic(), true, 8)
+	kit.box(Vector3(0.075, 0.034, 0.004), Vector3(-0.095, 0.105, -0.131), Mats.paper())             # name patch
+	kit.box(Vector3(0.065, 0.006, 0.005), Vector3(-0.095, 0.105, -0.133), Mats.book(0))             # the name, stitched in red
+	# Belt: keys on a ring, a radio, a spray bottle in its holster, a rag in the back pocket.
+	kit.box(Vector3(0.390, 0.045, 0.290), Vector3(0, -0.235, 0), Mats.rubber())
+	kit.box(Vector3(0.045, 0.035, 0.012), Vector3(0, -0.235, -0.150), Mats.steel())                 # buckle
+	kit.tube(0.030, 0.030, 0.006, Vector3(-0.150, -0.290, -0.110), Mats.brass(), true, 12)          # key ring
+	for k: int in 3:
+		kit.box(Vector3(0.010, 0.060, 0.004), Vector3(-0.165 + k * 0.015, -0.345, -0.112), Mats.brass(), Vector3(0, 0, -0.25 + k * 0.25))
+	kit.box(Vector3(0.045, 0.090, 0.030), Vector3(0.200, -0.215, 0.020), Mats.polymer())            # radio
+	kit.tube(0.003, 0.003, 0.060, Vector3(0.210, -0.140, 0.020), Mats.polymer(), false, 6)
+	kit.tube(0.028, 0.034, 0.130, Vector3(0.150, -0.300, -0.090), Mats.tumbler(), false, 10)        # spray bottle
+	kit.box(Vector3(0.030, 0.040, 0.065), Vector3(0.150, -0.215, -0.110), Mats.ceramic())
+	kit.box(Vector3(0.100, 0.150, 0.010), Vector3(-0.090, -0.330, 0.150), Mats.rubber_yellow(), Vector3(-0.1, 0, 0.12))   # rag
 
 
 static func _model_glove(kit: MeshKit) -> void:
-	kit.box(Vector3(0.095, 0.170, 0.050), Vector3.ZERO, Mats.rubber_yellow())
-	kit.tube(0.042, 0.048, 0.060, Vector3(0, 0.105, 0), Mats.rubber_yellow(), false, 10)      # the cuff
+	kit.box(Vector3(0.090, 0.150, 0.048), Vector3.ZERO, Mats.rubber_yellow())
+	kit.tube(0.040, 0.050, 0.075, Vector3(0, 0.105, 0), Mats.rubber_yellow(), false, 10)      # the long cuff
 
 
 ## A yard broom. It lies along the forearm: the head is out at -Z, the grip end behind the hand.
+## Short enough past the hand that the head rests on the floor, not under it.
 static func _model_broom(kit: MeshKit) -> void:
-	kit.tube(0.014, 0.014, 1.45, Vector3(0, 0, -0.40), Mats.wood(), true, 8)
-	kit.box(Vector3(0.36, 0.045, 0.060), Vector3(0, 0, -1.13), Mats.wood_dark())
-	kit.box(Vector3(0.34, 0.030, 0.150), Vector3(0, 0, -1.23), Mats.bristle())
-	kit.box(Vector3(0.30, 0.022, 0.040), Vector3(0, 0, -1.32), Mats.bristle())
+	kit.tube(0.015, 0.015, 1.30, Vector3(0, 0, -0.18), Mats.wood(), true, 8)
+	kit.tube(0.019, 0.019, 0.05, Vector3(0, 0, 0.45), Mats.rubber(), true, 8)               # grip cap
+	kit.box(Vector3(0.42, 0.055, 0.075), Vector3(0, 0, -0.83), Mats.wood_dark())             # head block
+	kit.box(Vector3(0.40, 0.045, 0.130), Vector3(0, 0, -0.925), Mats.bristle())              # bristles
+	kit.box(Vector3(0.36, 0.030, 0.050), Vector3(0, 0, -1.010), Mats.bristle())
+	for i: int in 7:
+		kit.box(Vector3(0.006, 0.047, 0.125), Vector3(-0.18 + i * 0.06, 0, -0.925), Mats.wood_dark())   # rows in the bristles
+
+
+## The yellow mop bucket on castors, with its wringer and a mop standing in it. Origin on the floor.
+static func _model_mop_bucket(kit: MeshKit) -> void:
+	var yellow: Material = Mats.mop_bucket_yellow()
+	kit.box(Vector3(0.38, 0.30, 0.50), Vector3(0, 0.23, 0), yellow)
+	kit.box(Vector3(0.33, 0.02, 0.45), Vector3(0, 0.375, 0), Mats.water())                  # the water in it
+	kit.box(Vector3(0.40, 0.03, 0.52), Vector3(0, 0.385, 0), yellow)                        # rim
+	kit.box(Vector3(0.33, 0.04, 0.45), Vector3(0, 0.392, 0), Mats.water())
+	kit.box(Vector3(0.34, 0.20, 0.20), Vector3(0, 0.49, -0.16), yellow)                     # wringer
+	kit.box(Vector3(0.03, 0.34, 0.03), Vector3(0.19, 0.62, -0.16), Mats.polymer(), Vector3(0.35, 0, 0))   # wringer lever
+	kit.box(Vector3(0.24, 0.10, 0.004), Vector3(0, 0.22, -0.252), Mats.polymer())           # CAUTION label
+	kit.box(Vector3(0.24, 0.10, 0.004), Vector3(0, 0.22, 0.252), Mats.polymer())
+	for x: float in [-0.16, 0.16]:
+		for z: float in [-0.21, 0.21]:
+			kit.tube(0.035, 0.035, 0.03, Vector3(x, 0.035, z), Mats.rubber(), false, 10, Vector3(0, 0, PI * 0.5))   # castors
+			kit.box(Vector3(0.02, 0.05, 0.02), Vector3(x, 0.075, z), Mats.steel())
+	kit.tube(0.014, 0.014, 1.25, Vector3(0.02, 0.98, 0.10), Mats.wood(), false, 8, Vector3(0.10, 0, 0.06))   # the mop
+	kit.box(Vector3(0.20, 0.12, 0.16), Vector3(0.0, 0.40, 0.06), Mats.ceramic())                          # its head, in the water
 
 
 func say(id: StringName) -> void:
@@ -282,10 +331,23 @@ func _pose() -> void:
 		var ref: Vector3 = Vector3.UP if absf(along.y) < 0.9 else Vector3.FORWARD
 		var x: Vector3 = ref.cross(along).normalized()
 		_gloves[i].global_transform = Transform3D(Basis(x, along, x.cross(along)), hand.lerp(wrist, 0.35))
+	_roll_bucket()
 	var w: Vector3 = joints[Humanoid.index_of(&"wrist_r")]
 	var forward: Vector3 = (w - joints[Humanoid.index_of(&"elbow_r")]).normalized()
 	var hand_up: Vector3 = Vector3.UP if absf(forward.y) < 0.95 else -global_transform.basis.z
 	_hand.global_transform = Transform3D(Basis.looking_at(forward, hand_up), w.lerp(joints[Humanoid.index_of(&"hand_r")], 0.5))
+
+
+## The bucket trundles along behind his left shoulder. When he snaps he leaves it where it is.
+func _roll_bucket() -> void:
+	if hostile and _bucket_at.is_finite():
+		return
+	var wish: Vector3 = global_position + global_transform.basis.z * 0.85 - global_transform.basis.x * 0.55
+	wish.y = global_position.y
+	_bucket_at = wish if not _bucket_at.is_finite() else _bucket_at.lerp(wish, 0.12)
+	var heading: Vector3 = wish - _bucket_at
+	var turn: float = atan2(-heading.x, -heading.z) if heading.length() > 0.02 else _bucket.rotation.y
+	_bucket.global_transform = Transform3D(Basis(Vector3.UP, lerp_angle(_bucket.rotation.y, turn, 0.2)), _bucket_at)
 
 
 # ------------------------------------------------------------------ getting hurt
@@ -323,5 +385,6 @@ func _hurt(amount: int, push: Vector3) -> void:
 	collision_layer = 0
 	voice.shut_up()
 	Ragdoll.spawn(Game.entities_root(self), joints, 1.0, push * 3.0 + Vector3.UP, Mats.overalls(), 1.0)
+	_bucket.reparent(get_parent())      # the bucket outlives him
 	Sfx.play(&"death", global_position)
 	queue_free()

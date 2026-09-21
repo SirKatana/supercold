@@ -179,6 +179,12 @@ func set_material(next: Material) -> void:
 	_head.material_override = next
 
 
+## Dresses one group (&"head", &"arms", &"legs", &"torso") in its own material: a shirt, trousers.
+func set_group_material(group: StringName, next: Material) -> void:
+	for node: MeshInstance3D in _groups.get(group, []):
+		node.material_override = next
+
+
 func set_group_visible(group: StringName, shown: bool) -> void:
 	for node: MeshInstance3D in _groups.get(group, []):
 		node.visible = shown
