@@ -464,6 +464,14 @@ func _capture(path: String, after: float) -> void:
 			item.rotation.y = eye.rotation.y + 0.6
 		eye.head.rotation.x = -0.32
 		eye.hands.visible = false
+		if _flag("monitor"):
+			# Sit down at the desk: straight on to one of its screens, with the video running.
+			desk.rotation.y = eye.rotation.y
+			desk.global_position = eye.global_position + ahead * 1.55 + Vector3(0, 0.5, 0)
+			eye.global_position += right * Furniture.MONITOR_X * -1.0
+			eye.head.rotation.x = -0.18
+			TimeManager.override_scale = 1.0
+			await get_tree().create_timer(float(_arg("at", "6.0")), true, false, true).timeout
 		await get_tree().create_timer(0.3, true, false, true).timeout
 	if _arg("do", "").begins_with("gun:") and Game.player != null:
 		var gun: Gun = PinkDude.create_gun(StringName(_arg("do", "").trim_prefix("gun:")))

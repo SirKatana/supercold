@@ -8,6 +8,12 @@ extends RefCounted
 
 const DESK_SIZE := Vector3(1.7, 1.0, 0.9)
 const CABINET_SIZE := Vector3(0.7, 0.9, 0.7)
+## A 24 inch monitor each side of the desk's privacy screen. Centre of the panel, in desk space.
+const MONITOR_X: float = -0.30
+const MONITOR_Y: float = 0.545
+const MONITOR_Z: float = 0.150
+const PANEL_SIZE := Vector2(0.545, 0.325)
+const SCREEN_SIZE := Vector2(0.523, 0.294)      # 16:9 inside a thin bezel
 
 
 ## Swaps a `LevelBuilder.make_box` body's plain box for a furniture model.
@@ -19,6 +25,13 @@ static func dress(body: StaticBody3D, mesh: ArrayMesh, panel_material: Material)
 	mi.mesh = mesh
 	mi.set_surface_override_material(0, panel_material)
 	body.add_child(mi)
+	if mesh == desk_mesh():
+		var screens := MeshInstance3D.new()
+		screens.name = "Screens"
+		screens.mesh = MonitorFeed.screens_mesh()
+		screens.material_override = MonitorFeed.material(body)
+		screens.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		body.add_child(screens)
 
 
 static func desk_mesh() -> ArrayMesh:
@@ -53,9 +66,14 @@ static func _model_desk(kit: MeshKit) -> void:
 	kit.box(Vector3(1.66, 0.014, 0.05), Vector3(0, floor_y + 0.993, 0), metal)
 	# A monitor each side of it, and the clutter of a working desk.
 	for face: float in [-1.0, 1.0]:
-		kit.box(Vector3(0.20, 0.012, 0.14), Vector3(-0.30, floor_y + 0.794, 0.20 * face), dark)  # stand foot
-		kit.box(Vector3(0.035, 0.12, 0.02), Vector3(-0.30, floor_y + 0.85, 0.15 * face), dark)   # neck
-		kit.box(Vector3(0.50, 0.19, 0.022), Vector3(-0.30, floor_y + 0.895, 0.125 * face), dark) # screen
+		# A real monitor: weighted foot, a neck with a hinge block, a thin panel with a chin.
+		kit.box(Vector3(0.24, 0.010, 0.17), Vector3(MONITOR_X, floor_y + 0.793, 0.125 * face), dark)             # foot
+		kit.box(Vector3(0.045, 0.235, 0.018), Vector3(MONITOR_X, floor_y + 0.905, 0.105 * face), metal)          # neck
+		kit.box(Vector3(0.090, 0.070, 0.040), Vector3(MONITOR_X, floor_y + 1.030, 0.122 * face), dark)           # hinge block
+		kit.box(Vector3(PANEL_SIZE.x, PANEL_SIZE.y, 0.022), Vector3(MONITOR_X, MONITOR_Y, MONITOR_Z * face), dark)   # panel
+		kit.box(Vector3(PANEL_SIZE.x * 0.62, PANEL_SIZE.y * 0.62, 0.020), Vector3(MONITOR_X, MONITOR_Y, (MONITOR_Z - 0.019) * face), dark)   # the bulge behind
+		kit.box(Vector3(0.030, 0.004, 0.003), Vector3(MONITOR_X, MONITOR_Y - PANEL_SIZE.y * 0.5 + 0.009, (MONITOR_Z + 0.0125) * face), metal) # badge on the chin
+		kit.box(Vector3(0.006, 0.004, 0.003), Vector3(MONITOR_X + 0.245, MONITOR_Y - PANEL_SIZE.y * 0.5 + 0.009, (MONITOR_Z + 0.0125) * face), Mats.icon(0))   # power light
 		kit.box(Vector3(0.36, 0.014, 0.12), Vector3(-0.30, floor_y + 0.795, 0.33 * face), dark)  # keyboard
 		kit.box(Vector3(0.24, 0.006, 0.31), Vector3(0.35, floor_y + 0.791, 0.24 * face), Mats.paper(), Vector3(0, 0.2 * face, 0))
 	# Feet.
