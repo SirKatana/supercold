@@ -53,6 +53,14 @@ Things worth knowing:
 - The super gun is a laser. It goes through everyone in line, shields too, and they melt.
 - The Director takes three bullets and calls a wave each time he is hit.
 
+## Play in a browser
+
+```bash
+tools/make_web.sh        # writes web/index.html
+```
+
+`web/index.html` is the whole game in one 65 MB file: engine, game data, sounds and the ad video are all inside it. Open it in Chrome, Edge or Firefox straight from disk, or upload that one file anywhere. Click the page once so the browser hands over the mouse and the sound. `web/` is output only and is not in git: delete it whenever you like, nothing else uses it, and the script makes it again. Progress in the browser is kept by the browser, and may not be kept at all for a file opened from disk.
+
 ## Testing shortcuts
 
 ```bash

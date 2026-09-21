@@ -88,7 +88,7 @@ static func break_cell(level: Node3D, data: LevelData, wall: StaticBody3D, cell:
 	Sfx.play(&"door_break", centre)
 	Game.emit_noise(centre, T.dude_hearing * 1.5)
 	# Threaded, so a breach never hitches the frame. Dudes use the new opening a moment later.
-	(level.get_node(^"Nav") as NavigationRegion3D).bake_navigation_mesh(true)
+	(level.get_node(^"Nav") as NavigationRegion3D).bake_navigation_mesh(not OS.has_feature("web"))      # the web build has no threads
 
 
 ## Jagged leftovers around the hole so it reads as broken, not as a neat doorway.

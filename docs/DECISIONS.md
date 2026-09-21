@@ -175,7 +175,6 @@ One line per call made in auto mode, with why.
 - Fetching and leaving stay on real time, so a player standing still after handing over is not kept waiting. If the weapon lies somewhere he cannot reach in 12 s he takes it anyway, and if he cannot get back to the lift in 30 s he is removed, so a checkpoint can never hang a floor.
 - Doors now open for the allies layer as well as dudes. Without that the chasing guard walked through closed doors, and so did the helper.
 - Voice lines reworded to match and re-rendered: "Security. Throw me your weapon." and "Stop! Throw it over, now!"
-\n
 - Playtest 19 (user): "sometimes you don't need to stop time, I want lots of guys so you can stop and dodge slow-mo bullets, it doesn't feel like SuperHot." The cause was in the original plan: dudes aimed at the player's current position, so a player who simply kept strafing at full speed was never hit and never needed slow motion. Dudes now lead their shots by 75 to 105 percent of a perfect lead. A straight run is what gets you killed, and stopping is what saves you, because the round was sent to where you would have been.
 - Bullet speed stays 12 m/s. The user asked for slower bullets in playtest 2, and the lead makes them dangerous without making them faster.
 - More rounds in the air: telegraph 0.7 to 0.5 s, cadence 1.4 to 1.0 s, time behind cover capped at 0.8 s. A gunshot is heard 45 m away instead of 14, so the whole floor comes instead of waiting room by room to be picked off.
@@ -183,3 +182,7 @@ One line per call made in auto mode, with why.
 - Nobody arrives before the first noise or kill, so a floor can still be scouted quietly.
 - The exit lift and the floor-clear flash wait for the budget, and the lift screen shows alive plus still to come, otherwise the count would go up after it reached zero.
 - Off by default in code, on in `main.gd`: 40 test files assume a floor holds exactly what its grid says.
+- Web build (user): "make a web/ folder and compile the whole game into a singular index.html", without deleting any code, and deleting the web folder must change nothing. Godot's web export is an html shell plus js, wasm, pck and two audio worklets. `tools/inline_web.py` folds them into one page: the engine script inline, the binaries as base64, and a shim over `fetch` and `AudioWorklet.addModule` that serves them by name, so the stock Godot loader is untouched. Worklets are served as data URLs because a page opened from disk may not load `blob:` worklets.
+- The no-threads template is used, so the file needs no special server headers and runs from `file://`. The only code change is that a wall breach rebakes the navmesh without a thread on web.
+- `web/` holds only output, has a `.gdignore`, is excluded from both export presets and is in `.gitignore`. The build script and the checker (`tools/web_check.mjs`, headless Chrome over its debug port, no window) live in `tools/`. Checked: deleted `web/`, import and tests unaffected, rebuilt it.
+- Renderer on web is WebGL 2 (Compatibility), the same one the offscreen captures use, so the water shader's compatibility branch is what runs there.

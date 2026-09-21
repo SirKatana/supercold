@@ -6,3 +6,6 @@ export_credentials.cfg
 
 # The raw screen recording. The game ships ads/the_last_ward.ogv, converted from it.
 /*.mp4
+
+# The one-file browser build. Output only: tools/make_web.sh makes it again.
+web/
