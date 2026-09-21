@@ -162,6 +162,18 @@ func _capture(path: String, after: float) -> void:
 			Game.player.hands.primary()
 			TimeManager.override_scale = 0.5
 			await get_tree().create_timer(0.7, true, false, true).timeout
+	if _arg("do", "") == "view" and Game.player != null:
+		# Stand on one grid cell and look at another: `--cell=12,1 --look=12,5 [--pitch=-5]`.
+		var from: PackedStringArray = _arg("cell", "1,1").split(",")
+		var to: PackedStringArray = _arg("look", "2,1").split(",")
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			node.queue_free()
+		Game.player.global_position = Game.data.cell_center(Vector2i(int(from[0]), int(from[1])), 0.05)
+		var target: Vector3 = Game.data.cell_center(Vector2i(int(to[0]), int(to[1])), 0.05)
+		Game.player.look_at(Vector3(target.x, Game.player.global_position.y, target.z))
+		Game.player.head.rotation.x = deg_to_rad(float(_arg("pitch", "0")))
+		Game.player.hands.visible = false
+		await get_tree().create_timer(0.3, true, false, true).timeout
 	if _arg("do", "") == "door" and Game.player != null:
 		# Stand in front of the first door. `--dude=1` puts someone behind it so it swings open.
 		var d: Door = get_tree().get_first_node_in_group(&"doors") as Door

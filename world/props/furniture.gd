@@ -8,6 +8,12 @@ extends RefCounted
 
 const DESK_SIZE := Vector3(1.7, 1.0, 0.9)
 const CABINET_SIZE := Vector3(0.7, 0.9, 0.7)
+const PILLAR_WIDTH: float = 1.1
+const SHELF_DEPTH: float = 1.0
+const SHELF_HEIGHT: float = 2.4
+## Floors where shelving holds stores, not books: nobody keeps a library in a furnace room.
+const STORAGE_FLOORS: Array[String] = ["f7_garage", "f11_sewers", "f13_coldstore", "f16_armoury", "f20_generators",
+	"f24_strongrooms", "f26_morgue", "f27_furnace"]
 ## A 24 inch monitor each side of the desk's privacy screen. Centre of the panel, in desk space.
 const MONITOR_X: float = -0.30
 const MONITOR_Y: float = 0.545
@@ -32,6 +38,177 @@ static func dress(body: StaticBody3D, mesh: ArrayMesh, panel_material: Material)
 		screens.material_override = MonitorFeed.material(body)
 		screens.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		body.add_child(screens)
+
+
+## How long a run of `cells` shelving cells is. A lone one keeps the old rack's 1.7 m; each
+## further cell adds a full 2 m, so a row is one unbroken unit.
+static func shelf_length(cells: int) -> float:
+	return cells * 2.0 - 0.3
+
+
+static func shelf_size(cells: int) -> Vector3:
+	return Vector3(SHELF_DEPTH, SHELF_HEIGHT, shelf_length(cells))
+
+
+## A double-sided shelving unit `cells` long, running along Z. Books or stores, by floor.
+static func shelf_mesh(cells: int, level_name: String) -> ArrayMesh:
+	var storage: bool = level_name in STORAGE_FLOORS
+	return MeshKit.cached(StringName("furniture_shelf_%d_%s" % [cells, "store" if storage else "books"]),
+		_model_shelf.bind(cells, storage))
+
+
+static func pillar_mesh(height: float) -> ArrayMesh:
+	return MeshKit.cached(StringName("furniture_pillar_%d" % int(height * 100.0)), _model_pillar.bind(height))
+
+
+## A square pillar on a cut-stone base, with a matching head under the ceiling. Origin at mid-height.
+static func _model_pillar(kit: MeshKit, height: float) -> void:
+	var shaft: Material = Mats.prop()           # surface 0: themed
+	var stone: Material = Mats.stone()
+	var w: float = PILLAR_WIDTH
+	var floor_y: float = -height * 0.5
+	kit.box(Vector3(w, height, w), Vector3.ZERO, shaft)
+	# Shallow recessed face on every side, so the shaft is not a blank slab.
+	for i: int in 4:
+		var turn := Basis(Vector3.UP, i * PI * 0.5)
+		kit.box(Vector3(w * 0.62, height - 1.1, 0.012), turn * Vector3(0, 0.02, w * 0.5 + 0.004), shaft)
+	# The base: a plinth block, then mouldings stepping in to the shaft.
+	kit.box(Vector3(w + 0.26, 0.20, w + 0.26), Vector3(0, floor_y + 0.10, 0), stone)
+	kit.box(Vector3(w + 0.18, 0.09, w + 0.18), Vector3(0, floor_y + 0.245, 0), stone)
+	kit.box(Vector3(w + 0.10, 0.06, w + 0.10), Vector3(0, floor_y + 0.32, 0), stone)
+	kit.box(Vector3(w + 0.04, 0.035, w + 0.04), Vector3(0, floor_y + 0.367, 0), stone)
+	# The head, the same the other way up and a little lighter.
+	kit.box(Vector3(w + 0.04, 0.035, w + 0.04), Vector3(0, -floor_y - 0.30, 0), stone)
+	kit.box(Vector3(w + 0.12, 0.07, w + 0.12), Vector3(0, -floor_y - 0.245, 0), stone)
+	kit.box(Vector3(w + 0.22, 0.14, w + 0.22), Vector3(0, -floor_y - 0.14, 0), stone)
+	kit.box(Vector3(w + 0.22, 0.07, w + 0.22), Vector3(0, -floor_y - 0.035, 0), stone)
+
+
+## Shelving open on both long faces, with a back panel down the middle. Origin at its centre.
+static func _model_shelf(kit: MeshKit, cells: int, storage: bool) -> void:
+	var panel: Material = Mats.prop()           # surface 0: themed
+	var board: Material = Mats.steel() if storage else Mats.wood()
+	var dark: Material = Mats.polymer()
+	var length: float = shelf_length(cells)
+	var floor_y: float = -SHELF_HEIGHT * 0.5
+	var half: float = SHELF_DEPTH * 0.5
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 4242 + cells * 17 + (1000 if storage else 0)
+
+	kit.box(Vector3(SHELF_DEPTH, SHELF_HEIGHT, 0.04), Vector3(0, 0, -length * 0.5 + 0.02), panel)      # end panels
+	kit.box(Vector3(SHELF_DEPTH, SHELF_HEIGHT, 0.04), Vector3(0, 0, length * 0.5 - 0.02), panel)
+	kit.box(Vector3(0.02, SHELF_HEIGHT - 0.14, length - 0.08), Vector3(0, 0.03, 0), panel)             # back, down the middle
+	kit.box(Vector3(SHELF_DEPTH, 0.04, length), Vector3(0, -floor_y - 0.02, 0), panel)                 # top
+	kit.box(Vector3(SHELF_DEPTH - 0.06, 0.10, length - 0.04), Vector3(0, floor_y + 0.05, 0), dark)     # plinth
+	var bays: int = maxi(1, int(round(length / 0.95)))
+	var bay: float = (length - 0.08) / bays
+	for i: int in range(1, bays):
+		kit.box(Vector3(SHELF_DEPTH - 0.02, SHELF_HEIGHT - 0.14, 0.025), Vector3(0, 0.03, -length * 0.5 + 0.04 + bay * i), panel)   # uprights
+	var levels: Array[float] = [0.10, 0.56, 1.02, 1.48, 1.94]
+	for y: float in levels:
+		kit.box(Vector3(SHELF_DEPTH - 0.02, 0.025, length - 0.08), Vector3(0, floor_y + y + 0.0125, 0), board)
+
+	for face: float in [-1.0, 1.0]:
+		for level: int in levels.size():
+			var clear: float = (levels[level + 1] - levels[level] - 0.035) if level + 1 < levels.size() else 0.40
+			var y0: float = floor_y + levels[level] + 0.025
+			for b: int in bays:
+				var z0: float = -length * 0.5 + 0.04 + bay * b + 0.025
+				var z1: float = z0 + bay - 0.05
+				if storage:
+					_fill_with_stores(kit, rng, face, y0, clear, z0, z1, half)
+				else:
+					_fill_with_books(kit, rng, face, y0, clear, z0, z1, half)
+
+
+## One bay of one shelf, facing `face` (-1 or +1 along X). Books stand with their spines to the room.
+static func _fill_with_books(kit: MeshKit, rng: RandomNumberGenerator, face: float, y0: float, clear: float,
+		z0: float, z1: float, half: float) -> void:
+	var roll: float = rng.randf()
+	if roll < 0.06:
+		return      # an empty shelf now and then
+	if roll < 0.16:
+		_put_boxes(kit, rng, face, y0, clear, z0, z1, half, Mats.cardboard())
+		return
+	if roll < 0.24:
+		_put_ornament(kit, rng, face, y0, (z0 + z1) * 0.5, half)
+		z1 = (z0 + z1) * 0.5 - 0.16      # books fill what is left of the bay
+	var z: float = z0
+	var stop: float = z1 - rng.randf_range(0.0, 0.28)
+	var colour: int = rng.randi()
+	while z < stop:
+		var thick: float = rng.randf_range(0.032, 0.075)
+		if z + thick > stop:
+			break
+		var tall: float = minf(clear - 0.02, rng.randf_range(0.22, 0.34))
+		var deep: float = rng.randf_range(0.17, 0.23)
+		if rng.randf() < 0.75:
+			colour = rng.randi()      # runs of the same binding happen, but not often
+		var x: float = face * (half - 0.035 - deep * 0.5)
+		kit.box(Vector3(deep, tall, thick - 0.004), Vector3(x, y0 + tall * 0.5, z + thick * 0.5), Mats.book(colour))
+		if thick > 0.05 and rng.randf() < 0.5:      # a title band on the fatter spines
+			kit.box(Vector3(0.004, tall * 0.16, thick - 0.012), Vector3(face * (half - 0.033), y0 + tall * 0.72, z + thick * 0.5), Mats.brass())
+		z += thick
+	# What would not stand goes flat in a pile at the end.
+	if z1 - z > 0.26 and rng.randf() < 0.6:
+		var pile_y: float = y0
+		for k: int in rng.randi_range(2, 4):
+			var t: float = rng.randf_range(0.03, 0.055)
+			kit.box(Vector3(0.20, t - 0.003, 0.24), Vector3(face * (half - 0.14), pile_y + t * 0.5, z + 0.15), Mats.book(rng.randi()), Vector3(0, rng.randf_range(-0.12, 0.12), 0))
+			pile_y += t
+
+
+static func _put_boxes(kit: MeshKit, rng: RandomNumberGenerator, face: float, y0: float, clear: float,
+		z0: float, z1: float, half: float, material: Material) -> void:
+	var z: float = z0 + 0.02
+	while z < z1 - 0.2:
+		var wide: float = rng.randf_range(0.24, 0.38)
+		if z + wide > z1:
+			break
+		var tall: float = minf(clear - 0.03, rng.randf_range(0.18, 0.32))
+		kit.box(Vector3(0.34, tall, wide - 0.02), Vector3(face * (half - 0.21), y0 + tall * 0.5, z + wide * 0.5), material)
+		kit.box(Vector3(0.004, tall * 0.35, (wide - 0.02) * 0.55), Vector3(face * (half - 0.038), y0 + tall * 0.55, z + wide * 0.5), Mats.paper())   # label
+		z += wide + rng.randf_range(0.01, 0.06)
+
+
+static func _put_ornament(kit: MeshKit, rng: RandomNumberGenerator, face: float, y0: float, z: float, half: float) -> void:
+	var x: float = face * (half - 0.16)
+	match rng.randi_range(0, 2):
+		0:      # a globe on a stand
+			kit.tube(0.05, 0.06, 0.02, Vector3(x, y0 + 0.01, z), Mats.wood_dark(), false, 12)
+			kit.tube(0.008, 0.008, 0.07, Vector3(x, y0 + 0.05, z), Mats.brass(), false, 6)
+			kit.ball(0.085, Vector3(x, y0 + 0.17, z), Mats.book(1))
+		1:      # a plant
+			kit.tube(0.075, 0.055, 0.11, Vector3(x, y0 + 0.055, z), Mats.ceramic(), false, 12)
+			kit.ball(0.10, Vector3(x, y0 + 0.20, z), Mats.leaf_green(), Vector3(1.0, 1.15, 1.0))
+			kit.ball(0.06, Vector3(x + 0.05 * face, y0 + 0.27, z + 0.04), Mats.leaf_green())
+		_:      # a trophy
+			kit.box(Vector3(0.09, 0.03, 0.09), Vector3(x, y0 + 0.015, z), Mats.wood_dark())
+			kit.tube(0.012, 0.02, 0.08, Vector3(x, y0 + 0.07, z), Mats.brass(), false, 8)
+			kit.tube(0.055, 0.02, 0.09, Vector3(x, y0 + 0.155, z), Mats.brass(), false, 10)
+
+
+## Stores: crates, cartons, drums and toolboxes, on steel shelves.
+static func _fill_with_stores(kit: MeshKit, rng: RandomNumberGenerator, face: float, y0: float, clear: float,
+		z0: float, z1: float, half: float) -> void:
+	var roll: float = rng.randf()
+	if roll < 0.12:
+		return
+	if roll < 0.55:
+		_put_boxes(kit, rng, face, y0, clear, z0, z1, half, Mats.cardboard() if rng.randf() < 0.6 else Mats.wood())
+		return
+	var z: float = z0 + 0.08
+	while z < z1 - 0.1:
+		var tall: float = minf(clear - 0.04, rng.randf_range(0.20, 0.34))
+		if rng.randf() < 0.6:      # a drum or a can
+			var r: float = rng.randf_range(0.07, 0.11)
+			kit.tube(r, r, tall, Vector3(face * (half - 0.18), y0 + tall * 0.5, z + r), [Mats.steel(), Mats.book(1), Mats.book(3), Mats.polymer()][rng.randi_range(0, 3)], false, 12)
+			kit.tube(r * 1.03, r * 1.03, 0.02, Vector3(face * (half - 0.18), y0 + tall - 0.01, z + r), Mats.polymer(), false, 12)
+			z += r * 2.0 + rng.randf_range(0.02, 0.10)
+		else:      # a toolbox
+			kit.box(Vector3(0.22, 0.16, 0.36), Vector3(face * (half - 0.16), y0 + 0.08, z + 0.18), Mats.book(0))
+			kit.box(Vector3(0.03, 0.025, 0.16), Vector3(face * (half - 0.16), y0 + 0.175, z + 0.18), Mats.polymer())
+			z += 0.36 + rng.randf_range(0.03, 0.10)
 
 
 static func desk_mesh() -> ArrayMesh:

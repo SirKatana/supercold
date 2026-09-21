@@ -77,6 +77,26 @@ static func lift_light() -> StandardMaterial3D:
 		return m)
 
 
+## Cut stone for the feet and heads of pillars.
+static func stone() -> StandardMaterial3D:
+	return _plain(&"stone", Color(0.60, 0.59, 0.56), 0.95)
+
+
+static func cardboard() -> StandardMaterial3D:
+	return _plain(&"cardboard", Color(0.66, 0.52, 0.36), 0.95)
+
+
+static func leaf_green() -> StandardMaterial3D:
+	return _plain(&"leaf_green", Color(0.24, 0.50, 0.28), 0.9)
+
+
+## Book cloth, in the handful of colours a shelf of real books settles into.
+static func book(index: int) -> StandardMaterial3D:
+	var colours: Array[Color] = [Color(0.55, 0.16, 0.16), Color(0.16, 0.27, 0.48), Color(0.17, 0.38, 0.27),
+		Color(0.80, 0.62, 0.22), Color(0.86, 0.83, 0.74), Color(0.20, 0.19, 0.22), Color(0.45, 0.28, 0.45)]
+	return _plain(StringName("book_%d" % (index % colours.size())), colours[index % colours.size()], 0.85)
+
+
 static func paper() -> StandardMaterial3D:
 	return _plain(&"paper", Color(0.97, 0.97, 0.95), 1.0)
 

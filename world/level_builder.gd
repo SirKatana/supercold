@@ -363,16 +363,37 @@ static func _build_walls(data: LevelData, parent: Node3D) -> void:
 
 
 static func _build_props(data: LevelData, parent: Node3D) -> void:
+	var racks: Dictionary[Vector2i, bool] = {}
+	for prop: Dictionary in data.props:
+		if prop["kind"] == &"rack":
+			racks[prop["cell"]] = true
 	for prop: Dictionary in data.props:
 		var kind: StringName = prop["kind"]
-		var size := Vector3(1.0, 2.4, 1.7)
-		if kind == &"desk":
-			size = Vector3(1.7, 1.0, 0.9)
-		elif kind == &"pillar":
+		var cell: Vector2i = prop["cell"]
+		if kind == &"rack":
+			# Shelving that stands in a row is one unit, not a line of separate blocks. A run is
+			# built once, from its first cell.
+			if racks.has(cell + Vector2i(0, -1)):
+				continue
+			var run: int = 1
+			while racks.has(cell + Vector2i(0, run)):
+				run += 1
+			var shelf: StaticBody3D = make_box(Furniture.shelf_size(run), prop_material)
+			shelf.name = "Shelving"
+			Furniture.dress(shelf, Furniture.shelf_mesh(run, data.level_name), prop_material)
+			var first: Vector3 = data.cell_center(cell, Furniture.SHELF_HEIGHT * 0.5)
+			var last: Vector3 = data.cell_center(cell + Vector2i(0, run - 1), Furniture.SHELF_HEIGHT * 0.5)
+			shelf.position = (first + last) * 0.5
+			parent.add_child(shelf)
+			continue
+		var size := Vector3(1.7, 1.0, 0.9)
+		if kind == &"pillar":
 			size = Vector3(1.1, T.wall_height, 1.1)
 		var body: StaticBody3D = make_box(size, prop_material)
 		body.name = String(kind).capitalize()
 		if kind == &"desk":
 			Furniture.dress(body, Furniture.desk_mesh(), prop_material)
-		body.position = data.cell_center(prop["cell"], size.y * 0.5)
+		elif kind == &"pillar":
+			Furniture.dress(body, Furniture.pillar_mesh(T.wall_height), prop_material)
+		body.position = data.cell_center(cell, size.y * 0.5)
 		parent.add_child(body)
