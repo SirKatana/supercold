@@ -380,6 +380,7 @@ static func _build_props(data: LevelData, parent: Node3D) -> void:
 				run += 1
 			var shelf: StaticBody3D = make_box(Furniture.shelf_size(run), prop_material)
 			shelf.name = "Shelving"
+			shelf.add_to_group(&"shelving")      # duplicate names get renamed by the engine
 			Furniture.dress(shelf, Furniture.shelf_mesh(run, data.level_name), prop_material)
 			var first: Vector3 = data.cell_center(cell, Furniture.SHELF_HEIGHT * 0.5)
 			var last: Vector3 = data.cell_center(cell + Vector2i(0, run - 1), Furniture.SHELF_HEIGHT * 0.5)

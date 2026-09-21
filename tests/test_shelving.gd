@@ -27,7 +27,7 @@ func test_a_row_of_racks_is_one_bookshelf() -> void:
 	check(Game.load_floor(2), "server room loads")
 	await wait_physics(3)
 	var runs: Array = _runs(Game.data)
-	var units: Array[Node] = Game.level.find_children("*Shelving*", "StaticBody3D", true, false)
+	var units: Array[Node] = get_tree().get_nodes_in_group(&"shelving")
 	check_eq(units.size(), runs.size(), "one unit per row, not one per cell")
 	check(runs.max() >= 4, "and the server room's rows are four cells long")
 	var longest: StaticBody3D = null
