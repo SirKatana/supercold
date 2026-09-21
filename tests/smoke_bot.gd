@@ -43,7 +43,6 @@ func _run() -> void:
 	var game: Node = root.get_node(^"Game")
 	game.set(&"god_mode", true)
 	game.set(&"fast_elevators", true)
-	game.set(&"reinforcements_enabled", true)
 	root.get_node(^"AdService").set(&"auto_result", 1)
 	# No talking computer during automated runs. Loaded at runtime: see the note on -s scripts.
 	(load("res://allies/helper_voice.gd") as GDScript).set(&"tts_enabled", false)

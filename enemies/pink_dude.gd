@@ -405,11 +405,8 @@ func shoot() -> void:
 	if not has_weapon():
 		return
 	var p: Player = get_player()
+	var target: Vector3 = p.chest_position() if p != null else muzzle() - global_transform.basis.z
 	var origin: Vector3 = muzzle()
-	var target: Vector3 = muzzle() - global_transform.basis.z
-	if p != null:
-		# Lead him. Flight time at full speed, because a player who is moving has time running.
-		target = lead_point(origin, p.chest_position(), p.get_real_velocity(), T.bullet_speed * weapon.bullet_speed_scale, randf_range(T.dude_lead_min, T.dude_lead_max))
 	var dir: Vector3 = (target - origin).normalized()
 	var spread: float = deg_to_rad(T.dude_spread_deg)
 	dir = dir.rotated(Vector3.UP, randf_range(-spread, spread))
@@ -418,13 +415,7 @@ func shoot() -> void:
 		dir = dir.rotated(right, randf_range(-spread, spread))
 	weapon.cooldown_left = 0.0
 	weapon.fire(origin, dir, self, false)
-	Game.emit_noise(origin, T.gunshot_hearing)
-
-
-## Where to put a round so that it meets a target running at `run`. `share` 1.0 is a perfect lead.
-static func lead_point(origin: Vector3, chest: Vector3, run: Vector3, round_speed: float, share: float) -> Vector3:
-	var flight: float = origin.distance_to(chest) / maxf(round_speed, 0.1)
-	return chest + Vector3(run.x, 0, run.z) * flight * share
+	Game.emit_noise(origin, T.dude_hearing)
 
 
 func find_free_gun() -> Gun:

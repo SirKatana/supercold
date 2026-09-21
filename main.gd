@@ -30,7 +30,6 @@ func _ready() -> void:
 	Game.floor_loaded.connect(_apply_theme)
 
 	Game.god_mode = _flag("god")
-	Game.reinforcements_enabled = _arg("shot", "") == "" or _flag("reinforce")      # captures count on a fixed cast
 	var level: String = _arg("level", "")
 	var level_number: int = _level_from_args()
 	if level_number > 0:

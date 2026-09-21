@@ -188,33 +188,17 @@ extends Resource
 ## Between shots a dude runs for cover and stays hidden this long (world seconds).
 @export var dude_cover_search_radius: float = 6.0
 @export var dude_hide_min: float = 0.5
-@export var dude_hide_max: float = 0.8
+@export var dude_hide_max: float = 1.3
 @export var dude_reposition_max: float = 3.0
 ## A dead dude falls as a ragdoll on world time, then bursts into shards after this long.
 @export var dude_ragdoll_shatter: float = 2.0
 @export var dude_reaction: float = 0.3
-@export var dude_aim_time: float = 0.5
-@export var dude_cadence: float = 1.0
-## Dudes shoot where the player will be, not where he is. Run in a straight line and the
-## bullet meets you; stop, and it crawls past in front of you. 1.0 is a perfect lead, and
-## each shot takes a random share between `dude_lead_min` and `dude_lead_max`.
-@export var dude_lead_min: float = 0.75
-@export var dude_lead_max: float = 1.05
+@export var dude_aim_time: float = 0.7
+@export var dude_cadence: float = 1.4
 @export var dude_spread_deg: float = 1.5
 @export var dude_sight: float = 40.0
 @export var dude_engage_dist: float = 16.0
 @export var dude_hearing: float = 14.0
-## A gunshot carries across the floor: everyone who hears it comes for the player.
-@export var gunshot_hearing: float = 45.0
-
-@export_group("Reinforcements")
-## Lots of guys. Once the shooting starts, every kill is answered: while fewer dudes are alive
-## than the floor started with and the budget lasts, another one arrives out of sight, already
-## hunting. Budget is the floor's starting count times the ratio. Boss floors have none.
-@export var reinforce_ratio: float = 1.0
-@export var reinforce_ratio_early: float = 0.5      # levels 1 and 2
-@export var reinforce_interval: float = 2.5          # world seconds between arrivals
-@export var reinforce_min_distance: float = 9.0
 @export var dude_seek_weapon_dist: float = 12.0
 @export var dude_punch_range: float = 1.5
 @export var dude_punch_windup: float = 0.5

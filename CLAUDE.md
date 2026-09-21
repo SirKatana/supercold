@@ -216,9 +216,8 @@ CharacterBody3D plus NavigationAgent3D. Move 3.2 m/s times `world_scale`. HP 3 v
 FSM, one script per state under `enemies/states/`:
 `Idle -> Alert -> Approach -> Aim -> Fire -> Reposition`, plus `Stunned`, `Disarmed`, `Dead`.
 
-- Aim: telegraph `dude_aim_time` 0.5 s world time, arm raises, thin pink laser line. The shot **leads the player** (`PinkDude.lead_point`, a random share between `dude_lead_min` and `dude_lead_max` of a perfect lead, flight time taken at full speed), spread 1.5 degrees. Running in a straight line gets you hit; stopping makes the round crawl past ahead of you. The user found that without a lead "you don't need to stop time". Never go back to aiming at the current position.
-- Fire cadence `dude_cadence` 1.0 s world time. Needs line of sight, checked by raycast against layer 1 and 6. A gunshot is heard `gunshot_hearing` (45 m) away, so the floor converges on the first shot.
-- **Reinforcements, "lots of guys"** (`Game.reinforcements_left`, `_send_reinforcement`, `enemies_left()`): budget is the floor's starting count times `reinforce_ratio` (half on levels 1 and 2, none on boss floors). Once `Game.alarm` is up (any noise or kill), whenever fewer dudes are alive than the floor started with, one more arrives every `reinforce_interval` world seconds at a spawn or wave cell the player cannot see, at least `reinforce_min_distance` away, already alerted, of a kind the floor already has. After three failed tries the farthest cell is used, so a floor can never hang. The floor is clear, and the exit lift arrives, only when the budget is spent. `reinforcements_enabled` is **off by default** so tests count exactly what a grid holds; `main.gd` turns it on for play (not for `--shot` captures) and the smoke bot turns it on.
+- Aim: telegraph 0.7 s world time, arm raises, thin pink laser line. Aims at player's **current** position, no lead, spread 1.5 degrees. This is what makes dodging work.
+- Fire cadence 1.4 s world time. Needs line of sight, checked by raycast against layer 1 and 6.
 - Disarmed: runs to nearest free pistol within 12 m, otherwise rushes to punch. Enemy punch kills player, 0.5 s world windup.
 - Unarmed variant spawns without pistol and goes straight to rush.
 - Dead: drops its gun and goes limp as a pink Ragdoll on world time, then shatters into shards.

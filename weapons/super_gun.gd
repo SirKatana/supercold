@@ -120,5 +120,5 @@ func fire(origin: Vector3, direction: Vector3, shooter: Node, spend: bool = true
 	LaserBeam.draw(Game.entities_root(self), origin, end)
 	Sfx.play(sound, origin)
 	if spend:
-		Game.emit_noise(origin, T.gunshot_hearing)
+		Game.emit_noise(origin, T.dude_hearing)
 	return true
