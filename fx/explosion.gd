@@ -160,7 +160,7 @@ func _blast(source: Node) -> int:
 			var body: Node3D = node as Node3D
 			if body != null and body.global_position.distance_to(here) <= _radius and body.has_method(&"take_damage"):
 				if body is Door:
-					(body as Door).take_damage(99, body.global_position - here, body.global_position)
+					(body as Door).smash(body.global_position - here)
 				else:
 					body.call(&"take_damage", 99, body.global_position - here)
 	# Other barrels in reach cook off a beat later, one after another.

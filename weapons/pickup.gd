@@ -12,6 +12,12 @@ const T: Tuning = preload("res://data/tuning.tres")
 const LAYER_PICKUP: int = 8
 const LAYER_FLYING: int = 64
 const HIT_MASK: int = 1 | 4 | 32  # world, enemies, breakables
+const ENEMY_MASK: int = 4
+## How wide a thrown item is when it comes to hitting someone. Its flight follows one point,
+## and a spinning shotgun is a metre long: without this its centre passed beside a dude while
+## the gun itself went straight through him. Only people are swept wide; walls still see the
+## centre, so nothing stops short of a wall.
+var hit_radius: float = 0.12
 const REST_HEIGHT: float = 0.08
 
 var kind: StringName = &"item"
@@ -136,6 +142,9 @@ func throw_from(at: Vector3, initial_velocity: Vector3, by: Node) -> void:
 	velocity = initial_velocity
 	thrower = by
 	dangerous = true
+	# Long things are wide things once they tumble: half their length, near enough.
+	if get(&"two_handed") == true or kind == &"ram":
+		hit_radius = 0.32
 	spin = Vector3(randf_range(-6, 6), randf_range(8, 14), randf_range(-6, 6))
 	_apply_layer()
 
@@ -177,12 +186,41 @@ func step_flight(wd: float) -> void:
 	query.collide_with_areas = false
 	if is_instance_valid(thrower) and thrower is CollisionObject3D:
 		query.exclude = [(thrower as CollisionObject3D).get_rid()]
-	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var hit: Dictionary = space.intersect_ray(query)
+	if dangerous and hit_radius > 0.0:
+		var body: Dictionary = _swept_body(space, from, to, query.exclude)
+		if not body.is_empty() and (hit.is_empty() or from.distance_to(body["position"]) < from.distance_to(hit["position"])):
+			hit = body
 	if hit.is_empty():
 		global_position = to
 		_mesh_root.rotation += spin * wd
 		return
 	_on_flight_hit(hit["collider"], hit["position"], hit["normal"])
+
+
+## The first person a sphere of `hit_radius` touches between `from` and `to`, as a ray result.
+func _swept_body(space: PhysicsDirectSpaceState3D, from: Vector3, to: Vector3, exclude: Array[RID]) -> Dictionary:
+	var ball := SphereShape3D.new()
+	ball.radius = hit_radius
+	var params := PhysicsShapeQueryParameters3D.new()
+	params.shape = ball
+	params.transform = Transform3D(Basis.IDENTITY, from)
+	params.motion = to - from
+	params.collision_mask = ENEMY_MASK
+	params.exclude = exclude
+	var fractions: PackedFloat32Array = space.cast_motion(params)
+	if fractions.size() < 2 or fractions[1] >= 1.0:
+		return {}
+	params.transform = Transform3D(Basis.IDENTITY, from + (to - from) * fractions[1])
+	params.motion = Vector3.ZERO
+	var touch: Dictionary = space.get_rest_info(params)
+	if touch.is_empty():
+		return {}
+	var collider: Object = instance_from_id(touch["collider_id"])
+	if collider == null:
+		return {}
+	return {"collider": collider, "position": touch["point"], "normal": touch["normal"]}
 
 
 func _on_flight_hit(collider: Object, point: Vector3, normal: Vector3) -> void:

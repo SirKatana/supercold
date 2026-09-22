@@ -266,6 +266,8 @@ func _capture(path: String, after: float) -> void:
 		Game.player.look_at(Vector3(d.global_position.x, Game.player.global_position.y, d.global_position.z))
 		Game.player.head.rotation.x = -0.08
 		Game.player.hands.visible = false
+		if _flag("oneleaf"):
+			d.take_damage(9, -face, d._visual.global_transform * Vector3(0.5, 1.2, 0.0))
 		if _flag("dude"):
 			var visitor: PinkDude = Game.spawn_dude(d.global_position - face * 1.0, true)
 			visitor.sense_override = true

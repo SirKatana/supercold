@@ -118,7 +118,7 @@ func bash(player: Player) -> bool:
 		(collider as PinkDude).on_rammed(dir)
 		landed = true
 	elif collider is Door:
-		(collider as Door).take_damage(99, dir, point)
+		(collider as Door).smash(dir)      # a door costs one bash: both leaves
 		landed = true
 	elif collider is GlassPane:
 		(collider as GlassPane).take_damage(99, dir)

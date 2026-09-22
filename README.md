@@ -33,7 +33,7 @@ Things worth knowing:
 - A pistol has six rounds and its cooldown runs on world time. Stand still after a shot and it will not be ready.
 - Throw anything at a dude to stun him and knock his gun into the air. Catch it.
 - Three punches kill. The first one disarms.
-- Doors break to two punches, two bullets, or one thrown object. The panels stun whoever stood behind.
+- Double doors break a leaf at a time: two punches, two bullets or one thrown object takes out the leaf you hit, and you can squeeze through that half. The ram or a blast takes both. The splinters stun whoever stood behind.
 - Dudes aim where you are, not where you will be. Keep moving sideways.
 - Shield troopers only die to a bullet through the glass slit in their shield, or to an explosion. Take the shield with F afterwards.
 - One bullet in three ricochets off a shield. It can come back at you.

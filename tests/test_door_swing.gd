@@ -56,3 +56,59 @@ func test_breaking_it_leaves_the_frame_in_the_wall() -> void:
 	check(not is_instance_valid(d), "the door is gone")
 	check(is_instance_valid(frame) and frame.is_inside_tree(), "the steel frame is not")
 	check(frame.global_position.distance_to(where) < 0.01, "and it has not moved")
+
+
+func _point_on_leaf(d: Door, leaf: int) -> Vector3:
+	return d._visual.global_transform * Vector3((-1.0 if leaf == 0 else 1.0) * 0.5, 1.2, 0.0)
+
+
+func test_shooting_one_leaf_breaks_that_leaf_only() -> void:
+	var d: Door = _door()
+	d.on_bullet_hit(null, _point_on_leaf(d, 1), Vector3.UP)
+	d.on_bullet_hit(null, _point_on_leaf(d, 1), Vector3.UP)
+	await wait_physics(2)
+	check(d.leaf_broken[1] and not d.leaf_broken[0], "the leaf that was shot is gone, the other still hangs")
+	check(is_instance_valid(d) and not d.is_broken, "the door is still a door")
+	check(not d._leaves[1].visible and d._leaves[0].visible, "and it looks that way")
+	check(d._leaf_shapes[1].disabled and not d._leaf_shapes[0].disabled, "you can get through the broken half only")
+	d.on_bullet_hit(null, _point_on_leaf(d, 0), Vector3.UP)
+	check(not d.leaf_broken[0], "one bullet does not break the other")
+	d.on_bullet_hit(null, _point_on_leaf(d, 0), Vector3.UP)
+	await wait_physics(2)
+	check(not is_instance_valid(d), "two, and the doorway is clear")
+
+
+func test_the_ram_takes_both_leaves() -> void:
+	var d: Door = _door()
+	d.smash(Vector3.FORWARD)
+	await wait_physics(2)
+	check(not is_instance_valid(d), "one bash, whole door")
+
+
+func test_the_windows_are_glass_you_can_see_through() -> void:
+	var leaf: ArrayMesh = MeshKit.cached(&"door_leaf", Door._model_leaf)
+	var glass: int = -1
+	for s: int in leaf.get_surface_count():
+		if leaf.surface_get_material(s) == Mats.glass():
+			glass = s
+	check(glass >= 0, "the window is a pane of glass")
+	check((Mats.glass() as StandardMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED, "and glass is see-through")
+	# Nothing opaque sits in front of or behind the pane: no triangle of any other surface
+	# covers the middle of the window, seen straight on.
+	var w: float = T.cell_size * 0.5 - Door.JAMB - 0.006
+	var middle := Vector2(w - Door.WINDOW_FROM_EDGE, Door.WINDOW_Y)
+	for s: int in leaf.get_surface_count():
+		if s == glass:
+			continue
+		var arrays: Array = leaf.surface_get_arrays(s)
+		var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+		var covered: bool = false
+		for t: int in range(0, indices.size(), 3):
+			var a := Vector2(verts[indices[t]].x, verts[indices[t]].y)
+			var b := Vector2(verts[indices[t + 1]].x, verts[indices[t + 1]].y)
+			var c := Vector2(verts[indices[t + 2]].x, verts[indices[t + 2]].y)
+			if Geometry2D.point_is_inside_triangle(middle, a, b, c):
+				covered = true
+				break
+		check(not covered, "surface %d does not cover the window" % s)
