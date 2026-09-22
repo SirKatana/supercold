@@ -122,14 +122,64 @@ func _level_from_args() -> int:
 ## `--perfprint=1`: once a second, what a frame costs. Works in the web build too.
 func _perf_print() -> void:
 	TimeManager.override_scale = 1.0
+	# Switches for pinning down where web frame time goes. Measuring aids only.
+	if _flag("norender"):
+		get_viewport().disable_3d = true
+	if _flag("novideo"):
+		for feed: Node in get_tree().root.find_children("MonitorFeed", "VideoStreamPlayer", false, false):
+			(feed as VideoStreamPlayer).stop()
+	if _flag("nodudes"):
+		for dude: Node in get_tree().get_nodes_in_group(&"enemies"):
+			dude.queue_free()
+	if _flag("nosound"):
+		AudioServer.set_bus_mute(0, true)
+	if _flag("nohud"):
+		for layer: Node in find_children("*", "CanvasLayer", true, false):
+			(layer as CanvasLayer).visible = false
+	# Brackets round every script's _process: first and last in the frame.
+	var first := Node.new()
+	first.process_priority = -100000
+	var last := Node.new()
+	last.process_priority = 100000
+	var span: Dictionary = {"start": 0, "sum": 0, "frames": 0, "gap": 0, "prev_end": 0}
+	first.set_script(_bracket_script(true))
+	last.set_script(_bracket_script(false))
+	first.set_meta(&"span", span)
+	last.set_meta(&"span", span)
+	add_child(first)
+	add_child(last)
 	while true:
 		await get_tree().create_timer(1.0, true, false, true).timeout
+		var n: int = maxi(1, span["frames"])
+		print("SPAN scripts %.1f ms  between frames outside scripts %.1f ms" % [span["sum"] / 1000.0 / n, span["gap"] / 1000.0 / n])
+		span["sum"] = 0
+		span["gap"] = 0
+		span["frames"] = 0
 		print("PERF fps %d  process %.1f ms  physics %.1f ms  draws %d  objects %d  prims %d  dudes %d" % [
 			Performance.get_monitor(Performance.TIME_FPS), Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
 			Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
 			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 			Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
 			Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), Game.alive_enemies])
+
+
+func _bracket_script(opening: bool) -> GDScript:
+	var src := GDScript.new()
+	src.source_code = """extends Node
+func _process(_d: float) -> void:
+	var span: Dictionary = get_meta(&"span")
+	var now: int = Time.get_ticks_usec()
+	if %s:
+		if span["prev_end"] > 0:
+			span["gap"] += now - span["prev_end"]
+		span["start"] = now
+	else:
+		span["sum"] += now - span["start"]
+		span["frames"] += 1
+		span["prev_end"] = now
+""" % ("true" if opening else "false")
+	src.reload()
+	return src
 
 
 func _capture(path: String, after: float) -> void:
