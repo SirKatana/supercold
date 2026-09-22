@@ -374,7 +374,7 @@ Headless gotchas:
 the user asks. That rules out Godot MCP `run_project` and the `game-development` skill's `shot`. Instead:
 
 ```bash
-rtk proxy tests/run.sh [test_file_basename]        # unit tests, exit code is Godot's own, gate every commit on it
+rtk proxy tests/run.sh [test_file_basename]        # unit tests, exit code is Godot's own, gate every commit on it. NEVER pipe it (`| tail` hides the exit code): `tests/run.sh && git commit`
 rtk proxy tools/shot.sh out.png <level> <seconds>  # one frame on a hidden Xvfb display, then Read the png
 rtk proxy tools/shot.sh out.png test_room 1.5 --do=punch   # also --do=hold
 ```

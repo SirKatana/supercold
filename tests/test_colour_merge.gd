@@ -19,7 +19,8 @@ func test_a_door_leaf_becomes_one_draw_call_with_its_colours_kept() -> void:
 	MeshKit.colour_merge = true
 	var after: ArrayMesh = _bake(Door._model_leaf)
 	check(before.get_surface_count() >= 4, "separately it is one per material, got %d" % before.get_surface_count())
-	check_eq(after.get_surface_count(), 1, "merged, it is one")
+	check_eq(after.get_surface_count(), 2, "merged, it is two: all the wood and steel in one, the see-through window apart")
+	check_eq(after.surface_get_material(1), Mats.glass(), "the window keeps its own glass")
 	var arrays: Array = after.surface_get_arrays(0)
 	var colours: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
 	check_eq(colours.size(), (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size(), "a colour on every vertex")
