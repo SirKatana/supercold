@@ -1,5 +1,5 @@
 ########################################
-#iiiiiiiiii#.......#iiiiiiiiii#iiRiiiii#
+#iiiiiiiiii#.......#iiiiiiiiii#iiqiiiii#
 #isiisiisii#.sq.s..#iiiiiiiiii#iiiiiiii#
 #isiisiisii#.s..s..#iiiiiiiiiiDiiiiiiii#
 #isiisiisii#.s..s.a#iiiiiiiiii#iiiiiiii#
@@ -10,10 +10,10 @@
 #iiiiiiiiii#.......#..........#........#
 ####D########D#############D#######D####
 #iiiii#piiiiiiiiii#iiiiaiiiiii#iiiiiiii#
-#Piiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiia#
+#PiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiR#
 #iiiiiiiiiiiiiiiiiiiiiii#iiiiiiiiiiiiii#
 #####D#######D#######D############D#####
-#......#........#iiiiiii#iiqiiiiiiiiiii#
+#......#........#iiiiiii#iiyiiiiiiiiiii#
 #......#........#iaiiiii#iiiiiiiiiiiiii#
 #......#.F...a..#iiiiiii#iiiiiiiiiiiiii#
 #....K.#........#iiiiiii#iiiiiiiiiiiiii#
