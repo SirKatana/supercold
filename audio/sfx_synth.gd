@@ -25,6 +25,15 @@ static func build_all() -> Dictionary[StringName, AudioStream]:
 		&"ding": _render(0.8, func(t: float, _n: float) -> float:
 			var second: float = sin(TAU * 1318.5 * (t - 0.18)) * exp(-(t - 0.18) * 5.0) if t > 0.18 else 0.0
 			return (sin(TAU * 1046.5 * t) * exp(-t * 5.0) + second) * 0.4),
+		# Crystal: a handful of little bells at once, all slightly out of tune with each other.
+		&"jingle": _render(0.9, func(t: float, n: float) -> float:
+			var sum: float = 0.0
+			for i: int in 6:
+				var hz: float = 1900.0 + i * 430.0 + sin(float(i) * 12.0) * 90.0
+				var start: float = float(i) * 0.012
+				if t > start:
+					sum += sin(TAU * hz * (t - start)) * exp(-(t - start) * 7.5)
+			return clampf(sum * 0.13 + n * exp(-t * 60.0) * 0.06, -1.0, 1.0)),
 		&"ricochet": _render(0.35, func(t: float, n: float) -> float:
 			return sin(TAU * (2600.0 - t * 4200.0) * t) * exp(-t * 9.0) * 0.5 + n * exp(-t * 70.0) * 0.5),
 		&"explosion": _render(0.98, func(t: float, n: float) -> float:

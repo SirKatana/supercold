@@ -26,7 +26,7 @@ var two_handed: bool = false
 var has_scope: bool = false
 var muzzle_local: Vector3 = Vector3(0, 0.048, -0.20)
 ## How far a shot lifts the world clock, and how hard it kicks the camera.
-var burst_strength: float = 0.22
+var burst_strength: float = 0.10
 var kick: float = 0.05
 ## Enemies fire this many rounds per attack, this far apart in world seconds.
 var enemy_burst: int = 1

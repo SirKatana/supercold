@@ -235,6 +235,24 @@ func _capture(path: String, after: float) -> void:
 		me.hands.visible = false
 		TimeManager.override_scale = 1.0
 		await get_tree().create_timer(float(_arg("at", "3.0")), true, false, true).timeout
+	if _arg("do", "") == "chandelier" and Game.player != null:
+		# Stand under the nearest chandelier and fling a body into it.
+		var lights: Array[Node] = get_tree().get_nodes_in_group(&"hanging")
+		if not lights.is_empty():
+			var nearest: Node3D = lights[0]
+			for node: Node in lights:
+				if (node as Node3D).global_position.distance_to(Game.player.global_position) < nearest.global_position.distance_to(Game.player.global_position):
+					nearest = node as Node3D
+			Game.player.global_position = nearest.global_position - Vector3(3.4, T.wall_height - 0.05, 0)
+			Game.player.look_at(nearest.global_position - Vector3(0, 0.9, 0))
+			Game.player.hands.visible = false
+			TimeManager.override_scale = 1.0
+			if _flag("yeet"):
+				var body: Ragdoll = Ragdoll.spawn_standing(Game.entities_root(self),
+					Transform3D(Basis.IDENTITY, nearest.global_position - Vector3(0, T.wall_height - 0.05, 0)),
+					Vector3.UP * 26.0, Mats.pink(), 1.0)
+				body.set_meta(&"promo", true)
+			await get_tree().create_timer(float(_arg("at", "1.0")), true, false, true).timeout
 	if _arg("do", "") == "sign" and Game.player != null:
 		# A wet floor sign a little way ahead, turned so both panels show.
 		var viewer: Player = Game.player

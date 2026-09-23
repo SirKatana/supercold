@@ -11,7 +11,7 @@ extends Resource
 ## your own bullet leave the barrel. Each burst has a length (real seconds) and a strength (scale).
 @export var burst_action: float = 0.12
 @export var burst_pickup: float = 0.08
-@export var burst_strength_shot: float = 0.22
+@export var burst_strength_shot: float = 0.10
 @export var burst_strength_throw: float = 0.30
 @export var burst_strength_punch: float = 0.55
 @export var burst_strength_pickup: float = 0.15

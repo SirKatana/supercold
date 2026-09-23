@@ -8,6 +8,8 @@ OUT = os.path.join(os.path.dirname(__file__), "..", "levels")
 
 
 ENEMIES = "auBRSHqNUxyC"
+# Hangs from the ceiling. Not cover, not an obstacle: the scatter treats it like an item.
+CHANDELIERS = {"f1_lobby": 3, "f5_executive": 4, "f10_vault": 2, "f19_tradingfloor": 5, "f23_mirrors": 4, "f25_skygarden": 3, "f29_penthouse": 6, "f6_cafeteria": 2, "f17_greenhouse": 2}
 
 # Which floors get which gadget, and how many. f = fart grenade, F = freeze bomb, j = water bucket.
 # Deliberately uneven: seven floors have none, most have one or two, only two have all three.
@@ -251,6 +253,7 @@ def f1_lobby():
     g.put("g", (11, 9))
     g.put("o", (3, 6), (7, 3), (12, 3), (16, 6), (4, 10), (15, 10), (7, 12))
     g.gadgets("f1_lobby", 799)
+    g.put("h", (4, 3), (14, 3), (8, 9))
     save("f1_lobby", g, {"intro": "LOBBY\nSTAND STILL. TIME CRAWLS."})
 
 
@@ -388,6 +391,7 @@ def f5_executive():
     g.pillars(27, 20, 38, 26, step=4, ox=2, oy=2)
     g.put("o", (18, 17), (24, 18), (30, 16), (35, 17))
     g.gadgets("f5_executive", 345)
+    g.put("h", (4, 3), (14, 3), (24, 3), (34, 3))
     save("f5_executive", g, {
         "intro": "EXECUTIVE FLOOR\nEVERYTHING YOU LEARNED.",
         "waves": [{"after_kills": 5, "count": 4, "armed": 3}, {"after_kills": 10, "count": 5, "armed": 4}],
@@ -712,6 +716,8 @@ def build_floor(spec):
                 g.scatter({"w": spec.get("wave_points", 4)}, rects, spec["seed"] + attempt + 7, floor=".")
             items = {k: v for k, v in spec.get("items", {}).items() if k not in "fFj"}
             g.scatter(items, rects, spec["seed"] + attempt + 5, floor=".", margin=True)
+            if CHANDELIERS.get(spec["name"]):
+                g.scatter({"h": CHANDELIERS[spec["name"]]}, rects, spec["seed"] + attempt + 23, floor=".")
             g.gadgets(spec["name"], spec["seed"] + attempt + 11)
             assert walkable_from_lift(g), "somebody cannot be reached"
             cover = len(g.cells("cso"))

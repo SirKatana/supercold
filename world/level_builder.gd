@@ -309,15 +309,14 @@ static func _build_pools(data: LevelData, level: Node3D, entities: Node3D) -> vo
 		entities.add_child(water)
 
 
+## A real ceiling: it stops a flung ragdoll, a thrown chair and a stray round. It is deliberately
+## NOT under `Nav`, so the navmesh never sees it.
 static func _build_ceiling(data: LevelData, parent: Node3D) -> void:
-	var mesh_instance := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(data.width * data.cell_size, 0.2, data.height * data.cell_size)
-	mesh.material = wall_material
-	mesh_instance.mesh = mesh
-	mesh_instance.name = "Ceiling"
-	mesh_instance.position = Vector3(mesh.size.x * 0.5, T.wall_height + 0.1, mesh.size.z * 0.5)
-	parent.add_child(mesh_instance)
+	var size := Vector3(data.width * data.cell_size, 0.2, data.height * data.cell_size)
+	var body: StaticBody3D = make_box(size, wall_material)
+	body.name = "Ceiling"
+	body.position = Vector3(size.x * 0.5, T.wall_height + 0.1, size.z * 0.5)
+	parent.add_child(body)
 
 
 ## Merges wall cells into rectangles: runs along each row, then identical runs stacked down rows.
@@ -390,6 +389,9 @@ static func _build_props(data: LevelData, parent: Node3D) -> void:
 			var last: Vector3 = data.cell_center(cell + Vector2i(0, run - 1), Furniture.SHELF_HEIGHT * 0.5)
 			shelf.position = (first + last) * 0.5
 			parent.add_child(shelf)
+			continue
+		if kind == &"chandelier":
+			Chandelier.hang(parent, data.cell_center(cell, 0.0), (cell.x + cell.y) % 3 == 0)
 			continue
 		var size := Vector3(1.7, 1.0, 0.9)
 		if kind == &"pillar":

@@ -5,6 +5,7 @@ extends Node3D
 ## distances across each joint. Deterministic, testable headless, and it runs on whichever
 ## clock it is told to: real time for the player, world time for dudes.
 
+const T: Tuning = preload("res://data/tuning.tres")
 const POINT_RADIUS: float = 0.07
 const ITERATIONS: int = 8
 const GRAVITY: float = 9.8
@@ -61,6 +62,11 @@ var prev: PackedVector3Array = []
 
 var _links: Array = []
 var _skin: Humanoid
+## The ceiling this body is under, or a great height on a floor that is open to the sky. A
+## flung body stops against it instead of sailing off through the roof, and whatever is hanging
+## there hears about it (`hit_ceiling`).
+var ceiling_y: float = 1.0e9
+var _hit_the_ceiling: bool = false
 var _ground: PackedFloat32Array = []
 var _touching: PackedByteArray = []
 ## The wall each joint struck this step, as a plane (normal, distance). The solver clamps
@@ -73,12 +79,23 @@ var _last_dt: float = 0.0
 
 
 ## `joints` are world positions in Humanoid.JOINTS order: the pose the body was in when it died.
+## Anything hanging from the ceiling that a flying body slams into.
+func _rattle_the_ceiling(at: Vector3) -> void:
+	for node: Node in get_tree().get_nodes_in_group(&"hanging"):
+		var thing: Node3D = node as Node3D
+		if thing != null and thing.global_position.distance_to(at) <= 1.6 and thing.has_method(&"knock"):
+			thing.call(&"knock", (at - thing.global_position).normalized() + Vector3.UP * 0.2)
+
+
 static func spawn(parent: Node, joints: PackedVector3Array, scale_factor: float, impulse: Vector3,
 		body_material: Material, sim_speed: float) -> Ragdoll:
 	var r := Ragdoll.new()
 	r.material = body_material
 	r.speed = sim_speed
 	r.body_scale = scale_factor
+	# Head room: the ceiling of this floor, less a little for the point's own size.
+	if Game.data != null and not Game.data.open_sky:
+		r.ceiling_y = T.wall_height - POINT_RADIUS
 	parent.add_child(r)
 	r.add_to_group(&"ragdolls")
 	r.setup(joints, impulse)
@@ -226,6 +243,12 @@ func _solve(iterations: int) -> void:
 			if pos[i].y < _ground[i]:
 				pos[i].y = _ground[i]
 				_touching[i] = 1
+			if pos[i].y > ceiling_y:
+				pos[i].y = ceiling_y
+				prev[i].y = ceiling_y + (ceiling_y - prev[i].y) * 0.25      # a little bounce off it
+				if not _hit_the_ceiling:
+					_hit_the_ceiling = true
+					_rattle_the_ceiling(pos[i])
 			if _wall_normal[i] != Vector3.ZERO:
 				var depth: float = _wall_d[i] - pos[i].dot(_wall_normal[i])
 				if depth > 0.0:
