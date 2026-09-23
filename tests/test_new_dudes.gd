@@ -45,46 +45,114 @@ func test_runner_actually_closes_the_distance() -> void:
 	check(start - now > 8.0, "he covered %.1f m in two seconds" % (start - now))
 
 
-func test_biter_waits_underground_rises_when_you_come_close_and_only_then_counts() -> void:
-	var spot: Vector3 = await _clear_room()
-	Game.player.global_position = spot + Vector3(-20, 0, 0)
-	var biter: Zombie = Game.spawn_dude(spot, true, &"zombie") as Zombie
-	await wait_physics(30)
-	check(biter.buried and not biter.rising, "still under the floor")
-	check_eq(Game.alive_enemies, 0, "and not counted as an enemy")
-	check(not biter.skin.visible, "out of sight")
-	Game.player.global_position = spot + Vector3(-5, 0, 0)
-	await wait_physics(20)
-	check(biter.rising, "he starts to climb out")
-	check(biter.global_position.y < -0.3, "from below the floor (y=%.2f)" % biter.global_position.y)
-	await wait_physics(int(T.zombie_rise_seconds * 60.0) + 10)
-	check(not biter.buried, "up")
-	check_eq(Game.alive_enemies, 1, "now he counts")
-	check(biter.arm_raise_floor() > 0.8, "arms out in front")
-	check(not biter.can_choke(), "and he does not breathe")
-
-
-func test_biter_bites() -> void:
+func test_knifeman_is_orange_rushes_and_cuts_from_further_than_a_fist() -> void:
 	var spot: Vector3 = await _clear_room()
 	Game.god_mode = false
-	Game.player.global_position = spot + Vector3(-3, 0.05, 0)
-	Game.spawn_dude(spot, true, &"zombie")
+	Game.player.global_position = spot + Vector3(-4, 0.05, 0)
+	var blade: Knifeman = Game.spawn_dude(spot, false, &"knifeman") as Knifeman
+	blade.alerted = true
+	check_eq(blade.skin.material, Mats.knifeman(), "burnt orange, not pink")
+	check(blade.has_knife, "with a knife in his hand")
+	check(blade.punch_range() > T.dude_punch_range + 0.4, "and he reaches further than a fist")
+	check(blade.move_speed() > T.dude_speed, "and he is quick")
+	for i: int in 400:
+		await wait_physics(1)
+		if not Game.player.alive:
+			break
+	check(not Game.player.alive, "he cut you")
+
+
+func test_the_knifeman_throws_the_blade_if_you_keep_away_and_drops_one_when_killed() -> void:
+	var spot: Vector3 = await _clear_room()
+	var blade: Knifeman = Game.spawn_dude(spot, false, &"knifeman") as Knifeman
+	blade.sense_override = true
+	blade.can_see_player = true
+	blade.dist_to_player = 8.0
+	blade.set_physics_process(false)      # hold him at arm's length and let his patience run out
+	blade._out_of_reach = T.knifeman_throw_wait
+	blade.set_physics_process(true)
+	for i: int in 200:
+		await wait_physics(1)
+		if not blade.has_knife:
+			break
+	check(not blade.has_knife, "the knife went to you instead")
+	var flying: Array = get_tree().get_nodes_in_group(&"pickups").filter(func(k: Pickup) -> bool: return k is Knife)
+	check(flying.size() >= 1, "and it is in the air")
+	check_eq(blade.punch_range(), T.dude_punch_range, "without it he is down to his fists")
+	blade.die()
+	await wait_physics(3)
+	var knives: int = get_tree().get_nodes_in_group(&"pickups").filter(func(k: Pickup) -> bool: return k is Knife).size()
+	check_eq(knives, 1, "he had nothing left to drop")
+
+
+func test_spearman_is_violet_slow_and_kills_from_outside_your_reach() -> void:
+	var spot: Vector3 = await _clear_room()
+	Game.god_mode = false
+	Game.player.global_position = spot + Vector3(-5, 0.05, 0)
+	var pike: Spearman = Game.spawn_dude(spot, false, &"spearman") as Spearman
+	pike.alerted = true
+	check_eq(pike.skin.material, Mats.spearman(), "violet")
+	check(pike.punch_range() > T.punch_range, "his reach beats yours: %.1f m against your %.1f" % [pike.punch_range(), T.punch_range])
+	check(pike.move_speed() < T.walk_speed, "but you can walk away from him")
 	for i: int in 500:
 		await wait_physics(1)
 		if not Game.player.alive:
 			break
-	check(not Game.player.alive, "he got you")
+	check(not Game.player.alive, "he ran you through")
 
 
-func test_floor_with_only_buried_biters_left_counts_as_clear() -> void:
+func test_a_dead_spearman_leaves_his_spear() -> void:
 	var spot: Vector3 = await _clear_room()
-	Game.player.global_position = spot + Vector3(-25, 0, 0)
-	Game.spawn_dude(spot, true, &"zombie")
-	var dude: PinkDude = Game.spawn_dude(spot + Vector3(3, 0, 0), true)
-	dude.sense_override = true
-	dude.die()
+	var pike: PinkDude = Game.spawn_dude(spot, false, &"spearman")
 	await wait_physics(2)
-	check_eq(Game.state, Game.State.CLEARED, "you never have to go digging for them")
+	pike.die()
+	await wait_physics(3)
+	var spears: Array = get_tree().get_nodes_in_group(&"pickups").filter(func(x: Pickup) -> bool: return x is Spear)
+	check_eq(spears.size(), 1, "one spear on the floor, yours if you want it")
+
+
+func test_cloner_keeps_away_and_makes_copies_that_cannot_copy() -> void:
+	var spot: Vector3 = await _clear_room()
+	Game.player.global_position = spot + Vector3(-6, 0.05, 0)
+	var maker: Cloner = Game.spawn_dude(spot, false, &"cloner") as Cloner
+	maker.sense_override = true
+	maker.alerted = true
+	check_eq(maker.skin.material, Mats.cloner(), "mint white")
+	var counted: int = Game.alive_enemies
+	for i: int in 900:
+		await wait_physics(1)
+		if maker.alive_copies() >= T.cloner_at_once:
+			break
+	check_eq(maker.alive_copies(), T.cloner_at_once, "he fills the room to his limit")
+	check_eq(Game.alive_enemies, counted + T.cloner_at_once, "and every copy counts as an enemy")
+	var copy: Cloner = maker.copies[0]
+	check(copy.is_copy and copy.made == 0, "a copy never makes copies")
+	check_eq(copy.skin.material, Mats.clone_copy(), "and is a paler thing than he is")
+	await wait_physics(240)
+	check(maker.alive_copies() <= T.cloner_at_once, "never more than his limit at once")
+	check(maker.global_position.distance_to(Game.player.global_position) > 4.0, "he keeps his distance")
+
+
+func test_killing_the_cloner_takes_every_copy_with_him() -> void:
+	var spot: Vector3 = await _clear_room()
+	Game.player.global_position = spot + Vector3(-6, 0.05, 0)
+	var maker: Cloner = Game.spawn_dude(spot, false, &"cloner") as Cloner
+	maker.sense_override = true
+	maker.alerted = true
+	for i: int in 900:
+		await wait_physics(1)
+		if maker.alive_copies() >= 2:
+			break
+	check(maker.alive_copies() >= 2, "copies are out")
+	var his: Array = maker.copies.duplicate()
+	maker.die()
+	await wait_physics(4)
+	var still_up: int = 0
+	for c: Variant in his:
+		if is_instance_valid(c) and (c as Cloner).alive:
+			still_up += 1
+	check_eq(still_up, 0, "they go when he goes")
+	check_eq(Game.alive_enemies, 0, "and the floor is clear")
 
 
 func test_brute_is_huge_takes_twelve_hits_calls_waves_and_drops_the_super_gun() -> void:
@@ -176,7 +244,7 @@ func test_floors_use_the_new_toys_where_promised() -> void:
 			totals["dude_" + String(sp["weapon"])] = totals.get("dude_" + String(sp["weapon"]), 0) + 1
 	check(with_fart.has("f15_restrooms") and with_fart.has("f18_beanworks"), "stink grenades on 15 and 18: %s" % ", ".join(with_fart))
 	check(with_fart.size() < 15, "but not everywhere (%d floors)" % with_fart.size())
-	for key: String in ["knife", "freeze", "smg", "revolver", "sniper", "dude_runner", "dude_zombie", "dude_sniper", "dude_smg"]:
+	for key: String in ["knife", "freeze", "smg", "revolver", "sniper", "dude_runner", "dude_knifeman", "dude_spearman", "dude_sniper", "dude_smg"]:
 		check(totals.get(key, 0) >= 5, "%s appears %d times across the game" % [key, totals.get(key, 0)])
 	check(totals["water"] > 300, "plenty of wet floor (%d cells)" % totals["water"])
 

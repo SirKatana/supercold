@@ -417,19 +417,21 @@ func dismiss_helper(floor_is_clear: bool = false) -> void:
 
 func spawn_dude(at: Vector3, armed: bool, weapon_kind: StringName = &"pistol") -> PinkDude:
 	var dude: PinkDude
-	if weapon_kind == &"zombie":
-		# Buried. He registers himself as an enemy when he climbs out.
-		var biter := Zombie.new()
-		biter.name = "Biter"
-		entities_root(self).add_child(biter)
-		biter.global_position = at
-		return biter
 	if weapon_kind == &"shield":
 		dude = ShieldDude.new()
 		dude.name = "ShieldDude"
 	elif weapon_kind == &"runner":
 		dude = Runner.new()
 		dude.name = "Runner"
+	elif weapon_kind == &"knifeman":
+		dude = Knifeman.new()
+		dude.name = "Knifeman"
+	elif weapon_kind == &"spearman":
+		dude = Spearman.new()
+		dude.name = "Spearman"
+	elif weapon_kind == &"cloner":
+		dude = Cloner.new()
+		dude.name = "Cloner"
 	else:
 		dude = DUDE_SCENE.instantiate()
 		dude.armed_at_spawn = armed
@@ -464,9 +466,10 @@ func _register(dude: PinkDude, at: Vector3) -> void:
 
 
 ## Spawns `count` dudes spread over the level's wave points, already alerted.
-## A biter has clawed his way up. Now he counts.
-func register_risen(biter: Zombie) -> void:
-	biter.died.connect(_on_dude_died)
+## Somebody who was not there when the floor was built, and who counts like anyone else:
+## a cloner's copy.
+func count_new_enemy(dude: PinkDude) -> void:
+	dude.died.connect(_on_dude_died)
 	alive_enemies += 1
 
 

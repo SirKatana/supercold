@@ -110,10 +110,7 @@ func capsule_cell() -> Vector2i:
 	return Vector2i(-1, -1)
 
 
-## Buried biters do not count until they climb out.
+## Everyone the floor starts with. A cloner's copies are not here: they are counted as he
+## makes them.
 func initial_enemy_count() -> int:
-	var count: int = 1 if boss_cell.x >= 0 else 0
-	for spawn: Dictionary in spawns:
-		if spawn.get("weapon", &"pistol") != &"zombie":
-			count += 1
-	return count
+	return spawns.size() + (1 if boss_cell.x >= 0 else 0)

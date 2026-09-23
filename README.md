@@ -49,7 +49,10 @@ Things worth knowing:
 - Throw a stink grenade into a room and green fog fills it. Dudes grab their throats, double over and drop. Troopers wear gas masks. Levels 15 and 18 are full of them.
 - Spill something (pour a bucket, smash a coffee mug) and the cleaner comes out of the lift to mop it up. He keeps count. The fifth spill on a floor is one too many and he comes for you with the broom. He is slower than you. Nothing kills him: shoot him, or let a pink dude shoot him, and he turns on whoever did it and shouts WHY!, then gets on with his work. Once he is after you, a hit only stops him for a moment.
 - A knife kills in one stab. Runners are faster than you, so keep one.
-- Biters wait under the floor and climb out when you get close. They do not count toward clearing a floor until they are up.
+- The knifeman is orange and fast, and his blade reaches further than your fist. Keep away from him too long and he throws it at you.
+- The spearman is violet and slow, and he kills from further than you can reach. Shoot him, or get inside the point.
+- The cloner is mint white and will not come near you. He keeps making pale copies of himself, up to three at a time. Kill him and every copy pops at once.
+- A spear is worth picking up: it kills at arm's length and further, and it kills when thrown. A crossbow is quiet, so nobody comes running.
 - The super gun is a laser. It goes through everyone in line, shields too, and they melt.
 - The Director takes three bullets and calls a wave each time he is hit.
 

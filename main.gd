@@ -448,11 +448,27 @@ func _capture(path: String, after: float) -> void:
 				stink.global_position = base + ahead * 4.6 + Vector3.UP * 1.1
 				stink.burst()
 				await get_tree().create_timer(float(_arg("at", "1.5")), true, false, true).timeout
-			"zombie":
+			"cloner":
 				for d: PinkDude in cast:
 					d.queue_free()
-				for i: int in 3:
-					Game.spawn_dude(base + ahead * 3.6 + side * (i - 1) * 1.5, true, &"zombie")
+				var maker: Cloner = Game.spawn_dude(base + ahead * 4.4, false, &"cloner") as Cloner
+				maker.alerted = true
+				maker.sense_override = true
+				TimeManager.override_scale = 1.0
+				await get_tree().create_timer(float(_arg("at", "10.0")), true, false, true).timeout
+			"knifeman":
+				for d: PinkDude in cast:
+					d.queue_free()
+				for i: int in 2:
+					var blade: PinkDude = Game.spawn_dude(base + ahead * 3.4 + side * (i - 0.5) * 1.6, false, &"knifeman")
+					blade.sense_override = true
+				await get_tree().create_timer(float(_arg("at", "1.0")), true, false, true).timeout
+			"spearman":
+				for d: PinkDude in cast:
+					d.queue_free()
+				for i: int in 2:
+					var pike: PinkDude = Game.spawn_dude(base + ahead * 3.8 + side * (i - 0.5) * 1.8, false, &"spearman")
+					pike.sense_override = true
 				await get_tree().create_timer(float(_arg("at", "1.0")), true, false, true).timeout
 			"brute":
 				var brute := Brute.new()

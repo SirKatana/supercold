@@ -106,6 +106,10 @@ func primary() -> void:
 			_animate_thrust()
 		else:
 			throw_held()      # empty: it is just a bucket now
+	elif held is Spear:
+		if (held as Spear).thrust(player):
+			TimeManager.burst(T.burst_action, T.burst_strength_punch)
+			_animate_thrust()
 	elif held is Knife:
 		if (held as Knife).stab(player):
 			TimeManager.burst(T.burst_action, T.burst_strength_punch)

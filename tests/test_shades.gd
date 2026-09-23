@@ -27,8 +27,8 @@ func _dude(kind: StringName = &"pistol") -> PinkDude:
 	return d
 
 
-func test_every_kind_of_dude_wears_shades_except_the_biter() -> void:
-	for kind: StringName in [&"pistol", &"rifle", &"shotgun", &"shield", &"runner", &"sniper", &"smg"]:
+func test_every_kind_of_dude_wears_shades_except_a_copy() -> void:
+	for kind: StringName in [&"pistol", &"rifle", &"shotgun", &"shield", &"runner", &"sniper", &"smg", &"knifeman", &"spearman", &"cloner"]:
 		var d: PinkDude = _dude(kind)
 		check(d.skin.has_sunglasses(), "%s dude has sunglasses" % kind)
 		d.free()
@@ -36,8 +36,12 @@ func test_every_kind_of_dude_wears_shades_except_the_biter() -> void:
 		Game.entities_root(self).add_child(boss)
 		check(boss.skin.has_sunglasses(), "%s has them too" % boss.get_script().get_global_name())
 		boss.free()
-	var biter: PinkDude = Game.spawn_dude(Game.data.cell_center(Vector2i(8, 8), 0.05), true, &"zombie")
-	check(not biter.skin.has_sunglasses(), "the biter lost his long ago")
+	# A copy is a copy of the man, not of what he was wearing.
+	var copy := Cloner.new()
+	copy.is_copy = true
+	Game.entities_root(self).add_child(copy)
+	check(not copy.skin.has_sunglasses(), "a clone has none")
+	copy.free()
 
 
 func test_shades_sit_on_the_face_and_turn_with_him() -> void:

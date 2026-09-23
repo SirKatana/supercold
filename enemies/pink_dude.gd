@@ -141,6 +141,8 @@ static func create_gun(gun_kind: StringName) -> Gun:
 			return SniperRifle.create()
 		&"super":
 			return SuperGun.create()
+		&"crossbow":
+			return Crossbow.create()
 	return Pistol.create()
 
 
@@ -268,6 +270,12 @@ func aim_left_amount() -> float:
 
 func move_speed() -> float:
 	return T.dude_run_speed if state_name == &"reposition" else T.dude_speed
+
+
+## Most unarmed dudes run at you and swing. The cloner does not: he keeps away and lets his
+## copies do it.
+func fights_hand_to_hand() -> bool:
+	return true
 
 
 func seeks_cover() -> bool:

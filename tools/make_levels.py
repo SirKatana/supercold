@@ -7,7 +7,7 @@ import os
 OUT = os.path.join(os.path.dirname(__file__), "..", "levels")
 
 
-ENEMIES = "auBRSHqZNU"
+ENEMIES = "auBRSHqNUxyC"
 
 # Which floors get which gadget, and how many. f = fart grenade, F = freeze bomb, j = water bucket.
 # Deliberately uneven: seven floors have none, most have one or two, only two have all three.
@@ -737,10 +737,10 @@ SPECS = [
          waves=[{"after_kills": 7, "count": 4, "armed": 3}]),
     dict(name="f8_archive", size=(40, 25), style="spine", seed=8, theme="paper", title="ARCHIVE",
          intro="ARCHIVE\\nFAST ONES IN THE STACKS. KEEP A KNIFE.", furnish=["racks", "racks", "office"], start=["n", "p"],
-         layout={"min_w": 7, "max_w": 11}, enemies={"a": 5, "q": 4, "u": 1}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
+         layout={"min_w": 7, "max_w": 11}, enemies={"a": 4, "q": 3, "u": 1, "x": 2}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
     dict(name="f11_sewers", size=(42, 25), style="double", seed=11, theme="sewer", title="SEWERS",
-         intro="SEWERS\\nSOMETHING IS UNDER THE FLOOR.", furnish=["columns", "racks"], furnished=0.5, wet=6, wet_corridor=True, start=["p", "n"],
-         enemies={"Z": 6, "a": 4, "S": 1}, items={"j": 2, "T": 1, "F": 1, "g": 3, "b": 2}),
+         intro="SEWERS\\nTHEY COME AT YOU WITH BLADES DOWN HERE.", furnish=["columns", "racks"], furnished=0.5, wet=6, wet_corridor=True, start=["p", "n"],
+         enemies={"x": 4, "a": 3, "S": 1, "y": 2}, items={"j": 2, "T": 1, "F": 1, "g": 3, "b": 2, "L": 1}),
     dict(name="f12_kitchen", size=(42, 25), style="spine", seed=12, theme="stainless", title="KITCHEN",
          intro="KITCHEN\\nKNIVES EVERYWHERE. SO IS THE GAS.", furnish=["counters", "counters", "tables"], wet=3, ice_rooms=1, start=["M"],
          enemies={"a": 6, "U": 2, "q": 2}, items={"j": 3, "n": 5, "g": 6, "F": 1, "m": 2}),
@@ -755,10 +755,10 @@ SPECS = [
          layout={"min_w": 5, "max_w": 8}, enemies={"a": 7, "u": 3, "q": 2}, items={"j": 2, "T": 1, "m": 3, "b": 2}),
     dict(name="f16_armoury", size=(42, 25), style="bsp", seed=16, theme="olive", title="ARMOURY",
          intro="ARMOURY\\nTAKE WHAT YOU LIKE. THEY DID.", furnish=["racks", "office", "columns"], start=["K", "T"],
-         enemies={"H": 2, "R": 3, "S": 2, "U": 2, "a": 3}, items={"M": 1, "V": 1, "Y": 1, "F": 2, "r": 1, "n": 1, "g": 4}),
+         enemies={"H": 2, "R": 2, "S": 2, "U": 2, "a": 2, "x": 2}, items={"M": 1, "V": 1, "Y": 1, "F": 2, "r": 1, "n": 1, "g": 4, "A": 1, "L": 1}),
     dict(name="f17_greenhouse", size=(42, 27), style="double", seed=17, theme="leaf", title="GREENHOUSE",
-         intro="GREENHOUSE\\nTHEY GROW THEM HERE.", furnish=["counters", "tables"], glass=8, wet=4, fart=2, start=["p", "n"],
-         enemies={"Z": 8, "a": 4}, items={"j": 3, "K": 1, "F": 1, "b": 2, "g": 2}),
+         intro="GREENHOUSE\\nTHEY GROW THEM HERE. ONE OF THEM GROWS MORE OF HIMSELF.", furnish=["counters", "tables"], glass=8, wet=4, fart=2, start=["p", "n"],
+         enemies={"C": 2, "a": 4, "x": 2, "y": 2}, items={"j": 3, "K": 1, "F": 1, "b": 2, "g": 2, "A": 1}),
     dict(name="f18_beanworks", size=(44, 27), style="spine", seed=18, theme="bean", title="BEANWORKS",
          intro="BEAN CANNERY\\nIT IS EXACTLY AS BAD AS IT SMELLS.", furnish=["vats", "vats", "counters"], fart=7, start=["f", "p"],
          layout={"min_w": 8, "max_w": 12}, enemies={"a": 6, "S": 2, "q": 3, "H": 1}, items={"g": 5, "M": 1, "n": 1}),
@@ -771,29 +771,29 @@ SPECS = [
          enemies={"a": 6, "R": 2, "H": 2, "N": 1}, items={"g": 10, "r": 1, "F": 1}),
     dict(name="f22_cryolab", size=(42, 25), style="spine", seed=22, theme="cryo", title="CRYO LAB",
          intro="CRYO LAB\\nFREEZE BOMBS. USE ALL OF THEM.", furnish=["tables", "counters"], glass=6, ice_rooms=3, ice_corridor=True, start=["F", "p"],
-         enemies={"a": 6, "U": 2, "q": 3, "Z": 3}, items={"F": 3, "M": 1, "n": 1, "g": 1}),
+         enemies={"a": 4, "U": 2, "q": 3, "C": 1, "y": 2}, items={"F": 3, "M": 1, "n": 1, "g": 1, "A": 1}),
     dict(name="f23_mirrors", size=(44, 27), style="bsp", seed=23, theme="silver", title="HALL OF GLASS",
          intro="HALL OF GLASS\\nEVERYONE CAN SEE EVERYONE.", furnish=["columns", "tables"], glass=12, start=["V", "Y"],
          layout={"min_side": 6, "max_side": 10}, enemies={"N": 2, "S": 3, "a": 6, "H": 1}, items={"T": 1, "F": 1, "b": 2, "g": 2}),
     dict(name="f24_strongrooms", size=(44, 27), style="double", seed=24, theme="bank", title="STRONGROOMS",
          intro="STRONGROOMS\\nA DOOR IS A SUGGESTION. SO IS A WALL.", furnish=["racks", "office"], start=["r", "p"],
-         layout={"min_w": 5, "max_w": 8}, enemies={"a": 6, "S": 3, "H": 2, "R": 2}, items={"r": 1, "T": 1, "K": 1, "V": 1, "g": 3}),
+         layout={"min_w": 5, "max_w": 8}, enemies={"a": 4, "S": 3, "H": 2, "R": 2, "y": 2}, items={"r": 1, "T": 1, "K": 1, "V": 1, "g": 3, "A": 1}),
     dict(name="f25_skygarden", size=(46, 29), style="bsp", seed=25, theme="sky", title="SKY GARDEN", open_sky=True,
          intro="SKY GARDEN\\nWALLED GARDENS. LONG SIGHTLINES. THEIRS TOO.", furnish=["counters", "columns", "tables"], wet=6, glass=4, start=["Y", "K"],
-         layout={"min_side": 8, "max_side": 14}, enemies={"N": 3, "R": 3, "a": 5, "q": 3}, items={"F": 1, "g": 3}),
+         layout={"min_side": 8, "max_side": 14}, enemies={"N": 3, "R": 3, "a": 4, "q": 2, "y": 2}, items={"F": 1, "g": 3, "L": 1}),
     dict(name="f26_morgue", size=(46, 29), style="double", seed=26, theme="morgue", title="MORGUE",
-         intro="MORGUE\\nNOT ALL OF THEM STAYED DEAD.", furnish=["slabs", "slabs", "racks"], ice_rooms=1, start=["T", "n"],
-         enemies={"Z": 12, "a": 3, "H": 1}, items={"j": 2, "n": 2, "F": 2, "p": 1}),
+         intro="MORGUE\\nONE OF THEM IS SEVERAL OF THEM.", furnish=["slabs", "slabs", "racks"], ice_rooms=1, start=["T", "n"],
+         enemies={"C": 2, "x": 4, "a": 3, "H": 1}, items={"j": 2, "n": 2, "F": 2, "p": 1, "L": 1}),
     dict(name="f27_furnace", size=(44, 27), style="bsp", seed=27, theme="furnace", title="FURNACE",
          intro="FURNACE ROOMS\\nTWELVE BARRELS. COUNT THEM.", furnish=["vats", "columns", "racks"], start=["K", "F"],
          enemies={"S": 3, "R": 3, "U": 3, "a": 4, "H": 2}, items={"g": 12, "V": 1, "r": 1}),
     dict(name="f28_waterworks", size=(46, 27), style="double", seed=28, theme="harbour", title="WATERWORKS",
          intro="WATERWORKS\\nEVERY CORRIDOR IS FLOODED. LET THEM RUN.", furnish=["vats", "columns", "counters"], wet=8, wet_corridor=True, start=["M", "n"],
-         enemies={"q": 6, "a": 6, "R": 2, "Z": 3}, items={"j": 3, "F": 2, "T": 1, "g": 3}),
+         enemies={"q": 5, "a": 5, "R": 2, "y": 3}, items={"j": 3, "F": 2, "T": 1, "g": 3, "L": 1}),
     dict(name="f29_penthouse", size=(52, 31), style="double", seed=29, theme="gold", title="PENTHOUSE",
          intro="PENTHOUSE\\nEVERYTHING THEY HAVE LEFT.", furnish=["office", "tables", "columns", "counters"], wet=3, ice_rooms=1, glass=5, fart=2,
          start=["K", "T"], layout={"min_w": 8, "max_w": 12},
-         enemies={"a": 6, "R": 3, "S": 2, "U": 2, "N": 2, "H": 3, "q": 3, "Z": 3}, items={"j": 2, "Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5},
+         enemies={"a": 5, "R": 2, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 2}, items={"j": 2, "Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5, "A": 1, "L": 1},
          waves=[{"after_kills": 9, "count": 5, "armed": 4}, {"after_kills": 18, "count": 6, "armed": 5}], wave_points=5),
 ]
 

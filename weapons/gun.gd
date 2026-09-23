@@ -32,6 +32,8 @@ var kick: float = 0.05
 var enemy_burst: int = 1
 var enemy_burst_gap: float = 0.12
 var sound: StringName = &"shot"
+## A quiet weapon does not bring the floor down on you. The crossbow is the only one.
+var silent: bool = false
 ## Rounds left in it when a dude drops it.
 var drop_ammo: int = 4
 ## Pellets when a dude fires it. Fewer than the player gets, or shotgunners are undodgeable.
@@ -103,7 +105,7 @@ func fire(origin: Vector3, direction: Vector3, shooter: Node, spend: bool = true
 	for i: int in pellets:
 		pool.fire(origin, scatter(direction, cone), shooter, bullet_scale, pierce, bullet_speed_scale)
 	Sfx.play(sound, origin)
-	if spend:
+	if spend and not silent:
 		Game.emit_noise(origin, T.dude_hearing)
 	return true
 

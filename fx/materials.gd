@@ -448,14 +448,46 @@ static func melt_pink() -> StandardMaterial3D:
 		return m)
 
 
-static func zombie() -> StandardMaterial3D:
-	return _cached(&"zombie", func() -> StandardMaterial3D:
+static func knifeman() -> StandardMaterial3D:
+	return _cached(&"knifeman", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()
-		m.albedo_color = Color(0.62, 0.30, 0.46)
+		m.albedo_color = Color(1.0, 0.45, 0.10)
 		m.emission_enabled = true
-		m.emission = Color(0.45, 0.10, 0.30)
-		m.emission_energy_multiplier = 0.35
-		m.roughness = 0.95
+		m.emission = Color(1.0, 0.35, 0.04)
+		m.emission_energy_multiplier = 0.55
+		return m)
+
+
+## The spearman: deep violet. Slower, taller reach.
+static func spearman() -> StandardMaterial3D:
+	return _cached(&"spearman", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.58, 0.26, 0.95)
+		m.emission_enabled = true
+		m.emission = Color(0.45, 0.15, 1.0)
+		m.emission_energy_multiplier = 0.5
+		return m)
+
+
+## The cloner: cold mint white. His copies are the same colour, dimmer.
+static func cloner() -> StandardMaterial3D:
+	return _cached(&"cloner", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.72, 1.0, 0.92)
+		m.emission_enabled = true
+		m.emission = Color(0.35, 1.0, 0.85)
+		m.emission_energy_multiplier = 0.7
+		return m)
+
+
+static func clone_copy() -> StandardMaterial3D:
+	return _cached(&"clone_copy", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.55, 0.85, 0.80, 0.72)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.emission_enabled = true
+		m.emission = Color(0.30, 0.90, 0.78)
+		m.emission_energy_multiplier = 0.45
 		return m)
 
 

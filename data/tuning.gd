@@ -107,6 +107,15 @@ extends Resource
 ## Knife: one stab kills an ordinary dude.
 @export var knife_range: float = 1.9
 @export var knife_cooldown: float = 0.32
+## Spear: a two-handed thrust from well out of punching range, or one throw that kills.
+@export var spear_range: float = 3.2
+@export var spear_cooldown: float = 0.75
+@export var spear_throw_speed: float = 1.5
+## Crossbow: quiet. Nobody but the man you hit knows where you are.
+@export var crossbow_ammo: int = 4
+@export var crossbow_cooldown: float = 1.5
+@export var crossbow_pierce: int = 2
+@export var crossbow_speed_scale: float = 2.4
 ## Melting under the super gun takes this long, world seconds.
 @export var melt_seconds: float = 1.3
 
@@ -133,12 +142,28 @@ extends Resource
 @export_group("More dudes")
 @export var runner_speed: float = 6.4
 @export var runner_windup: float = 0.28
-@export var zombie_wake_distance: float = 9.0
-@export var zombie_rise_seconds: float = 1.5
-@export var zombie_shamble: float = 1.9
-@export var zombie_lunge: float = 4.6
-@export var zombie_lunge_distance: float = 3.2
-@export var zombie_bite_range: float = 1.25
+@export_group("Knifeman, spearman and cloner")
+## The knifeman: quick, short, and he throws the blade if you keep away from him.
+@export var knifeman_speed: float = 5.4
+@export var knifeman_windup: float = 0.32
+@export var knifeman_reach: float = 2.1
+@export var knifeman_throw_range: float = 12.0
+@export var knifeman_throw_wait: float = 1.6
+## The spearman: keeps his distance and kills from further than you can reach.
+@export var spearman_speed: float = 3.0
+@export var spearman_windup: float = 0.65
+@export var spearman_reach: float = 3.4
+@export var spearman_standoff: float = 2.6
+## The cloner: no weapon, keeps away, and makes copies of himself. Kill him and they all go.
+@export var cloner_speed: float = 3.4
+@export var cloner_keep_away: float = 9.0
+@export var cloner_interval: float = 4.5
+@export var cloner_at_once: int = 3
+@export var cloner_budget: int = 6
+@export var cloner_spawn_seconds: float = 0.7
+## A clone is a rusher who cannot clone, and punches like any dude.
+@export var clone_speed: float = 4.6
+
 @export var brute_scale: float = 1.75
 @export var brute_hp: int = 12
 @export var brute_speed: float = 2.4

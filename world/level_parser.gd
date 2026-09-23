@@ -3,8 +3,9 @@ extends RefCounted
 ## Turns an ASCII grid plus optional JSON sidecar into LevelData.
 ##
 ## `#` wall  `.` floor  ` ` void  `D` door  `G` glass  `P` player  `X` exit
-## `H` shield trooper  `g` gas barrel  `q` runner  `Z` buried biter  `N` sniper  `U` SMG dude
-## `n` knife  `F` freeze bomb  `M` SMG  `V` revolver  `Y` sniper rifle
+## `H` shield trooper  `g` gas barrel  `q` runner  `N` sniper  `U` SMG dude
+## `x` knifeman  `y` spearman  `C` cloner
+## `n` knife  `F` freeze bomb  `M` SMG  `V` revolver  `Y` sniper rifle  `L` spear  `A` crossbow
 ## `~` wet floor  `W` deep water (a real pool)  `i` ice  `f` fart grenade  `j` water bucket
 ## `a` pistol dude  `R` rifle dude  `S` shotgun dude  `u` unarmed dude  `K` AK-47  `T` shotgun
 ##  `B` boss  `w` wave point  `t` trigger
@@ -14,12 +15,14 @@ extends RefCounted
 const PICKUP_KINDS: Dictionary[String, StringName] = {
 	"p": &"pistol", "b": &"bottle", "m": &"mug", "k": &"keyboard", "l": &"stapler", "r": &"ram", "K": &"rifle", "T": &"shotgun", "g": &"barrel",
 	"n": &"knife", "F": &"freeze", "f": &"fart", "j": &"bucket", "M": &"smg", "V": &"revolver", "Y": &"sniper",
+	"L": &"spear", "A": &"crossbow",
 }
 const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar"}
-const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqZNU~ifWj"
+const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLA"
 const DUDE_KINDS: Dictionary[String, StringName] = {
 	"a": &"pistol", "u": &"", "R": &"rifle", "S": &"shotgun", "H": &"shield",
-	"q": &"runner", "Z": &"zombie", "N": &"sniper", "U": &"smg",
+	"q": &"runner", "N": &"sniper", "U": &"smg",
+	"x": &"knifeman", "y": &"spearman", "C": &"cloner",
 }
 
 

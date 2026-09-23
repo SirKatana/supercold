@@ -37,7 +37,6 @@
  "name_brawler": "Brawler,",
  "name_director": "The Director,",
  "name_runner": "Runner,",
- "name_zombie": "Biter,",
  "name_brute": "The Brute,",
  "name_warden": "The Warden,",
  "name_sniper": "Sniper,",
@@ -115,5 +114,8 @@
  "cleaner_4": "One more. Go on. I dare you.",
  "cleaner_snap": "That's it! Come here!",
  "cleaner_done": "Wet floor. Mind your step.",
- "cleaner_why": "WHY!"
+ "cleaner_why": "WHY!",
+ "name_knifeman": "Knifeman,",
+ "name_spearman": "Spearman,",
+ "name_cloner": "Cloner,"
 }
