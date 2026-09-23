@@ -8,8 +8,8 @@
 #isiisiisii#.s..s..#..........#...F....#
 #isiisiisii#.s..s..D.F.....g..#.......X#
 #iiiiiiiiii#.......#..........#........#
-####D########D#############D#######D####
-#iiiii#piiiiiiiiii#iiiiaiiiiii#iiiiiiii#
+####D#v######D####v########D#######D####
+#iiiiivpiiiiiiiiiiviiiiaiiiiii#iiiiiiii#
 #PiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiR#
 #iiiiiiiiiiiiiiiiiiiiiii#iiiiiiiiiiiiii#
 #####D#######D#######D############D#####

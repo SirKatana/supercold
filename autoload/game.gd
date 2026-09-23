@@ -231,6 +231,7 @@ func load_level(name_of_level: String) -> bool:
 	for wave: Dictionary in data.waves:
 		_pending_waves.append(wave.duplicate())
 
+	_place_lurkers()
 	_hand_back_what_was_carried()
 	_arm_player_with_super_gun()
 	var index: int = FLOORS.find(level_name)
@@ -317,6 +318,28 @@ func report_spill(puddle: Puddle) -> void:
 		entities_root(self).add_child(cleaner)
 		cleaner.report_for_duty(data.cell_center(data.front_cell(data.player_start), 0.05))
 	cleaner.call_out(puddle, spills_this_floor)
+
+
+## Somebody in the ducts, for every floor with a run of them worth hiding in. He never counts
+## toward clearing the floor: the ducts are a short cut the player chooses to take, not a hunt.
+func _place_lurkers() -> void:
+	var duct_cells: Array[Vector2i] = []
+	for y: int in data.height:
+		for x: int in data.width:
+			if data.rows[y][x] == "v":
+				duct_cells.append(Vector2i(x, y))
+	if duct_cells.size() < 3:
+		return
+	# At the far end of the run from where the player comes in, so he is met halfway down.
+	var start: Vector3 = data.cell_center(data.player_start, 0.0)
+	var farthest: Vector2i = duct_cells[0]
+	for cell: Vector2i in duct_cells:
+		if data.cell_center(cell, 0.0).distance_to(start) > data.cell_center(farthest, 0.0).distance_to(start):
+			farthest = cell
+	var lurker := VentLurker.new()
+	lurker.name = "VentLurker"
+	entities_root(self).add_child(lurker)
+	lurker.global_position = data.cell_center(farthest, 0.05)
 
 
 func _post_guard() -> void:

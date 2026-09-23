@@ -448,6 +448,17 @@ static func melt_pink() -> StandardMaterial3D:
 		return m)
 
 
+## The vent lurker: sickly green, the colour of something that never sees the lights.
+static func lurker() -> StandardMaterial3D:
+	return _cached(&"lurker", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.36, 0.86, 0.22)
+		m.emission_enabled = true
+		m.emission = Color(0.25, 1.0, 0.12)
+		m.emission_energy_multiplier = 0.6
+		return m)
+
+
 static func knifeman() -> StandardMaterial3D:
 	return _cached(&"knifeman", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

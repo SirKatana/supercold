@@ -142,6 +142,17 @@ extends Resource
 @export_group("More dudes")
 @export var runner_speed: float = 6.4
 @export var runner_windup: float = 0.28
+@export_group("Vents")
+## On hands and knees in a duct.
+@export var crawl_speed: float = 2.4
+## The green thing that lives in the ducts: how far down a duct he notices you, how fast he
+## comes, and how long you have to kill him once he has hold of you.
+@export var lurker_sense: float = 14.0
+@export var lurker_speed: float = 3.1
+@export var lurker_grab_range: float = 1.35
+@export var lurker_hold_seconds: float = 1.4
+@export var lurker_hp: int = 2
+
 @export_group("Knifeman, spearman and cloner")
 ## The knifeman: quick, short, and he throws the blade if you keep away from him.
 @export var knifeman_speed: float = 5.4

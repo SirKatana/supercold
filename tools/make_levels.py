@@ -9,6 +9,9 @@ OUT = os.path.join(os.path.dirname(__file__), "..", "levels")
 
 ENEMIES = "auBRSHqNUxyC"
 # Hangs from the ceiling. Not cover, not an obstacle: the scatter treats it like an item.
+DUCTS = {"f8_archive": 3, "f11_sewers": 3, "f12_kitchen": 2,
+         "f13_coldstore": 2, "f16_armoury": 2, "f19_tradingfloor": 3, "f23_mirrors": 2, "f24_strongrooms": 3, "f26_morgue": 2, "f28_waterworks": 2,
+         "f29_penthouse": 3}
 CHANDELIERS = {"f1_lobby": 3, "f5_executive": 4, "f10_vault": 2, "f19_tradingfloor": 5, "f23_mirrors": 4, "f25_skygarden": 3, "f29_penthouse": 6, "f6_cafeteria": 2, "f17_greenhouse": 2}
 
 # Which floors get which gadget, and how many. f = fart grenade, F = freeze bomb, j = water bucket.
@@ -225,6 +228,53 @@ THEMES = {
 def theme(name):
     wall, floor, prop, ambient, sky, energy, sun = THEMES[name]
     return {"wall": wall, "floor": floor, "prop": prop, "ambient": ambient, "sky": sky, "energy": energy, "sun": sun}
+
+
+
+def ducts(g, seed, runs=2):
+    """Bores crawl ducts through interior walls. A run is a straight line of wall cells with a
+    room at each end, so it always joins two places you could otherwise only reach by walking."""
+    import random
+    rng = random.Random(seed)
+    made = 0
+    for _ in range(600):
+        if made >= runs:
+            break
+        horizontal = rng.random() < 0.5
+        x = rng.randrange(2, g.w - 2)
+        y = rng.randrange(2, g.h - 2)
+        if g.c[y][x] != "#":
+            continue
+        cells = [(x, y)]
+        # Walk along the wall while it stays wall.
+        step = (1, 0) if horizontal else (0, 1)
+        for sign in (1, -1):
+            cx, cy = x, y
+            for _ in range(6):
+                cx, cy = cx + step[0] * sign, cy + step[1] * sign
+                if not (0 < cx < g.w - 1 and 0 < cy < g.h - 1) or g.c[cy][cx] != "#":
+                    break
+                cells.append((cx, cy))
+        if len(cells) < 2 or len(cells) > 7:
+            continue
+        cells.sort()
+        ends = (cells[0], cells[-1])
+        # A room at both ends, and nothing already built in any of these cells.
+        opens = 0
+        for (cx, cy), sign in zip(ends, (-1, 1)):
+            nx, ny = cx + step[0] * sign, cy + step[1] * sign
+            if g.c[ny][nx] in ".~i":
+                opens += 1
+        if opens < 2:
+            continue
+        # Never cut a wall that is holding up a door frame.
+        if any(g.c[cy + dy][cx + dx] in "DGPX" for (cx, cy) in cells
+               for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
+            continue
+        for (cx, cy) in cells:
+            g.c[cy][cx] = "v"
+        made += 1
+    return made
 
 
 def save(name, grid, meta):
@@ -716,6 +766,8 @@ def build_floor(spec):
                 g.scatter({"w": spec.get("wave_points", 4)}, rects, spec["seed"] + attempt + 7, floor=".")
             items = {k: v for k, v in spec.get("items", {}).items() if k not in "fFj"}
             g.scatter(items, rects, spec["seed"] + attempt + 5, floor=".", margin=True)
+            if DUCTS.get(spec["name"]):
+                ducts(g, spec["seed"] + attempt + 31, DUCTS[spec["name"]])
             if CHANDELIERS.get(spec["name"]):
                 g.scatter({"h": CHANDELIERS[spec["name"]]}, rects, spec["seed"] + attempt + 23, floor=".")
             g.gadgets(spec["name"], spec["seed"] + attempt + 11)

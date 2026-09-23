@@ -1,0 +1,197 @@
+class_name VentLurker
+extends CharacterBody3D
+## Green, and he lives in the ducts. He does not walk the floors and he never counts toward
+## clearing one: he is what happens when you decide to take the short way round.
+##
+## Crawl into a duct and he comes down it after you, flat on his belly, arms out. Within
+## `lurker_grab_range` he takes hold of you: you cannot move, but you can still shoot him or
+## punch him, and you have `lurker_hold_seconds` to do it. Kill him and he lets go.
+
+signal grabbed(player: Player)
+signal let_go
+signal died
+
+enum Mode { WAITING, COMING, HOLDING, DEAD }
+
+const T: Tuning = preload("res://data/tuning.tres")
+const BODY_SCALE: float = 0.92
+
+var mode: Mode = Mode.WAITING
+var alive: bool = true
+var hp: int = 2
+var skin: Humanoid
+var joints: PackedVector3Array = []
+
+var _hold_left: float = 0.0
+var _crawl: float = 0.0
+var _agent: NavigationAgent3D
+var _home: Vector3
+
+
+func _ready() -> void:
+	add_to_group(&"lurkers")
+	collision_layer = 4          # an enemy to every bullet, punch, blade and blast
+	collision_mask = 1
+	hp = T.lurker_hp
+	var shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.32
+	capsule.height = 0.80        # he is never anything but flat
+	shape.shape = capsule
+	shape.position.y = 0.40
+	add_child(shape)
+	skin = Humanoid.create(self, Mats.lurker(), BODY_SCALE)
+	skin.set_sunglasses(false)
+	_agent = NavigationAgent3D.new()
+	_agent.avoidance_enabled = false
+	add_child(_agent)
+	_home = global_position
+	_pose(0.0)
+
+
+func voice_name_id() -> StringName:
+	return &"name_lurker"
+
+
+func player() -> Player:
+	return get_tree().get_first_node_in_group(&"player") as Player
+
+
+## True while the player is in the ducts with him.
+func _player_in_the_ducts(p: Player) -> bool:
+	return p != null and p.alive and p.crawling and VentDuct.inside(Game.data, p.global_position)
+
+
+func _physics_process(delta: float) -> void:
+	if not alive:
+		return
+	var wd: float = TimeManager.world_delta(delta)
+	var p: Player = player()
+	match mode:
+		Mode.WAITING:
+			# He waits where he is, and only stirs when somebody is in the duct with him.
+			if _player_in_the_ducts(p) and global_position.distance_to(p.global_position) <= T.lurker_sense:
+				mode = Mode.COMING
+				Sfx.play(&"choke", global_position)
+		Mode.COMING:
+			if not _player_in_the_ducts(p):
+				# He will not leave the ducts. He goes back and waits.
+				if global_position.distance_to(_home) > 0.4:
+					_crawl_toward(_home, wd, delta)
+				else:
+					mode = Mode.WAITING
+			elif global_position.distance_to(p.global_position) <= T.lurker_grab_range:
+				_take_hold(p)
+			else:
+				_crawl_toward(p.global_position, wd, delta)
+		Mode.HOLDING:
+			if p == null or not p.alive:
+				_release()
+			else:
+				global_position = global_position.lerp(p.global_position - _facing_player(p) * 0.9, minf(1.0, wd * 6.0))
+				_face(p.global_position, wd)
+				_hold_left -= wd
+				p.fx.shake(0.25)
+				if _hold_left <= 0.0:
+					p.die()
+					_release()
+	_pose(wd)
+
+
+func _facing_player(p: Player) -> Vector3:
+	var flat: Vector3 = p.global_position - global_position
+	flat.y = 0.0
+	return flat.normalized() if flat.length() > 0.01 else global_transform.basis.z
+
+
+func _take_hold(p: Player) -> void:
+	mode = Mode.HOLDING
+	_hold_left = T.lurker_hold_seconds
+	p.held_by = self
+	Sfx.play(&"punch", global_position)
+	grabbed.emit(p)
+
+
+func _release() -> void:
+	var p: Player = player()
+	if p != null and p.held_by == self:
+		p.held_by = null
+	if alive:
+		mode = Mode.COMING
+	let_go.emit()
+
+
+func _crawl_toward(target: Vector3, wd: float, delta: float) -> void:
+	_agent.target_position = target
+	var next: Vector3 = _agent.get_next_path_position()
+	var flat := Vector3(next.x - global_position.x, 0, next.z - global_position.z)
+	if flat.length() < 0.05:
+		flat = Vector3(target.x - global_position.x, 0, target.z - global_position.z)
+	if flat.length() < 0.05 or delta <= 0.0:
+		return
+	_face(global_position + flat, wd)
+	velocity = flat.normalized() * T.lurker_speed * (wd / delta)
+	move_and_slide()
+	_crawl += wd * 9.0
+
+
+func _face(point: Vector3, step: float) -> void:
+	var flat := Vector3(point.x - global_position.x, 0, point.z - global_position.z)
+	if flat.length() > 0.01:
+		rotation.y = lerp_angle(rotation.y, atan2(-flat.x, -flat.z), minf(1.0, 9.0 * step))
+
+
+## Flat out, arms reaching, dragging himself along.
+func _pose(_wd: float) -> void:
+	var reach: float = 0.85 + 0.15 * sin(_crawl)
+	var local: PackedVector3Array = Humanoid.pose(_crawl, 0.7, reach, 0.85 - 0.15 * sin(_crawl), 0.0, true, 0.0, 1.0)
+	var flat := Basis(Vector3.RIGHT, -1.35)      # face down, belly to the floor
+	for i: int in local.size():
+		local[i] = flat * local[i] + Vector3(0, 0.62, 0)
+	joints = Humanoid.to_world(local, global_transform, BODY_SCALE)
+	skin.apply(joints)
+
+
+# ---------------------------------------------------------------- hurting him
+
+func on_bullet_hit(_bullet: Node, point: Vector3, normal: Vector3) -> bool:
+	Shatter.burst(Game.entities_root(self), point + normal * 0.04, 3, Mats.lurker(), Vector3.ONE * 0.02, normal * 1.5, 0.03)
+	_hurt(T.lurker_hp)
+	return false
+
+
+func on_punched(_by: Node, _at: Vector3) -> void:
+	_hurt(1)
+
+
+func on_thrown_hit(_item: Pickup) -> void:
+	_hurt(1)
+
+
+func on_stabbed(_direction: Vector3) -> void:
+	_hurt(T.lurker_hp)
+
+
+func on_laser(_direction: Vector3) -> void:
+	_hurt(T.lurker_hp)
+
+
+func on_explosion(_centre: Vector3) -> void:
+	_hurt(T.lurker_hp)
+
+
+func _hurt(amount: int) -> void:
+	if not alive:
+		return
+	hp -= amount
+	if hp > 0:
+		Sfx.play(&"punch", global_position)
+		return
+	alive = false
+	mode = Mode.DEAD
+	collision_layer = 0
+	_release()
+	Ragdoll.spawn(Game.entities_root(self), joints, BODY_SCALE, Vector3.UP * 1.5, Mats.lurker(), 1.0)
+	Sfx.play(&"shatter", global_position)
+	died.emit()
+	queue_free()

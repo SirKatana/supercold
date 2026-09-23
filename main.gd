@@ -235,6 +235,26 @@ func _capture(path: String, after: float) -> void:
 		me.hands.visible = false
 		TimeManager.override_scale = 1.0
 		await get_tree().create_timer(float(_arg("at", "3.0")), true, false, true).timeout
+	if _arg("do", "") == "vent" and Game.player != null:
+		# Stand at a grate, or crawl in and meet what is in there with `--inside=true`.
+		var grates: Array[Node] = get_tree().get_nodes_in_group(&"grates")
+		var green: Node3D = get_tree().get_first_node_in_group(&"lurkers") as Node3D
+		if not grates.is_empty():
+			var mouth: VentGrate = grates[0]
+			for g: Node in grates:
+				if green != null and (g as Node3D).global_position.distance_to(green.global_position) < mouth.global_position.distance_to(green.global_position):
+					mouth = g as VentGrate
+			var facing: Vector3 = mouth.global_transform.basis.z if mouth.along_x else mouth.global_transform.basis.x
+			if _flag("inside"):
+				Game.player.global_position = mouth.global_position + facing * float(_arg("back", "0.6")) + Vector3(0, 0.05, 0)
+				mouth.take_damage(99, -facing)
+				TimeManager.override_scale = 1.0
+			else:
+				Game.player.global_position = mouth.global_position + facing * 2.2 + Vector3(0, 0.05, 0)
+			Game.player.look_at(mouth.global_position + Vector3(0, 0.55, 0))
+			Game.player.head.rotation.x = -0.1
+			Game.player.hands.visible = false
+			await get_tree().create_timer(float(_arg("at", "0.6")), true, false, true).timeout
 	if _arg("do", "") == "chandelier" and Game.player != null:
 		# Stand under the nearest chandelier and fling a body into it.
 		var lights: Array[Node] = get_tree().get_nodes_in_group(&"hanging")

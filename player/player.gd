@@ -34,19 +34,31 @@ var _death_cam_from: Transform3D
 var _last_hit_direction: Vector3 = Vector3.ZERO
 
 
+## In a duct he is on his hands and knees: a short capsule, eyes near the floor, and half speed.
+## Nothing else changes, so he can still shoot, punch, throw and die in there.
+const CRAWL_HEIGHT: float = 0.85
+const CRAWL_EYE: float = 0.60
+var crawling: bool = false
+## Held by something in the dark. He cannot move, but he can still fight.
+var held_by: Node3D = null
+
+var _shape: CollisionShape3D
+var _capsule: CapsuleShape3D
+
+
 func _ready() -> void:
 	add_to_group(&"player")
 	collision_layer = 2
 	collision_mask = MASK
 	floor_snap_length = 0.2
 
-	var shape := CollisionShape3D.new()
-	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.35
-	capsule.height = 1.8
-	shape.shape = capsule
-	shape.position.y = 0.9
-	add_child(shape)
+	_shape = CollisionShape3D.new()
+	_capsule = CapsuleShape3D.new()
+	_capsule.radius = 0.35
+	_capsule.height = 1.8
+	_shape.shape = _capsule
+	_shape.position.y = 0.9
+	add_child(_shape)
 
 	head = Node3D.new()
 	head.name = "Head"
@@ -130,16 +142,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		_look_accum_deg += motion.relative.length() * sens
 
 
+## Crouches the moment he is in a duct, stands up again when he is out and has the head room.
+func _update_crawl() -> void:
+	var wants: bool = VentDuct.inside(Game.data, global_position)
+	if not wants and crawling:
+		var from: Vector3 = global_position + Vector3(0, 0.2, 0)
+		var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.UP * 1.7, 1)
+		query.exclude = [get_rid()]
+		if not get_world_3d().direct_space_state.intersect_ray(query).is_empty():
+			wants = true      # still under something low: stay down
+	if wants == crawling:
+		return
+	crawling = wants
+	_capsule.height = CRAWL_HEIGHT if crawling else 1.8
+	_shape.position.y = _capsule.height * 0.5
+	head.position.y = CRAWL_EYE if crawling else T.eye_height
+
+
 func _physics_process(delta: float) -> void:
 	in_stink = maxf(0.0, in_stink - delta)
 	in_water = maxf(0.0, in_water - delta)
 	_look_rate = lerpf(_look_rate, _look_accum_deg / delta, 0.5)
 	_look_accum_deg = 0.0
 
+	_update_crawl()
 	var wish := Vector3.ZERO
-	if alive and input_enabled:
+	if alive and input_enabled and held_by == null:
 		var input: Vector2 = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
-		wish = (global_transform.basis * Vector3(input.x, 0.0, input.y)).normalized() * T.walk_speed
+		wish = (global_transform.basis * Vector3(input.x, 0.0, input.y)).normalized() * (T.crawl_speed if crawling else T.walk_speed)
 		if swimming():
 			wish = wish.normalized() * T.swim_speed if wish.length() > 0.01 else Vector3.ZERO
 		elif Input.is_action_just_pressed(&"jump") and is_on_floor():

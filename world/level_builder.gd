@@ -44,6 +44,7 @@ static func build(data: LevelData) -> Node3D:
 	_build_floor(data, nav)
 	_build_walls(data, nav)
 	_build_props(data, nav)
+	VentDuct.build(data, nav, entities)
 	if not data.open_sky:
 		_build_ceiling(data, level)
 	_place_pickups(data, nav, entities)

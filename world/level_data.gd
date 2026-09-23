@@ -46,6 +46,11 @@ func cell_center(cell: Vector2i, y: float = 0.0) -> Vector3:
 	return Vector3((cell.x + 0.5) * cell_size, y, (cell.y + 0.5) * cell_size)
 
 
+## Which cell a world position falls in.
+func cell_of(at: Vector3) -> Vector2i:
+	return Vector2i(int(floorf(at.x / cell_size)), int(floorf(at.z / cell_size)))
+
+
 func char_at(cell: Vector2i) -> String:
 	if cell.y < 0 or cell.y >= height or cell.x < 0 or cell.x >= width:
 		return " "
@@ -54,7 +59,7 @@ func char_at(cell: Vector2i) -> String:
 
 func is_solid(cell: Vector2i) -> bool:
 	var c: String = char_at(cell)
-	return c == "#" or c == " "
+	return c == "#" or c == " " or c == "v"      # a duct is wall to everyone who cannot crawl
 
 
 func is_open(cell: Vector2i) -> bool:
