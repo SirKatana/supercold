@@ -20,7 +20,7 @@ const DUDE_SCENE: PackedScene = preload("res://enemies/pink_dude.tscn")
 const FLOORS: PackedStringArray = [
 	"f1_lobby", "f2_offices", "f3_servers", "f4_labs", "f5_executive",
 	"f6_cafeteria", "f7_garage", "f8_archive", "f9_pool", "f10_vault",
-	"f11_sewers", "f12_kitchen", "f13_coldstore", "f14_glassworks", "f15_restrooms",
+	"f11_sewers", "f12_kitchen", "f13_basement", "f14_glassworks", "f15_restrooms",
 	"f16_armoury", "f17_greenhouse", "f18_beanworks", "f19_tradingfloor", "f20_generators",
 	"f21_lockdown", "f22_cryolab", "f23_mirrors", "f24_strongrooms", "f25_skygarden",
 	"f26_morgue", "f27_furnace", "f28_waterworks", "f29_penthouse", "roof",
@@ -135,7 +135,17 @@ func restart_floor() -> void:
 		quick_arrival = false
 
 
+## The one floor that is not on the buttons.
+const SECRET_FLOOR: String = "f13_basement"
+
+## How badly the picture is coming apart, 0 to 1. The lift sets it on the way down to the
+## basement and the HUD draws it.
+var glitch: float = 0.0
+
+
 func floor_label(name_of_level: String) -> String:
+	if name_of_level == SECRET_FLOOR:
+		return "LEVEL ????"
 	if name_of_level == "roof":
 		return "ROOF"
 	var index: int = FLOORS.find(name_of_level)
@@ -189,6 +199,7 @@ func unload_level() -> void:
 	player = null
 	helper = null
 	guard = null
+	glitch = 0.0
 	cleaner = null
 	spills_this_floor = 0
 	alive_enemies = 0
@@ -470,6 +481,8 @@ func spawn_boss(at: Vector3) -> PinkDude:
 			boss = Brute.new()
 		&"warden":
 			boss = Warden.new()
+		&"beast":
+			boss = Beast.new()
 		_:
 			boss = Director.new()
 	boss.name = String(data.boss_kind).capitalize()

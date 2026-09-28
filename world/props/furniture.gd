@@ -12,7 +12,7 @@ const PILLAR_WIDTH: float = 1.1
 const SHELF_DEPTH: float = 1.0
 const SHELF_HEIGHT: float = 2.4
 ## Floors where shelving holds stores, not books: nobody keeps a library in a furnace room.
-const STORAGE_FLOORS: Array[String] = ["f7_garage", "f11_sewers", "f13_coldstore", "f16_armoury", "f20_generators",
+const STORAGE_FLOORS: Array[String] = ["f7_garage", "f11_sewers", "f16_armoury", "f20_generators",
 	"f24_strongrooms", "f26_morgue", "f27_furnace"]
 ## A 24 inch monitor each side of the desk's privacy screen. Centre of the panel, in desk space.
 const MONITOR_X: float = -0.30

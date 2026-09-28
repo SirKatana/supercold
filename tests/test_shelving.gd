@@ -43,7 +43,7 @@ func test_a_row_of_racks_is_one_bookshelf() -> void:
 
 
 func test_books_upstairs_stores_in_the_cold() -> void:
-	check(Furniture.shelf_mesh(2, "f3_servers") != Furniture.shelf_mesh(2, "f13_coldstore"), "the cold store does not keep a library")
+	check(Furniture.shelf_mesh(2, "f3_servers") != Furniture.shelf_mesh(2, "f27_furnace"), "the cold store does not keep a library")
 	check(Furniture.shelf_mesh(3, "f3_servers") == Furniture.shelf_mesh(3, "f8_archive"), "the same unit is built once and shared")
 
 

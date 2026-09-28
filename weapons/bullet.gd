@@ -26,6 +26,10 @@ var _travelled: float = 0.0
 var _size: float = 1.0
 
 static var _round_mesh: ArrayMesh
+static var _carrot_mesh: ArrayMesh
+var _round_instance: MeshInstance3D
+## What this round looks like: nothing for a bullet, `&"carrot"` for what the basement guards fire.
+var style: StringName = &""
 static var _trail_mesh: CylinderMesh
 
 
@@ -44,10 +48,10 @@ func _ready() -> void:
 		_trail_mesh.material = Mats.pink_trail()
 	_body = Node3D.new()
 	add_child(_body)
-	var round_instance := MeshInstance3D.new()
-	round_instance.mesh = _round_mesh
-	round_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_body.add_child(round_instance)
+	_round_instance = MeshInstance3D.new()
+	_round_instance.mesh = _round_mesh
+	_round_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_body.add_child(_round_instance)
 
 	_trail = MeshInstance3D.new()
 	_trail.mesh = _trail_mesh
@@ -68,6 +72,33 @@ static func _model_round(kit: MeshKit) -> void:
 	kit.tube(0.021, 0.021, 0.050, Vector3(0, 0, 0.000), black, true, 12)     # bearing surface
 	kit.tube(0.0215, 0.0215, 0.005, Vector3(0, 0, 0.004), band, true, 12)    # driving band
 	kit.tube(0.021, 0.016, 0.018, Vector3(0, 0, 0.034), black, true, 12)     # boat tail
+
+
+## A carrot: fat orange root, tapered to a point, with a tuft of green at the blunt end.
+static func _model_carrot(kit: MeshKit) -> void:
+	var orange: Material = Mats.carrot()
+	var green: Material = Mats.carrot_top()
+	kit.tube(0.0, 0.020, 0.075, Vector3(0, 0, -0.060), orange, true, 10)
+	kit.tube(0.020, 0.032, 0.070, Vector3(0, 0, 0.012), orange, true, 10)
+	kit.tube(0.032, 0.030, 0.012, Vector3(0, 0, 0.053), orange, true, 10)
+	for i: int in 5:
+		var lean: float = TAU * i / 5.0
+		kit.box(Vector3(0.010, 0.044, 0.010), Vector3(sin(lean) * 0.016, cos(lean) * 0.016, 0.082), green,
+			Vector3(0.35 * cos(lean), 0.35 * sin(lean), 0))
+
+
+func set_style(next: StringName) -> void:
+	if style == next:
+		return
+	style = next
+	if next == &"carrot":
+		if _carrot_mesh == null:
+			_carrot_mesh = MeshKit.cached(&"carrot_round", _model_carrot)
+		_round_instance.mesh = _carrot_mesh
+		_trail.material_override = Mats.carrot_trail()
+	else:
+		_round_instance.mesh = _round_mesh
+		_trail.material_override = null
 
 
 func launch(from: Vector3, dir: Vector3, by: Node, size: float = 1.0, pierce: int = 0, speed: float = 1.0) -> void:

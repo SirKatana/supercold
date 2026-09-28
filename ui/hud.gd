@@ -12,6 +12,8 @@ var _words: WordFlash
 var _intro: Label
 var _hint: Label
 var _helper_clock: Label
+var _glitch: ColorRect
+var _glitch_material: ShaderMaterial
 var _scope: ColorRect
 var _boss_name: Label
 var _underwater: float = 0.0
@@ -31,6 +33,16 @@ func _ready() -> void:
 	_slowmo_material.shader = preload("res://fx/slowmo.gdshader")
 	_slowmo.material = _slowmo_material
 	add_child(_slowmo)
+
+	# The picture coming apart on the way down to the basement.
+	_glitch = ColorRect.new()
+	_glitch.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_glitch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_glitch_material = ShaderMaterial.new()
+	_glitch_material.shader = preload("res://fx/glitch.gdshader")
+	_glitch.material = _glitch_material
+	_glitch.visible = false
+	add_child(_glitch)
 
 	_scope = ColorRect.new()
 	_scope.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -147,6 +159,11 @@ func _process(delta: float) -> void:
 		var health: Vector2i = boss.call(&"boss_health")
 		_boss_name.text = boss.call(&"boss_name")
 		_boss_bar.size.x = 516.0 * clampf(float(health.x) / maxf(health.y, 1), 0.0, 1.0)
+	_glitch.visible = Game.glitch > 0.001
+	if _glitch.visible:
+		_hint.text = ""      # nothing on this screen is to be trusted on the way down
+		_glitch_material.set_shader_parameter(&"amount", Game.glitch)
+		_glitch_material.set_shader_parameter(&"time", Time.get_ticks_msec() / 1000.0)
 	var stink: float = Game.player.in_stink if Game.player != null and is_instance_valid(Game.player) else 0.0
 	_slowmo_material.set_shader_parameter(&"stink", clampf(stink / 0.3, 0.0, 1.0))
 	var under: bool = Game.player != null and is_instance_valid(Game.player) and Game.player.head_under_water()

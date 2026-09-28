@@ -449,6 +449,60 @@ static func melt_pink() -> StandardMaterial3D:
 
 
 ## The vent lurker: sickly green, the colour of something that never sees the lights.
+## The basement: carrots the guards fire, the fluid in the tanks, and what floats in them.
+static func carrot() -> StandardMaterial3D:
+	return _plain(&"carrot", Color(1.0, 0.45, 0.05), 0.75)
+
+
+static func carrot_top() -> StandardMaterial3D:
+	return _plain(&"carrot_top", Color(0.18, 0.62, 0.16), 0.9)
+
+
+static func carrot_trail() -> StandardMaterial3D:
+	return _cached(&"carrot_trail", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(1.0, 0.55, 0.12, 0.55)
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		return m)
+
+
+static func tank_fluid() -> StandardMaterial3D:
+	return _cached(&"tank_fluid", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(0.35, 0.95, 0.55, 0.45)
+		m.emission_enabled = true
+		m.emission = Color(0.20, 0.85, 0.45)
+		m.emission_energy_multiplier = 0.8
+		m.roughness = 0.2
+		return m)
+
+
+static func specimen() -> StandardMaterial3D:
+	return _cached(&"specimen", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.55, 0.28, 0.30)
+		m.emission_enabled = true
+		m.emission = Color(0.35, 0.10, 0.12)
+		m.emission_energy_multiplier = 0.25
+		m.roughness = 0.6
+		return m)
+
+
+static func spilled_fluid() -> StandardMaterial3D:
+	return _cached(&"spilled_fluid", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(0.30, 0.90, 0.50, 0.70)
+		m.emission_enabled = true
+		m.emission = Color(0.20, 0.80, 0.40)
+		m.emission_energy_multiplier = 1.1
+		m.roughness = 0.1
+		return m)
+
+
 static func lurker() -> StandardMaterial3D:
 	return _cached(&"lurker", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

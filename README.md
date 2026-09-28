@@ -49,6 +49,7 @@ Things worth knowing:
 - Throw a stink grenade into a room and green fog fills it. Dudes grab their throats, double over and drop. Troopers wear gas masks. Levels 15 and 18 are full of them.
 - Spill something (pour a bucket, smash a coffee mug) and the cleaner comes out of the lift to mop it up. He keeps count. The fifth spill on a floor is one too many and he comes for you with the broom. He is slower than you. Nothing kills him: shoot him, or let a pink dude shoot him, and he turns on whoever did it and shouts WHY!, then gets on with his work. Once he is after you, a hit only stops him for a moment.
 - Some walls have vent ducts. Break the grate and crawl through to the next room past everyone in the corridor. Enemies cannot follow you in there, but something green already lives in them: it crawls at you and grabs you, and you have about a second to shoot it or punch it before it kills you.
+- The lift from level 12 does not go up. Whatever happens on the way down, ride it out.
 - Chandeliers hang in the smart rooms. Fling a body into one and it swings and jingles.
 - A knife kills in one stab. Runners are faster than you, so keep one.
 - The knifeman is orange and fast, and his blade reaches further than your fist. Keep away from him too long and he throws it at you.

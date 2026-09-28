@@ -12,18 +12,20 @@ extends RefCounted
 ## `r` wall breaker  `p` pistol  `b` bottle  `m` mug  `k` keyboard  `l` stapler
 ## `c` desk  `s` server rack  `o` pillar (full height cover)  `h` chandelier (hangs, no collision)
 ## `v` vent duct: a crawl tunnel through the wall, with a grate where it opens into a room
+## `z` growing tank  `Z` the cracked one  `E` guard with a carrot gun
 
 const PICKUP_KINDS: Dictionary[String, StringName] = {
 	"p": &"pistol", "b": &"bottle", "m": &"mug", "k": &"keyboard", "l": &"stapler", "r": &"ram", "K": &"rifle", "T": &"shotgun", "g": &"barrel",
 	"n": &"knife", "F": &"freeze", "f": &"fart", "j": &"bucket", "M": &"smg", "V": &"revolver", "Y": &"sniper",
 	"L": &"spear", "A": &"crossbow",
 }
-const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar", "h": &"chandelier"}
-const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhv"
+const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar", "h": &"chandelier",
+	"z": &"tank", "Z": &"tank_cracked"}
+const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvzZE"
 const DUDE_KINDS: Dictionary[String, StringName] = {
 	"a": &"pistol", "u": &"", "R": &"rifle", "S": &"shotgun", "H": &"shield",
 	"q": &"runner", "N": &"sniper", "U": &"smg",
-	"x": &"knifeman", "y": &"spearman", "C": &"cloner",
+	"x": &"knifeman", "y": &"spearman", "C": &"cloner", "E": &"carrot",
 }
 
 

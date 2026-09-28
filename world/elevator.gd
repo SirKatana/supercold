@@ -30,6 +30,11 @@ var button: ElevatorButton
 var shell: Array[StaticBody3D] = []
 ## An exit lift is not there at all until the floor is clear.
 var present: bool = true
+var _wrong_way: bool = false
+var _shudder: float = 0.0
+var _last_groan: float = 0.0
+var _rest_y: float = 0.0
+var _lamp: OmniLight3D
 var _arriving: float = -1.0
 
 var _panels: Array[MeshInstance3D] = []
@@ -131,6 +136,7 @@ func _build_cabin() -> void:
 	_visual_box(Vector3(DOOR_WIDTH + 0.18, 0.09, 0.10), Vector3(0, DOOR_HEIGHT + 0.045, FRONT_Z - 0.06), trim)
 	_visual_box(Vector3(DOOR_WIDTH, 0.02, 0.16), Vector3(0, 0.01, FRONT_Z), Mats.steel())   # sill
 
+	_rest_y = position.y
 	var lamp := OmniLight3D.new()
 	lamp.position = Vector3(0, 2.2, 0)
 	lamp.omni_range = 3.2
@@ -141,6 +147,7 @@ func _build_cabin() -> void:
 	lamp.light_color = Color(0.8, 0.95, 1.0)
 	lamp.shadow_enabled = false
 	add_child(lamp)
+	_lamp = lamp
 
 
 static func _model_door_detail(kit: MeshKit) -> void:
@@ -349,15 +356,20 @@ func _process(delta: float) -> void:
 				phase = Phase.OPENING      # they backed out, let them
 			elif door_open <= 0.0:
 				phase = Phase.RIDING
-				_timer = _seconds(T.elevator_ride_seconds)
+				# The ride down to the basement takes longer, and it does not go well.
+				_wrong_way = Game.next_floor_name() == Game.SECRET_FLOOR
+				_timer = _seconds(T.basement_ride_seconds if _wrong_way else T.elevator_ride_seconds)
 				Sfx.play_music()
 				ride_started.emit()
 				_refresh_screens()
 		Phase.RIDING:
 			_timer -= delta
+			if _wrong_way:
+				_ride_goes_wrong(delta)
 			_refresh_screens()
 			if _timer <= 0.0:
 				phase = Phase.DONE
+				Game.glitch = 0.0
 				Game.next_floor.call_deferred()
 		Phase.WAITING:
 			_timer -= delta
@@ -367,6 +379,26 @@ func _process(delta: float) -> void:
 				Sfx.stop_music(2.5)
 	_apply_doors()
 	button.set_lit(phase == Phase.READY and mode == Mode.EXIT and fmod(Time.get_ticks_msec() / 1000.0, 1.0) < 0.6)
+
+
+## Something is wrong with this lift. It shakes harder the further down it goes, the cabin
+## light fails, the picture tears, and the floor screen stops making sense.
+func _ride_goes_wrong(delta: float) -> void:
+	var total: float = _seconds(T.basement_ride_seconds)
+	var through: float = clampf(1.0 - _timer / total, 0.0, 1.0)
+	Game.glitch = clampf((through - 0.12) / 0.55, 0.0, 1.0)
+	var p: Player = Game.player
+	if p != null and is_instance_valid(p):
+		p.fx.shake(0.012 + 0.05 * through)
+	_shudder += delta
+	position.y = _rest_y + sin(_shudder * 34.0) * 0.035 * through + sin(_shudder * 11.0) * 0.02 * through
+	if _lamp != null:
+		# The light gives out in bursts, and then for good.
+		var flicker: float = 1.0 if fmod(_shudder * 7.0, 1.0) > through * 0.85 else 0.05
+		_lamp.light_energy = 0.3 * flicker * (1.0 - through * 0.5)
+	if through > 0.3 and _shudder - _last_groan > 0.9:
+		_last_groan = _shudder
+		Sfx.play(&"door_hit", global_position)
 
 
 func _on_player_left() -> void:
@@ -388,6 +420,12 @@ func _refresh_screens() -> void:
 	if mode == Mode.ARRIVAL:
 		_screen_out.text = here
 		_screen_in.text = here
+		return
+	if _wrong_way and phase == Phase.RIDING:
+		# The floor readout loses its mind on the way down.
+		var mess: String = ["LEVEL 13", "LEVEL 1?", "L?V?L ??", "?? ?? ??", "LEVEL ????", "\u2588\u2588\u2588\u2588"][int(_shudder * 6.0) % 6]
+		_screen_in.text = "%s\nGOING DOWN" % mess
+		_screen_out.text = mess
 		return
 	var status: String = ""
 	match phase:

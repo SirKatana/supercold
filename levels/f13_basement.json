@@ -1,0 +1,14 @@
+{
+  "title": "LEVEL ????",
+  "intro": "SUB-BASEMENT\\nTHIS FLOOR IS NOT ON THE BUTTONS.",
+  "boss": "beast",
+  "theme": {
+    "wall": "2b3230",
+    "floor": "141a18",
+    "prop": "222926",
+    "ambient": "9fd8b4",
+    "sky": "0a0f0d",
+    "energy": 0.16,
+    "sun": 0.07
+  }
+}

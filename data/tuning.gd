@@ -142,6 +142,23 @@ extends Resource
 @export_group("More dudes")
 @export var runner_speed: float = 6.4
 @export var runner_windup: float = 0.28
+@export_group("The basement")
+## The guards down there fire carrots: slower than a bullet, and you can see them coming.
+@export var carrot_ammo: int = 12
+@export var carrot_cooldown: float = 0.55
+@export var carrot_speed_scale: float = 0.65
+## The beast: how many rounds he takes, how fast he comes, and his charge.
+@export var beast_hp: int = 14
+@export var beast_scale: float = 1.9
+@export var beast_speed: float = 2.8
+@export var beast_charge_speed: float = 7.5
+@export var beast_charge_every: float = 4.5
+@export var beast_charge_range: float = 16.0
+@export var beast_swipe_range: float = 3.2
+@export var beast_swipe_windup: float = 0.55
+## The lift ride down to a floor that is not on the buttons.
+@export var basement_ride_seconds: float = 6.0
+
 @export_group("Vents")
 ## On hands and knees in a duct.
 @export var crawl_speed: float = 2.4

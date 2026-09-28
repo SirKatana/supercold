@@ -235,6 +235,35 @@ func _capture(path: String, after: float) -> void:
 		me.hands.visible = false
 		TimeManager.override_scale = 1.0
 		await get_tree().create_timer(float(_arg("at", "3.0")), true, false, true).timeout
+	if _arg("do", "") == "liftdown" and Game.player != null:
+		# Ride the lift from 12 down to the basement and catch the picture coming apart.
+		Game.fast_elevators = false
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			(node as PinkDude).die()
+		await get_tree().create_timer(0.4, true, false, true).timeout
+		var way_down: Elevator = get_tree().get_first_node_in_group(&"elevator") as Elevator
+		Game.player.global_position = way_down.global_position
+		Game.player.look_at(way_down.global_position - way_down.global_transform.basis.z * 3.0)
+		Game.player.head.rotation.x = 0.0
+		way_down.press()
+		await get_tree().create_timer(float(_arg("at", "4.0")), true, false, true).timeout
+	if _arg("do", "") == "basement" and Game.player != null:
+		# Stand in the growing hall: the beast in the middle, the tanks down the sides.
+		var beast: Node3D = get_tree().get_first_node_in_group(&"bosses") as Node3D
+		if beast != null:
+			var back: float = float(_arg("back", "7.0"))
+			Game.player.global_position = beast.global_position + Vector3(0, 0.05, back)
+			Game.player.look_at(beast.global_position + Vector3(0, 1.6, 0))
+			Game.player.head.rotation.x = 0.0
+			Game.player.hands.visible = _flag("hands")
+			for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+				var dude: PinkDude = node as PinkDude
+				if dude != null:
+					dude.sense_override = true
+					dude.alerted = true
+			if _flag("fight"):
+				TimeManager.override_scale = 1.0
+			await get_tree().create_timer(float(_arg("at", "0.6")), true, false, true).timeout
 	if _arg("do", "") == "vent" and Game.player != null:
 		# Stand at a grate, or crawl in and meet what is in there with `--inside=true`.
 		var grates: Array[Node] = get_tree().get_nodes_in_group(&"grates")

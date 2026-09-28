@@ -10,7 +10,7 @@ OUT = os.path.join(os.path.dirname(__file__), "..", "levels")
 ENEMIES = "auBRSHqNUxyC"
 # Hangs from the ceiling. Not cover, not an obstacle: the scatter treats it like an item.
 DUCTS = {"f8_archive": 3, "f11_sewers": 3, "f12_kitchen": 2,
-         "f13_coldstore": 2, "f16_armoury": 2, "f19_tradingfloor": 3, "f23_mirrors": 2, "f24_strongrooms": 3, "f26_morgue": 2, "f28_waterworks": 2,
+         "f16_armoury": 2, "f19_tradingfloor": 3, "f23_mirrors": 2, "f24_strongrooms": 3, "f26_morgue": 2, "f28_waterworks": 2,
          "f29_penthouse": 3}
 CHANDELIERS = {"f1_lobby": 3, "f5_executive": 4, "f10_vault": 2, "f19_tradingfloor": 5, "f23_mirrors": 4, "f25_skygarden": 3, "f29_penthouse": 6, "f6_cafeteria": 2, "f17_greenhouse": 2}
 
@@ -27,7 +27,7 @@ GADGETS = {
     "f10_vault": {"F": 3, "f": 2},
     "f11_sewers": {"j": 3},
     "f12_kitchen": {"j": 3, "f": 2},
-    "f13_coldstore": {"F": 4},
+    "f13_basement": {"F": 2},
     "f15_restrooms": {"f": 4, "j": 3},
     "f16_armoury": {"f": 2, "F": 2, "j": 2},
     "f17_greenhouse": {"j": 3, "f": 2},
@@ -206,6 +206,8 @@ THEMES = {
     "sewer":    ("6f7a63", "3a4234", "59624e", "c9d8b0", "4a5340", 0.34, 0.22),
     "stainless": ("dfe3e6", "8a9197", "b4bbc1", "f2f7fb", "e2e6e9", 0.56, 0.48),
     "frost":    ("e4f1fb", "a9c9e2", "c3dbee", "e6f4ff", "dcecf8", 0.60, 0.42),
+    # The basement: almost nothing to see by. The tanks are most of the light down there.
+    "basement": ("2b3230", "141a18", "222926", "9fd8b4", "0a0f0d", 0.16, 0.07),
     "glass":    ("f4fbfd", "bcd9e2", "d5e8ee", "f0fbff", "eaf6fa", 0.62, 0.45),
     "mint":     ("dff1e4", "7fae8f", "a8cdb4", "ecfff2", "dcefe2", 0.55, 0.42),
     "olive":    ("a7ab8d", "4f533c", "777b5c", "e6ead2", "9da184", 0.46, 0.40),
@@ -803,9 +805,6 @@ SPECS = [
     dict(name="f12_kitchen", size=(42, 25), style="spine", seed=12, theme="stainless", title="KITCHEN",
          intro="KITCHEN\\nKNIVES EVERYWHERE. SO IS THE GAS.", furnish=["counters", "counters", "tables"], wet=3, ice_rooms=1, start=["M"],
          enemies={"a": 5, "U": 2, "q": 2, "x": 1}, items={"j": 3, "n": 5, "g": 6, "F": 1, "m": 2}),
-    dict(name="f13_coldstore", size=(40, 25), style="spine", seed=13, theme="frost", title="COLD STORE",
-         intro="COLD STORE\\nEVERY ROOM IS ICE.", furnish=["racks", "racks", "columns"], ice_rooms=7, ice_corridor=True, start=["p"],
-         enemies={"a": 5, "R": 2, "q": 3, "y": 1}, items={"F": 3, "K": 1, "n": 1, "g": 2}),
     dict(name="f14_glassworks", size=(42, 25), style="spine", seed=14, theme="glass", title="GLASSWORKS",
          intro="GLASSWORKS\\nRIGHT CLICK TO LOOK DOWN THE SCOPE.", furnish=["office", "tables", "columns"], glass=7, start=["Y", "p"],
          layout={"min_w": 7, "max_w": 12}, enemies={"N": 3, "a": 4, "S": 1, "x": 1}, items={"V": 1, "b": 2, "g": 2, "F": 1}),
@@ -906,6 +905,49 @@ def f10_vault():
                           "boss": "brute", "theme": theme("steel")})
 
 
+
+def f13_basement():
+    """Level 13 is not a floor of the building. The lift goes down instead of up, the screen
+    gives up on the way, and the doors open on a laboratory nobody is supposed to see: rows of
+    growing tanks, one of them broken open with its fluid still spreading, and what came out of
+    it waiting in the middle with its guards."""
+    g = Grid(38, 28)
+    g.room(1, 22, 9, 26)                                          # the lift lobby, where you arrive
+    g.room(1, 12, 9, 20)                                          # the tank room off it
+    g.room(11, 12, 20, 26)                                        # the corridor between
+    g.room(4, 1, 34, 10)                                          # the growing hall: where he is
+    g.room(22, 12, 36, 26)                                        # the plant room, and the way out
+    g.put("D", (10, 24), (10, 16), (21, 18), (15, 11), (28, 11))
+    # Tanks down both sides of the hall, and the cracked one facing the door you come in by.
+    for x in range(7, 32, 3):
+        g.put("z", (x, 2))
+    for x in range(8, 30, 4):
+        g.put("z", (x, 9))
+    g.put("Z", (15, 9))                                           # the broken one
+    for (x, y) in ((14, 8), (15, 8), (16, 8), (14, 7), (16, 7), (15, 10)):
+        g.put("~", (x, y))                                        # its fluid, still on the floor
+    g.put("z", (3, 14), (3, 18), (8, 14))
+    g.put("Z", (8, 18))
+    g.put("~", (8, 17), (7, 18), (8, 19))
+    # Cover to fight him round, and the machines that keep the tanks running.
+    g.put("o", (11, 5), (20, 5), (29, 5), (11, 3), (29, 3))
+    g.put("c", (24, 14), (25, 14), (33, 20), (34, 20), (13, 20), (13, 21))
+    g.put("s", (31, 14), (31, 15), (31, 16))
+    g.put("P", (1, 24))
+    g.put("X", (35, 24))
+    g.put("B", (19, 6))                                           # the beast, in the middle of the hall
+    # The gun they left by the lift, and what is lying about further in.
+    g.put("K", (3, 24)); g.put("p", (5, 25)); g.put("g", (6, 13), (26, 24), (33, 13))
+    g.put("E", (9, 4), (26, 4), (13, 14), (30, 22))                # guards with carrot guns
+    g.put("a", (17, 24), (33, 17)); g.put("x", (24, 20)); g.put("H", (26, 8))
+    g.put("n", (2, 13)); g.put("T", (35, 13))
+    assert walkable_from_lift(g), "basement: somebody cannot be reached"
+    g.gadgets("f13_basement", 913)
+    save("f13_basement", g, {"title": "LEVEL ????",
+                             "intro": "SUB-BASEMENT\\nTHIS FLOOR IS NOT ON THE BUTTONS.",
+                             "boss": "beast", "theme": theme("basement")})
+
+
 def f21_lockdown():
     """A cell block: the yard in the middle, cells down both sides, guard rooms at the ends."""
     g = Grid(44, 32)
@@ -935,6 +977,7 @@ def new_floors():
         build_floor(spec)
     f9_pool()
     f10_vault()
+    f13_basement()
     f21_lockdown()
 
 
