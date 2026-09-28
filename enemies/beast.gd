@@ -1,10 +1,12 @@
 class_name Beast
 extends PinkDude
-## What they were growing in the basement. Twice your size, red over green, and no weapon: he
-## does not need one. He walks you down, and every few seconds he drops his head and charges
-## flat out, which is the only time he is faster than you. Get out of the lane and he goes past.
+## What they were growing in the basement. Squat, wide, red over green, and no weapon: he does
+## not need one. He is shorter than you and faster than the men upstairs, he swipes the moment
+## he is in reach, and every couple of seconds he drops his head and charges flat out, which is
+## the only time anything in this game is quicker than you are.
 ##
-## Fourteen rounds. The guards with the carrot guns are his, and they keep firing while he works.
+## `beast_hp` rounds, and nothing clever works on him. Run himself into a wall and he is winded
+## for `beast_wall_stun`: that is the whole of your opening. The guards keep firing throughout.
 
 signal health_changed(left: int, total: int)
 
@@ -24,7 +26,7 @@ func _ready() -> void:
 	_gradient.shader = preload("res://fx/gradient.gdshader")
 	_gradient.set_shader_parameter(&"low_colour", Color(0.10, 0.90, 0.22))
 	_gradient.set_shader_parameter(&"high_colour", Color(0.95, 0.08, 0.10))
-	_gradient.set_shader_parameter(&"span", 1.85 * T.beast_scale)
+	_gradient.set_shader_parameter(&"span", 1.6 * T.beast_scale)
 	body_material = _gradient
 	super()
 	add_to_group(&"bosses")
@@ -35,7 +37,7 @@ func _ready() -> void:
 
 
 func body_bulk() -> float:
-	return 1.45
+	return T.beast_bulk
 
 
 func voice_name_id() -> StringName:
@@ -109,10 +111,10 @@ func _physics_process(delta: float) -> void:
 		var p: Player = get_player()
 		if p != null and p.alive and flat_distance_to(p.global_position) <= T.beast_swipe_range * 0.8:
 			p.hit_from(p.global_position - global_position)
-		if _charging >= 1.2 or is_on_wall():
+		if _charging >= 1.1 or is_on_wall():
 			_charging = -1.0
 			_charge_clock = T.beast_charge_every
-			stun(0.7)      # he goes into the wall and it takes him a moment
+			stun(T.beast_wall_stun)      # he goes into the wall and it takes him a moment
 			Sfx.play(&"slam", global_position)
 			Shatter.burst(Game.entities_root(self), global_position + Vector3(0, 1.4, 0), 10, Mats.floor_mat(),
 				Vector3(0.6, 0.4, 0.6), Vector3.UP * 2.0, 0.14)

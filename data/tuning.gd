@@ -147,15 +147,19 @@ extends Resource
 @export var carrot_ammo: int = 12
 @export var carrot_cooldown: float = 0.55
 @export var carrot_speed_scale: float = 0.65
-## The beast: how many rounds he takes, how fast he comes, and his charge.
-@export var beast_hp: int = 14
-@export var beast_scale: float = 1.9
-@export var beast_speed: float = 2.8
-@export var beast_charge_speed: float = 7.5
-@export var beast_charge_every: float = 4.5
-@export var beast_charge_range: float = 16.0
-@export var beast_swipe_range: float = 3.2
-@export var beast_swipe_windup: float = 0.55
+## The beast: squat, wide and quick. He is shorter than a man and much harder to put down,
+## and he never stops coming: a swipe every time he is in reach, a charge every few seconds.
+@export var beast_hp: int = 26
+@export var beast_scale: float = 1.35
+@export var beast_bulk: float = 1.55
+@export var beast_speed: float = 4.6
+@export var beast_charge_speed: float = 9.2
+@export var beast_charge_every: float = 2.6
+@export var beast_charge_range: float = 24.0
+@export var beast_swipe_range: float = 2.5
+@export var beast_swipe_windup: float = 0.26
+## How long he is winded after he runs himself into a wall. This is your window.
+@export var beast_wall_stun: float = 0.45
 ## The lift ride down to a floor that is not on the buttons.
 @export var basement_ride_seconds: float = 6.0
 

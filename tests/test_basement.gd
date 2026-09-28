@@ -75,12 +75,34 @@ func test_the_beast_is_the_boss_and_he_is_red_over_green() -> void:
 	check(beast != null, "he is down there")
 	check_eq(beast.boss_name(), "THE THING IN THE TANK", "with a name for the bar")
 	check_eq(beast.boss_health(), Vector2i(T.beast_hp, T.beast_hp), "and %d rounds in him" % T.beast_hp)
-	check(beast.body_scale > 1.5, "twice your size")
+	check(beast.body_scale < 1.5, "he is shorter than a man (%.2f)" % beast.body_scale)
+	check(beast.body_bulk() > 1.4, "and much wider (%.2f)" % beast.body_bulk())
+	check(T.beast_hp >= 24, "and it takes %d rounds to put him down" % T.beast_hp)
 	var skin: ShaderMaterial = beast.skin.material as ShaderMaterial
 	check(skin != null, "his colour is a gradient, not a flat pink")
 	check((skin.get_shader_parameter(&"low_colour") as Color).g > 0.5, "green at the feet")
 	check((skin.get_shader_parameter(&"high_colour") as Color).r > 0.5, "red at the head")
 	check(not beast.can_freeze() and not beast.can_choke(), "and nothing clever works on him")
+
+
+## He does not wait to be shot at. Standing anywhere near him is fatal, fast.
+func test_he_comes_straight_for_you_and_kills_quickly() -> void:
+	check(Game.load_floor(12), "the basement loads")
+	await wait_physics(4)
+	Game.god_mode = false
+	var beast: Beast = get_tree().get_first_node_in_group(&"bosses") as Beast
+	beast.alerted = true
+	check(beast.move_speed() > T.dude_speed, "he moves faster than the men upstairs")
+	check(T.beast_swipe_windup < T.dude_punch_windup, "and swings sooner than they do")
+	Game.player.global_position = beast.global_position + Vector3(2.0, 0.05, 0)
+	var ticks: int = 0
+	for i: int in 300:
+		await wait_physics(1)
+		ticks += 1
+		if not Game.player.alive:
+			break
+	check(not Game.player.alive, "he had you")
+	check(ticks < 90, "and it took him %.1f seconds" % (ticks / 60.0))
 
 
 func test_he_charges_you_and_it_costs_him() -> void:
