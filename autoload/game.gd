@@ -55,6 +55,8 @@ var guard: SecurityGuard = null
 ## Spills on this floor so far, and the cleaner while he is out. See `report_spill`.
 var spills_this_floor: int = 0
 var cleaner: Cleaner = null
+## Tests and captures set this: the thing in the ducts is otherwise a coin toss per floor.
+var lurker_always: bool = false
 signal spilled(puddle: Puddle, count: int)
 ## Testing: the helper is hired for free on every floor of this run.
 var free_helper: bool = false
@@ -242,6 +244,11 @@ func load_level(name_of_level: String) -> bool:
 	for wave: Dictionary in data.waves:
 		_pending_waves.append(wave.duplicate())
 
+	var arrow := WayOutArrow.new()
+	arrow.name = "WayOutArrow"
+	entities_root(self).add_child(arrow)
+	arrow.target = data.cell_center(data.exit_cell, 0.0) if data.exit_cell.x >= 0 else Vector3.ZERO
+
 	_place_lurkers()
 	_hand_back_what_was_carried()
 	_arm_player_with_super_gun()
@@ -337,9 +344,12 @@ func _place_lurkers() -> void:
 	var duct_cells: Array[Vector2i] = []
 	for y: int in data.height:
 		for x: int in data.width:
-			if data.rows[y][x] == "v":
+			if data.rows[y][x] == "v" or data.rows[y][x] == "e":
 				duct_cells.append(Vector2i(x, y))
 	if duct_cells.size() < 3:
+		return
+	# He is not always in there. Crawling into a duct should be a question, not a cutscene.
+	if not lurker_always and randf() > T.lurker_chance:
 		return
 	# At the far end of the run from where the player comes in, so he is met halfway down.
 	var start: Vector3 = data.cell_center(data.player_start, 0.0)

@@ -42,6 +42,7 @@ var crawling: bool = false
 ## Held by something in the dark. He cannot move, but he can still fight.
 var held_by: Node3D = null
 
+var _crawl_bob: float = 0.0
 var _shape: CollisionShape3D
 var _capsule: CapsuleShape3D
 
@@ -142,6 +143,49 @@ func _unhandled_input(event: InputEvent) -> void:
 		_look_accum_deg += motion.relative.length() * sens
 
 
+## E at an open duct mouth: climb in, or climb back out into the room beside him. Whatever he
+## is carrying comes with him, and he stays on his hands and knees while he is in there.
+func use_a_duct() -> bool:
+	if Game.data == null or not alive:
+		return false
+	if VentDuct.inside(Game.data, global_position):
+		var room: Vector3 = VentDuct.room_beside(Game.data, global_position)
+		if not room.is_finite():
+			return false
+		global_position = Vector3(room.x, 0.05, room.z)
+		_update_crawl()
+		Sfx.play(&"pickup", global_position)
+		return true
+	var mouth: Vector3 = VentDuct.mouth_ahead(Game.data, global_position, -global_transform.basis.z, T.duct_reach)
+	if not mouth.is_finite():
+		return false
+	# Crouch first, then move: a standing capsule will not fit through the hole.
+	crawling = true
+	_capsule.height = CRAWL_HEIGHT
+	_shape.position.y = _capsule.height * 0.5
+	head.position.y = CRAWL_EYE
+	global_position = Vector3(mouth.x, 0.05, mouth.z)
+	velocity = Vector3.ZERO
+	Sfx.play(&"pickup", global_position)
+	return true
+
+
+## The camera on hands and knees: a long roll from shoulder to shoulder, a dip with each reach,
+## and a little sway. It is the whole of the feeling of being down there, so it is not subtle.
+func _crawl_along(delta: float) -> void:
+	if not crawling:
+		if absf(head.rotation.z) > 0.0001 or absf(_crawl_bob) > 0.0001:
+			_crawl_bob = 0.0
+			head.rotation.z = move_toward(head.rotation.z, 0.0, delta * 4.0)
+			head.position.y = lerpf(head.position.y, T.eye_height, minf(1.0, delta * 8.0))
+		return
+	var moving: float = clampf(Vector2(velocity.x, velocity.z).length() / T.crawl_speed, 0.0, 1.0)
+	_crawl_bob += delta * 5.4 * moving
+	head.rotation.z = sin(_crawl_bob) * 0.075 * moving
+	head.position.y = CRAWL_EYE + absf(sin(_crawl_bob * 2.0)) * 0.05 * moving
+	head.position.x = sin(_crawl_bob) * 0.06 * moving
+
+
 ## Crouches the moment he is in a duct, stands up again when he is out and has the head room.
 func _update_crawl() -> void:
 	var wants: bool = VentDuct.inside(Game.data, global_position)
@@ -166,6 +210,7 @@ func _physics_process(delta: float) -> void:
 	_look_accum_deg = 0.0
 
 	_update_crawl()
+	_crawl_along(delta)
 	var wish := Vector3.ZERO
 	if alive and input_enabled and held_by == null:
 		var input: Vector2 = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")

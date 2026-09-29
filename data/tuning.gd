@@ -158,14 +158,26 @@ extends Resource
 @export var beast_charge_range: float = 24.0
 @export var beast_swipe_range: float = 2.5
 @export var beast_swipe_windup: float = 0.26
-## How long he is winded after he runs himself into a wall. This is your window.
+## How long it is winded after it runs itself into a wall. This is your window.
 @export var beast_wall_stun: float = 0.45
+## As a puddle: how fast it travels, how long it stays away before working back to you, how
+## close it gets before it pours up into a shape, and how long that takes either way.
+@export var beast_liquid_speed: float = 5.2
+@export var beast_hide_min: float = 4.0
+@export var beast_hide_max: float = 9.0
+@export var beast_rise_distance: float = 6.0
+@export var beast_rise_seconds: float = 0.8
+@export var beast_sink_seconds: float = 0.5
+## Rounds it will stand for before it gives up the shape and goes back into the floor.
+@export var beast_hits_before_it_melts: int = 5
 ## The lift ride down to a floor that is not on the buttons.
 @export var basement_ride_seconds: float = 6.0
 
 @export_group("Vents")
 ## On hands and knees in a duct.
 @export var crawl_speed: float = 2.4
+## How far from a duct mouth E will climb him in or out of it.
+@export var duct_reach: float = 2.6
 ## The green thing that lives in the ducts: how far down a duct he notices you, how fast he
 ## comes, and how long you have to kill him once he has hold of you.
 @export var lurker_sense: float = 14.0
@@ -173,6 +185,8 @@ extends Resource
 @export var lurker_grab_range: float = 1.35
 @export var lurker_hold_seconds: float = 1.4
 @export var lurker_hp: int = 2
+## One duct system in three has him in it. The rest are only dark.
+@export var lurker_chance: float = 0.34
 
 @export_group("Knifeman, spearman and cloner")
 ## The knifeman: quick, short, and he throws the blade if you keep away from him.

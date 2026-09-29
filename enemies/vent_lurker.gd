@@ -14,7 +14,9 @@ signal died
 enum Mode { WAITING, COMING, HOLDING, DEAD }
 
 const T: Tuning = preload("res://data/tuning.tres")
-const BODY_SCALE: float = 0.92
+## Small enough that lying flat he fits the width of a duct. A full-sized man laid out in a
+## 1.1 m tunnel has his head and his heels through the walls.
+const BODY_SCALE: float = 0.68
 
 var mode: Mode = Mode.WAITING
 var alive: bool = true
@@ -132,13 +134,57 @@ func _crawl_toward(target: Vector3, wd: float, delta: float) -> void:
 	_face(global_position + flat, wd)
 	velocity = flat.normalized() * T.lurker_speed * (wd / delta)
 	move_and_slide()
+	_hug_the_tunnel()
 	_crawl += wd * 9.0
 
 
 func _face(point: Vector3, step: float) -> void:
 	var flat := Vector3(point.x - global_position.x, 0, point.z - global_position.z)
-	if flat.length() > 0.01:
-		rotation.y = lerp_angle(rotation.y, atan2(-flat.x, -flat.z), minf(1.0, 9.0 * step))
+	if flat.length() < 0.01:
+		return
+	var wanted: float = atan2(-flat.x, -flat.z)
+	# In a duct he lies along the tunnel, never across it: he is longer than it is wide.
+	var along: Vector3 = _tunnel_heading(flat)
+	if along != Vector3.ZERO:
+		wanted = atan2(-along.x, -along.z)
+	rotation.y = lerp_angle(rotation.y, wanted, minf(1.0, 9.0 * step))
+
+
+## Which way the tunnel runs where he is, turned to whichever end he is heading for. Zero if
+## he is not in a duct, or if it is an open junction, where he can lie any way he likes.
+func _tunnel_heading(toward: Vector3) -> Vector3:
+	if Game.data == null:
+		return Vector3.ZERO
+	var here: Vector2i = Game.data.cell_of(global_position)
+	if not VentDuct.inside(Game.data, global_position):
+		return Vector3.ZERO
+	var best: Vector3 = Vector3.ZERO
+	var best_dot: float = -2.0
+	for step: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if not VentDuct.connects_for_lurker(Game.data, here, step):
+			continue
+		var way := Vector3(step.x, 0, step.y)
+		var dot: float = way.dot(toward.normalized())
+		if dot > best_dot:
+			best_dot = dot
+			best = way
+	return best
+
+
+## Keeps him off the walls: in a straight length of duct he rides the centre line.
+func _hug_the_tunnel() -> void:
+	if Game.data == null or not VentDuct.inside(Game.data, global_position):
+		return
+	var here: Vector2i = Game.data.cell_of(global_position)
+	var centre: Vector3 = Game.data.cell_center(here, global_position.y)
+	var opens_x: bool = VentDuct.connects_for_lurker(Game.data, here, Vector2i(1, 0)) \
+		or VentDuct.connects_for_lurker(Game.data, here, Vector2i(-1, 0))
+	var opens_z: bool = VentDuct.connects_for_lurker(Game.data, here, Vector2i(0, 1)) \
+		or VentDuct.connects_for_lurker(Game.data, here, Vector2i(0, -1))
+	if opens_x and not opens_z:
+		global_position.z = lerpf(global_position.z, centre.z, 0.3)
+	elif opens_z and not opens_x:
+		global_position.x = lerpf(global_position.x, centre.x, 0.3)
 
 
 ## Flat out, arms reaching, dragging himself along.

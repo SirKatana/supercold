@@ -11,7 +11,7 @@ extends RefCounted
 ##  `B` boss  `w` wave point  `t` trigger
 ## `r` wall breaker  `p` pistol  `b` bottle  `m` mug  `k` keyboard  `l` stapler
 ## `c` desk  `s` server rack  `o` pillar (full height cover)  `h` chandelier (hangs, no collision)
-## `v` vent duct: a crawl tunnel through the wall, with a grate where it opens into a room
+## `v` vent duct inside a wall  `e` the same, with a grate opening into the room beside it
 ## `z` growing tank  `Z` the cracked one  `E` guard with a carrot gun
 
 const PICKUP_KINDS: Dictionary[String, StringName] = {
@@ -21,7 +21,7 @@ const PICKUP_KINDS: Dictionary[String, StringName] = {
 }
 const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar", "h": &"chandelier",
 	"z": &"tank", "Z": &"tank_cracked"}
-const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvzZE"
+const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvezZE"
 const DUDE_KINDS: Dictionary[String, StringName] = {
 	"a": &"pistol", "u": &"", "R": &"rifle", "S": &"shotgun", "H": &"shield",
 	"q": &"runner", "N": &"sniper", "U": &"smg",

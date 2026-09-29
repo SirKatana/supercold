@@ -264,6 +264,16 @@ func _capture(path: String, after: float) -> void:
 			if _flag("fight"):
 				TimeManager.override_scale = 1.0
 			await get_tree().create_timer(float(_arg("at", "0.6")), true, false, true).timeout
+	if _arg("do", "") == "wayout" and Game.player != null:
+		# Clear the floor and look at the arrow that turns up.
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			(node as PinkDude).die()
+		await get_tree().create_timer(0.5, true, false, true).timeout
+		Game.player.global_position += -Game.player.global_transform.basis.z * 4.0
+		Game.player.rotation.y += deg_to_rad(float(_arg("yaw", "40")))
+		Game.player.head.rotation.x = deg_to_rad(-8.0)
+		Game.player.hands.visible = false
+		await get_tree().create_timer(float(_arg("at", "1.0")), true, false, true).timeout
 	if _arg("do", "") == "vent" and Game.player != null:
 		# Stand at a grate, or crawl in and meet what is in there with `--inside=true`.
 		var grates: Array[Node] = get_tree().get_nodes_in_group(&"grates")
@@ -274,11 +284,27 @@ func _capture(path: String, after: float) -> void:
 				if green != null and (g as Node3D).global_position.distance_to(green.global_position) < mouth.global_position.distance_to(green.global_position):
 					mouth = g as VentGrate
 			var facing: Vector3 = mouth.global_transform.basis.z if mouth.along_x else mouth.global_transform.basis.x
+			if _flag("deep"):
+				# Well inside the maze, looking down the tunnel.
+				var cells: Array[Vector2i] = []
+				for cy: int in Game.data.height:
+					for cx: int in Game.data.width:
+						if Game.data.rows[cy][cx] == "v":
+							cells.append(Vector2i(cx, cy))
+				if not cells.is_empty():
+					var pick: Vector2i = cells[cells.size() / 2]
+					Game.player.use_a_duct()
+					Game.player.global_position = Game.data.cell_center(pick, 0.05)
+					var look_at_cell: Vector2i = cells[mini(cells.size() - 1, cells.size() / 2 + 2)]
+					Game.player.look_at(Game.data.cell_center(look_at_cell, 0.45))
+					Game.player.head.rotation.x = 0.0
+					Game.player.hands.visible = true
+					await get_tree().create_timer(float(_arg("at", "0.6")), true, false, true).timeout
 			if _flag("inside"):
 				Game.player.global_position = mouth.global_position + facing * float(_arg("back", "0.6")) + Vector3(0, 0.05, 0)
 				mouth.take_damage(99, -facing)
 				TimeManager.override_scale = 1.0
-			else:
+			elif not _flag("deep"):
 				Game.player.global_position = mouth.global_position + facing * 2.2 + Vector3(0, 0.05, 0)
 			Game.player.look_at(mouth.global_position + Vector3(0, 0.55, 0))
 			Game.player.head.rotation.x = -0.1

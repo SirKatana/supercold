@@ -129,6 +129,33 @@ static func coffee_spill() -> StandardMaterial3D:
 		return m)
 
 
+## Inside a duct: dull galvanised sheet, dark, so a tunnel reads as a tunnel and not a room.
+static func duct_metal() -> StandardMaterial3D:
+	return _cached(&"duct_metal", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.26, 0.28, 0.31)
+		m.metallic = 0.65
+		m.metallic_specular = 0.3
+		m.roughness = 0.45
+		return m)
+
+
+## The way-out arrow: school-bus yellow, lit from inside so it reads across a dark room.
+static func way_out_yellow() -> StandardMaterial3D:
+	return _cached(&"way_out_yellow", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(1.0, 0.82, 0.05)
+		m.emission_enabled = true
+		m.emission = Color(1.0, 0.76, 0.0)
+		m.emission_energy_multiplier = 1.5
+		m.roughness = 0.4
+		return m)
+
+
+static func way_out_edge() -> StandardMaterial3D:
+	return _plain(&"way_out_edge", Color(0.35, 0.26, 0.02), 0.6)
+
+
 static func paper() -> StandardMaterial3D:
 	return _plain(&"paper", Color(0.97, 0.97, 0.95), 1.0)
 

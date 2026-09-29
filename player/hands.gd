@@ -91,6 +91,9 @@ func _physics_process(delta: float) -> void:
 
 
 func primary() -> void:
+	if held is Gun and not _may_fire_from_here():
+		Sfx.play(&"door_hit")      # a dull knock: there is no room to bring it up in here
+		return
 	if held is Gun:
 		var gun: Gun = held
 		var shot: Array[Vector3] = _shot_from_muzzle(gun)
@@ -156,11 +159,62 @@ func secondary() -> void:
 func interact() -> void:
 	var target: Pickup = find_target()
 	if target == null:
+		# Nothing to pick up: take a grate off, or climb into the duct behind one.
+		if not _pull_off_a_grate():
+			player.use_a_duct()
 		return
 	if held != null:
 		held.drop(player.aim_origin() + player.aim_direction() * 0.4)
 		_set_held(null)
 	pick_up(target)
+
+
+## E with nothing to pick up: if a vent grate is in reach, take hold of it and pull it off.
+## Punching one works too; this is for the player who walks up to it and presses use.
+## In a duct there is no shooting out into the room: you are flat on your face in a metal
+## tube, and picking people off through a grate would be no contest. The only thing you can
+## fire at down there is whatever is in the tube with you.
+func _may_fire_from_here() -> bool:
+	if not player.crawling or not VentDuct.inside(Game.data, player.global_position):
+		return true
+	var from: Vector3 = player.aim_origin()
+	var query := PhysicsRayQueryParameters3D.create(from, from + player.aim_direction() * 12.0, 1 | 4 | 32)
+	query.exclude = [player.get_rid()]
+	var hit: Dictionary = player.get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return false
+	var collider: Object = hit["collider"]
+	if collider is VentLurker:
+		return true
+	# Somebody else who has got in here counts too. A duct wall does not.
+	return collider is PinkDude and VentDuct.inside(Game.data, (collider as Node3D).global_position)
+
+
+## Returns true if a grate came off.
+func _pull_off_a_grate() -> bool:
+	var origin: Vector3 = player.aim_origin()
+	var forward: Vector3 = player.aim_direction()
+	var best: VentGrate = null
+	var best_distance: float = T.pickup_range + 0.6
+	for node: Node in get_tree().get_nodes_in_group(&"grates"):
+		var grate: VentGrate = node as VentGrate
+		if grate == null or grate.is_broken:
+			continue
+		var to_grate: Vector3 = grate.global_position + Vector3(0, VentDuct.HEIGHT * 0.5, 0) - origin
+		var distance: float = to_grate.length()
+		if distance > best_distance or distance < 0.01:
+			continue
+		if forward.dot(to_grate / distance) < 0.55:
+			continue      # it has to be roughly what you are looking at
+		best = grate
+		best_distance = distance
+	if best == null:
+		return false
+	best.take_damage(99, -forward)      # it comes away in one go when you use your hands
+	Sfx.play(&"door_break", best.global_position)
+	TimeManager.burst(T.burst_action, T.burst_strength_break)
+	_animate_thrust()
+	return true
 
 
 ## F: take the nearest shield off the floor and wear it, or drop the one being worn.

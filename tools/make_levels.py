@@ -234,49 +234,89 @@ def theme(name):
 
 
 def ducts(g, seed, runs=2):
-    """Bores crawl ducts through interior walls. A run is a straight line of wall cells with a
-    room at each end, so it always joins two places you could otherwise only reach by walking."""
+    """Carves the crawl ducts: a maze of tunnels inside the walls, with a few grates opening
+    into rooms. Wall cells are the maze's corridors, so the ducts run round and between rooms
+    the way real ventilation does, and there is always wall behind a grate rather than a hole
+    straight through into the next room.
+
+    `runs` is how many mouths to open. The maze itself is as big as the wall space allows, up
+    to `cap` cells."""
     import random
     rng = random.Random(seed)
-    made = 0
-    for _ in range(600):
-        if made >= runs:
-            break
-        horizontal = rng.random() < 0.5
-        x = rng.randrange(2, g.w - 2)
-        y = rng.randrange(2, g.h - 2)
+    cap = 22 + runs * 10
+
+    def diggable(x, y):
+        # Interior wall only, never the outer shell, never beside a door, a lift or glass.
+        if not (1 < x < g.w - 2 and 1 < y < g.h - 2):
+            return False
         if g.c[y][x] != "#":
+            return False
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if g.c[y + dy][x + dx] in "DGPXBw":
+                    return False
+        return True
+
+    def rooms_beside(x, y):
+        return [(x + dx, y + dy) for (dx, dy) in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                if g.c[y + dy][x + dx] in ".~i"]
+
+    starts = [(x, y) for y in range(2, g.h - 2) for x in range(2, g.w - 2)
+              if diggable(x, y) and rooms_beside(x, y)]
+    if not starts:
+        return 0
+    rng.shuffle(starts)
+    # Grow the maze from one seed cell, preferring to carry straight on, so the result is
+    # long tunnels with junctions rather than a blob.
+    maze = {starts[0]}
+    frontier = [starts[0]]
+    while frontier and len(maze) < cap:
+        # Growing tree: mostly carry on from the newest cell, which makes long tunnels, and
+        # now and then jump back to an older one, which makes branches.
+        index = rng.randrange(len(frontier)) if rng.random() < 0.3 else len(frontier) - 1
+        x, y = frontier[index]
+        steps = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        rng.shuffle(steps)
+        dug = False
+        for (dx, dy) in steps:
+            nx, ny = x + dx, y + dy
+            if (nx, ny) in maze or not diggable(nx, ny):
+                continue
+            # Keep it a maze and not a room: a new cell normally touches one cell already dug.
+            # Now and then allow a second, which closes a loop and gives the ducts a way round
+            # a room instead of a dead end.
+            touching = sum(1 for (ox, oy) in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                           if (nx + ox, ny + oy) in maze)
+            if touching > 2 or (touching == 2 and rng.random() > 0.22):
+                continue
+            maze.add((nx, ny))
+            frontier.append((nx, ny))
+            dug = True
+            break
+        if not dug:
+            frontier.pop(index)      # nowhere left to go from there
+    if len(maze) < 6:
+        return 0
+    # Mouths: cells of the maze that touch a room, spread out, and never two facing each other
+    # through the same wall.
+    candidates = [c for c in maze if rooms_beside(*c)]
+    rng.shuffle(candidates)
+    mouths = []
+    for (x, y) in candidates:
+        if len(mouths) >= max(2, runs + 1):
+            break
+        if any(abs(x - mx) + abs(y - my) < 4 for (mx, my) in mouths):
             continue
-        cells = [(x, y)]
-        # Walk along the wall while it stays wall.
-        step = (1, 0) if horizontal else (0, 1)
-        for sign in (1, -1):
-            cx, cy = x, y
-            for _ in range(6):
-                cx, cy = cx + step[0] * sign, cy + step[1] * sign
-                if not (0 < cx < g.w - 1 and 0 < cy < g.h - 1) or g.c[cy][cx] != "#":
-                    break
-                cells.append((cx, cy))
-        if len(cells) < 2 or len(cells) > 7:
-            continue
-        cells.sort()
-        ends = (cells[0], cells[-1])
-        # A room at both ends, and nothing already built in any of these cells.
-        opens = 0
-        for (cx, cy), sign in zip(ends, (-1, 1)):
-            nx, ny = cx + step[0] * sign, cy + step[1] * sign
-            if g.c[ny][nx] in ".~i":
-                opens += 1
-        if opens < 2:
-            continue
-        # Never cut a wall that is holding up a door frame.
-        if any(g.c[cy + dy][cx + dx] in "DGPX" for (cx, cy) in cells
-               for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
-            continue
-        for (cx, cy) in cells:
-            g.c[cy][cx] = "v"
-        made += 1
-    return made
+        mouths.append((x, y))
+    if len(mouths) < 2:
+        return 0
+    for (x, y) in maze:
+        g.c[y][x] = "v"
+    # Only the mouths are open to a room. Every other duct cell keeps its wall, which is what
+    # puts solid wall behind a grate instead of a hole through into the next room.
+    for (x, y) in mouths:
+        g.c[y][x] = "e"
+    return len(mouths)
 
 
 def save(name, grid, meta):
@@ -941,6 +981,7 @@ def f13_basement():
     g.put("E", (9, 4), (26, 4), (13, 14), (30, 22))                # guards with carrot guns
     g.put("a", (17, 24), (33, 17)); g.put("x", (24, 20)); g.put("H", (26, 8))
     g.put("n", (2, 13)); g.put("T", (35, 13))
+    ducts(g, 913, 3)      # the ducts down here are how it gets about
     assert walkable_from_lift(g), "basement: somebody cannot be reached"
     g.gadgets("f13_basement", 913)
     save("f13_basement", g, {"title": "LEVEL ????",

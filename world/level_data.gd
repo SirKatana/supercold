@@ -59,7 +59,7 @@ func char_at(cell: Vector2i) -> String:
 
 func is_solid(cell: Vector2i) -> bool:
 	var c: String = char_at(cell)
-	return c == "#" or c == " " or c == "v"      # a duct is wall to everyone who cannot crawl
+	return c == "#" or c == " " or c == "v" or c == "e"      # a duct is wall to anyone who cannot crawl
 
 
 func is_open(cell: Vector2i) -> bool:
