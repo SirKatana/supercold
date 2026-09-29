@@ -530,6 +530,53 @@ static func spilled_fluid() -> StandardMaterial3D:
 		return m)
 
 
+## The gentleman: grey wool, greyer skin, black felt and iron-grey whiskers.
+static func gentleman_grey() -> StandardMaterial3D:
+	return _plain(&"gentleman_grey", Color(0.46, 0.47, 0.50), 0.85)
+
+
+static func gentleman_skin() -> StandardMaterial3D:
+	return _plain(&"gentleman_skin", Color(0.62, 0.62, 0.64), 0.8)
+
+
+static func gentleman_hat() -> StandardMaterial3D:
+	return _plain(&"gentleman_hat", Color(0.13, 0.13, 0.15), 0.95)
+
+
+static func gentleman_hair() -> StandardMaterial3D:
+	return _plain(&"gentleman_hair", Color(0.20, 0.20, 0.22), 0.95)
+
+
+## His tailoring: charcoal coat, slightly lighter trousers, white linen, a wine waistcoat.
+static func gentleman_coat() -> StandardMaterial3D:
+	return _plain(&"gentleman_coat", Color(0.16, 0.16, 0.19), 0.92)
+
+
+static func gentleman_trousers() -> StandardMaterial3D:
+	return _plain(&"gentleman_trousers", Color(0.29, 0.29, 0.33), 0.92)
+
+
+static func gentleman_linen() -> StandardMaterial3D:
+	return _plain(&"gentleman_linen", Color(0.93, 0.93, 0.90), 0.85)
+
+
+static func gentleman_waistcoat() -> StandardMaterial3D:
+	return _plain(&"gentleman_waistcoat", Color(0.36, 0.10, 0.14), 0.9)
+
+
+static func leather_black() -> StandardMaterial3D:
+	return _plain(&"leather_black", Color(0.09, 0.09, 0.10), 0.35, 0.1)
+
+
+static func smoke_grey() -> StandardMaterial3D:
+	return _cached(&"smoke_grey", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(0.82, 0.82, 0.84, 0.55)
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		return m)
+
+
 static func lurker() -> StandardMaterial3D:
 	return _cached(&"lurker", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

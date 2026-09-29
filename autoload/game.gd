@@ -473,6 +473,9 @@ func spawn_dude(at: Vector3, armed: bool, weapon_kind: StringName = &"pistol") -
 	elif weapon_kind == &"spearman":
 		dude = Spearman.new()
 		dude.name = "Spearman"
+	elif weapon_kind == &"gentleman":
+		dude = Gentleman.new()
+		dude.name = "Gentleman"
 	elif weapon_kind == &"cloner":
 		dude = Cloner.new()
 		dude.name = "Cloner"
@@ -500,7 +503,25 @@ func spawn_boss(at: Vector3) -> PinkDude:
 	return boss
 
 
+## The basement staff are grown, not hired: they wear the same gradient as the thing in the
+## tanks rather than office pink.
+static var _basement_skin: ShaderMaterial
+
+
+static func basement_skin() -> ShaderMaterial:
+	if _basement_skin == null:
+		_basement_skin = ShaderMaterial.new()
+		_basement_skin.shader = preload("res://fx/gradient.gdshader")
+		_basement_skin.set_shader_parameter(&"low_colour", Color(0.10, 0.85, 0.20))
+		_basement_skin.set_shader_parameter(&"high_colour", Color(0.90, 0.10, 0.12))
+		_basement_skin.set_shader_parameter(&"span", 1.9)
+		_basement_skin.set_shader_parameter(&"glow", 0.45)
+	return _basement_skin
+
+
 func _register(dude: PinkDude, at: Vector3) -> void:
+	if level_name == SECRET_FLOOR and dude.body_material == null and not (dude is Gentleman):
+		dude.body_material = basement_skin()
 	entities_root(self).add_child(dude)
 	dude.global_position = at
 	if player != null:

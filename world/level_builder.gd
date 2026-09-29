@@ -139,6 +139,8 @@ static func create_pickup(kind: StringName) -> Pickup:
 		return FartGrenade.create()
 	if kind == &"bucket":
 		return WaterBucket.create()
+	if kind == &"blunderbuss":
+		return Blunderbuss.create()
 	if kind == &"carrot":
 		return CarrotGun.create()
 	if kind == &"spear":
@@ -392,6 +394,9 @@ static func _build_props(data: LevelData, parent: Node3D) -> void:
 			var last: Vector3 = data.cell_center(cell + Vector2i(0, run - 1), Furniture.SHELF_HEIGHT * 0.5)
 			shelf.position = (first + last) * 0.5
 			parent.add_child(shelf)
+			continue
+		if kind == &"striplight":
+			FlickerLamp.hang(parent, data.cell_center(cell, 0.0))
 			continue
 		if kind == &"tank" or kind == &"tank_cracked":
 			SpecimenTank.stand(parent, data.cell_center(cell, 0.0), kind == &"tank_cracked")

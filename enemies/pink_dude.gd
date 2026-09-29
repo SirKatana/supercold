@@ -145,6 +145,8 @@ static func create_gun(gun_kind: StringName) -> Gun:
 			return Crossbow.create()
 		&"carrot":
 			return CarrotGun.create()
+		&"blunderbuss":
+			return Blunderbuss.create()
 	return Pistol.create()
 
 

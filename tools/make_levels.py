@@ -7,7 +7,7 @@ import os
 OUT = os.path.join(os.path.dirname(__file__), "..", "levels")
 
 
-ENEMIES = "auBRSHqNUxyC"
+ENEMIES = "auBRSHqNUxyCQ"
 # Hangs from the ceiling. Not cover, not an obstacle: the scatter treats it like an item.
 DUCTS = {"f8_archive": 3, "f11_sewers": 3, "f12_kitchen": 2,
          "f16_armoury": 2, "f19_tradingfloor": 3, "f23_mirrors": 2, "f24_strongrooms": 3, "f26_morgue": 2, "f28_waterworks": 2,
@@ -459,9 +459,10 @@ def f5_executive():
         g.put("c", (x, 7), (x, 8))
     g.put("P", (1, 2))
     g.put("X", (38, 23))
-    g.put("a", (9, 6), (31, 3), (4, 13), (5, 23))
+    g.put("a", (9, 6), (31, 3), (4, 13))
     g.put("x", (33, 23))
     g.put("S", (30, 12))
+    g.put("Q", (12, 2))
     g.put("R", (24, 4), (36, 10))
     g.put("H", (26, 17), (24, 11))
     g.put("g", (22, 5), (30, 9), (20, 17), (34, 17), (8, 14))
@@ -838,7 +839,7 @@ SPECS = [
          waves=[{"after_kills": 7, "count": 4, "armed": 3}]),
     dict(name="f8_archive", size=(40, 25), style="spine", seed=8, theme="paper", title="ARCHIVE",
          intro="ARCHIVE\\nFAST ONES IN THE STACKS. KEEP A KNIFE.", furnish=["racks", "racks", "office"], start=["n", "p"],
-         layout={"min_w": 7, "max_w": 11}, enemies={"a": 3, "q": 3, "u": 1, "x": 2, "y": 1}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
+         layout={"min_w": 7, "max_w": 11}, enemies={"a": 2, "q": 3, "u": 1, "x": 2, "y": 1, "Q": 1}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
     dict(name="f11_sewers", size=(42, 25), style="double", seed=11, theme="sewer", title="SEWERS",
          intro="SEWERS\\nTHEY COME AT YOU WITH BLADES DOWN HERE.", furnish=["columns", "racks"], furnished=0.5, wet=6, wet_corridor=True, start=["p", "n"],
          enemies={"x": 4, "a": 3, "S": 1, "y": 2}, items={"j": 2, "T": 1, "F": 1, "g": 3, "b": 2, "L": 1}),
@@ -862,7 +863,7 @@ SPECS = [
          layout={"min_w": 8, "max_w": 12}, enemies={"a": 5, "S": 2, "q": 3, "H": 1, "y": 1}, items={"g": 5, "M": 1, "n": 1}),
     dict(name="f19_tradingfloor", size=(50, 31), style="double", seed=19, theme="navy", title="TRADING FLOOR",
          intro="TRADING FLOOR\\nEVERYONE IS AT THEIR DESK.", furnish=["office", "office", "tables"], furnished=1.0, start=["K", "M"],
-         layout={"min_w": 9, "max_w": 14}, enemies={"a": 6, "R": 3, "U": 3, "q": 3, "x": 2, "y": 1}, items={"j": 3, "F": 1, "g": 4, "k": 3},
+         layout={"min_w": 9, "max_w": 14}, enemies={"a": 5, "R": 3, "U": 3, "q": 3, "x": 2, "y": 1, "Q": 1}, items={"j": 3, "F": 1, "g": 4, "k": 3},
          waves=[{"after_kills": 8, "count": 5, "armed": 4}, {"after_kills": 16, "count": 6, "armed": 4}], wave_points=6),
     dict(name="f20_generators", size=(42, 27), style="bsp", seed=20, theme="amber", title="GENERATORS",
          intro="GENERATOR HALL\\nONE SPARK.", furnish=["vats", "racks", "columns"], start=["V", "Y"],
@@ -872,10 +873,10 @@ SPECS = [
          enemies={"a": 4, "U": 2, "q": 3, "C": 1, "y": 2}, items={"F": 3, "M": 1, "n": 1, "g": 1, "A": 1}),
     dict(name="f23_mirrors", size=(44, 27), style="bsp", seed=23, theme="silver", title="HALL OF GLASS",
          intro="HALL OF GLASS\\nEVERYONE CAN SEE EVERYONE.", furnish=["columns", "tables"], glass=12, start=["V", "Y"],
-         layout={"min_side": 6, "max_side": 10}, enemies={"N": 2, "S": 3, "a": 5, "H": 1, "x": 1}, items={"T": 1, "F": 1, "b": 2, "g": 2}),
+         layout={"min_side": 6, "max_side": 10}, enemies={"N": 2, "S": 3, "a": 4, "H": 1, "x": 1, "Q": 1}, items={"T": 1, "F": 1, "b": 2, "g": 2}),
     dict(name="f24_strongrooms", size=(44, 27), style="double", seed=24, theme="bank", title="STRONGROOMS",
          intro="STRONGROOMS\\nA DOOR IS A SUGGESTION. SO IS A WALL.", furnish=["racks", "office"], start=["r", "p"],
-         layout={"min_w": 5, "max_w": 8}, enemies={"a": 3, "S": 3, "H": 2, "R": 2, "y": 2, "C": 1}, items={"r": 1, "T": 1, "K": 1, "V": 1, "g": 3, "A": 1}),
+         layout={"min_w": 5, "max_w": 8}, enemies={"a": 2, "S": 3, "H": 2, "R": 2, "y": 2, "C": 1, "Q": 1}, items={"r": 1, "T": 1, "K": 1, "V": 1, "g": 3, "A": 1}),
     dict(name="f25_skygarden", size=(46, 29), style="bsp", seed=25, theme="sky", title="SKY GARDEN", open_sky=True,
          intro="SKY GARDEN\\nWALLED GARDENS. LONG SIGHTLINES. THEIRS TOO.", furnish=["counters", "columns", "tables"], wet=6, glass=4, start=["Y", "K"],
          layout={"min_side": 8, "max_side": 14}, enemies={"N": 3, "R": 3, "a": 3, "q": 2, "y": 2, "x": 1}, items={"F": 1, "g": 3, "L": 1}),
@@ -891,7 +892,7 @@ SPECS = [
     dict(name="f29_penthouse", size=(52, 31), style="double", seed=29, theme="gold", title="PENTHOUSE",
          intro="PENTHOUSE\\nEVERYTHING THEY HAVE LEFT.", furnish=["office", "tables", "columns", "counters"], wet=3, ice_rooms=1, glass=5, fart=2,
          start=["K", "T"], layout={"min_w": 8, "max_w": 12},
-         enemies={"a": 5, "R": 2, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 2}, items={"j": 2, "Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5, "A": 1, "L": 1},
+         enemies={"a": 4, "R": 2, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 2, "Q": 1}, items={"j": 2, "Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5, "A": 1, "L": 1},
          waves=[{"after_kills": 9, "count": 5, "armed": 4}, {"after_kills": 18, "count": 6, "armed": 5}], wave_points=5),
 ]
 
@@ -981,6 +982,10 @@ def f13_basement():
     g.put("E", (9, 4), (26, 4), (13, 14), (30, 22))                # guards with carrot guns
     g.put("a", (17, 24), (33, 17)); g.put("x", (24, 20)); g.put("H", (26, 8))
     g.put("n", (2, 13)); g.put("T", (35, 13))
+    for spot in ((9, 2), (19, 2), (29, 2), (6, 9), (16, 9), (26, 9), (3, 16), (15, 14),
+                 (15, 22), (25, 16), (31, 22), (5, 24), (33, 18)):
+        if g.c[spot[1]][spot[0]] == ".":
+            g.put("d", spot)      # strip lights, most of them on their way out
     ducts(g, 913, 3)      # the ducts down here are how it gets about
     assert walkable_from_lift(g), "basement: somebody cannot be reached"
     g.gadgets("f13_basement", 913)

@@ -72,13 +72,37 @@ static func _model(kit: MeshKit, is_cracked: bool) -> void:
 		return
 	kit.tube(RADIUS, RADIUS, HEIGHT - 0.42, Vector3(0, HEIGHT * 0.5, 0), glass, false, 18)
 	kit.tube(RADIUS - 0.05, RADIUS - 0.05, HEIGHT - 0.60, Vector3(0, HEIGHT * 0.5 - 0.04, 0), fluid, false, 18)
-	# Something curled up in it, head down, knees to its chest.
+	# Something curled up in it, head down, knees to its chest, hands against the glass.
 	var body: Material = Mats.specimen()
-	kit.ball(0.22, Vector3(0, HEIGHT * 0.52, 0), body, Vector3(1.0, 1.15, 1.0))                  # head
-	kit.ball(0.30, Vector3(0, HEIGHT * 0.33, 0.04), body, Vector3(1.0, 1.25, 0.85))              # body
+	var bone: Material = Mats.ceramic()
+	var head_y: float = HEIGHT * 0.54
+	kit.ball(0.20, Vector3(0, head_y, 0.02), body, Vector3(0.95, 1.15, 1.05))                    # skull
+	kit.box(Vector3(0.20, 0.09, 0.14), Vector3(0, head_y - 0.15, -0.04), body, Vector3(0.35, 0, 0))   # jaw, hanging open
 	for side: float in [-1.0, 1.0]:
-		kit.tube(0.07, 0.05, 0.42, Vector3(side * 0.22, HEIGHT * 0.36, -0.06), body, false, 8, Vector3(0.9, 0, side * 0.5))
-		kit.tube(0.09, 0.06, 0.40, Vector3(side * 0.16, HEIGHT * 0.19, 0.10), body, false, 8, Vector3(-1.1, 0, side * 0.3))
+		kit.ball(0.045, Vector3(side * 0.085, head_y + 0.02, -0.15), Mats.tank_fluid())          # an eye, milky
+		kit.box(Vector3(0.016, 0.05, 0.05), Vector3(side * 0.16, head_y + 0.03, 0.03), body, Vector3(0, 0, 0.4 * side))   # ear frill
+	# Spine and ribs: it is thin enough that you can count them.
+	for i: int in 6:
+		var y: float = HEIGHT * 0.45 - i * 0.075
+		var span: float = 0.28 - absf(float(i) - 2.0) * 0.03
+		kit.box(Vector3(0.07, 0.05, 0.09), Vector3(0, y, 0.10), bone)                            # vertebra
+		for side: float in [-1.0, 1.0]:
+			kit.box(Vector3(span, 0.028, 0.030), Vector3(side * span * 0.5, y, 0.02), bone, Vector3(0, 0, 0.18 * side))
+	kit.box(Vector3(0.26, 0.34, 0.20), Vector3(0, HEIGHT * 0.33, 0.0), body)                     # chest
+	kit.ball(0.17, Vector3(0, HEIGHT * 0.18, 0.02), body, Vector3(1.0, 0.9, 0.9))                # belly
+	for side: float in [-1.0, 1.0]:
+		# Arms: upper arm out, forearm forward, a hand flat on the glass with fingers spread.
+		kit.tube(0.055, 0.042, 0.30, Vector3(side * 0.20, HEIGHT * 0.38, 0.02), body, false, 8, Vector3(0, 0, side * 1.0))
+		kit.ball(0.05, Vector3(side * 0.30, HEIGHT * 0.31, 0.0), body)                           # elbow
+		kit.tube(0.042, 0.032, 0.30, Vector3(side * 0.30, HEIGHT * 0.29, -0.16), body, false, 8, Vector3(1.25, 0, 0))
+		kit.box(Vector3(0.10, 0.11, 0.03), Vector3(side * 0.30, HEIGHT * 0.28, -0.32), body)     # palm on the glass
+		for finger: int in 4:
+			kit.box(Vector3(0.018, 0.070, 0.022), Vector3(side * 0.30 + (finger - 1.5) * 0.026, HEIGHT * 0.34, -0.33), body)
+		# Legs, folded up under it.
+		kit.tube(0.070, 0.050, 0.26, Vector3(side * 0.13, HEIGHT * 0.15, 0.06), body, false, 8, Vector3(-1.0, 0, side * 0.35))
+		kit.ball(0.055, Vector3(side * 0.17, HEIGHT * 0.20, -0.14), body)                        # knee
+		kit.tube(0.050, 0.038, 0.24, Vector3(side * 0.16, HEIGHT * 0.12, -0.16), body, false, 8, Vector3(0.9, 0, 0))
+		kit.box(Vector3(0.09, 0.05, 0.13), Vector3(side * 0.15, HEIGHT * 0.05, -0.12), body)     # foot
 	for i: int in 7:                                                                             # bubbles
 		var lift: float = fmod(float(i) * 0.31, 1.0)
 		kit.ball(0.03 + 0.02 * fmod(float(i) * 0.7, 1.0),

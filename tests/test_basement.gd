@@ -68,65 +68,90 @@ func test_the_basement_is_a_laboratory_with_a_broken_tank() -> void:
 	check(float(Game.data.theme.get("energy", 1.0)) < 0.25, "and it is dark down there")
 
 
-func test_the_beast_is_the_boss_and_he_is_red_over_green() -> void:
+## It is not a boss fight: no bar, no name over the room, and it is not standing in the middle
+## of the floor waiting for you. Most of the time it is a puddle.
+func test_the_thing_down_there_is_not_a_boss() -> void:
 	check(Game.load_floor(12), "the basement loads")
 	await wait_physics(4)
-	var beast: Beast = get_tree().get_first_node_in_group(&"bosses") as Beast
-	check(beast != null, "he is down there")
-	check_eq(beast.boss_name(), "THE THING IN THE TANK", "with a name for the bar")
-	check_eq(beast.boss_health(), Vector2i(T.beast_hp, T.beast_hp), "and %d rounds in him" % T.beast_hp)
-	check(beast.body_scale < 1.5, "he is shorter than a man (%.2f)" % beast.body_scale)
-	check(beast.body_bulk() > 1.4, "and much wider (%.2f)" % beast.body_bulk())
-	check(T.beast_hp >= 24, "and it takes %d rounds to put him down" % T.beast_hp)
-	var skin: ShaderMaterial = beast.skin.material as ShaderMaterial
-	check(skin != null, "his colour is a gradient, not a flat pink")
-	check((skin.get_shader_parameter(&"low_colour") as Color).g > 0.5, "green at the feet")
-	check((skin.get_shader_parameter(&"high_colour") as Color).r > 0.5, "red at the head")
-	check(not beast.can_freeze() and not beast.can_choke(), "and nothing clever works on him")
+	var it: Beast = null
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		if node is Beast:
+			it = node
+	check(it != null, "it is down there")
+	check_eq(get_tree().get_nodes_in_group(&"bosses").size(), 0, "and nothing on this floor is a boss")
+	check(not it.has_method(&"boss_name"), "it has no name for a bar")
+	check_eq(it.form, Beast.Form.LIQUID, "it starts as a puddle")
+	check(it.liquid(), "which is nothing you can shoot")
+	var skin: ShaderMaterial = it.body_material as ShaderMaterial
+	check(skin != null and (skin.get_shader_parameter(&"low_colour") as Color).g > 0.5, "green at the bottom")
+	check((skin.get_shader_parameter(&"high_colour") as Color).r > 0.5, "red at the top")
 
 
-## He does not wait to be shot at. Standing anywhere near him is fatal, fast.
-func test_he_comes_straight_for_you_and_kills_quickly() -> void:
+func test_it_runs_as_liquid_and_pours_up_into_a_shape_when_you_are_close() -> void:
 	check(Game.load_floor(12), "the basement loads")
 	await wait_physics(4)
-	Game.god_mode = false
-	var beast: Beast = get_tree().get_first_node_in_group(&"bosses") as Beast
-	beast.alerted = true
-	check(beast.move_speed() > T.dude_speed, "he moves faster than the men upstairs")
-	check(T.beast_swipe_windup < T.dude_punch_windup, "and swings sooner than they do")
-	Game.player.global_position = beast.global_position + Vector3(2.0, 0.05, 0)
-	var ticks: int = 0
-	for i: int in 300:
+	var it: Beast = null
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		if node is Beast:
+			it = node
+	it.sense_override = true
+	it.can_see_player = true
+	it.alerted = true
+	var rounds: int = 0
+	it.on_bullet_hit(null, it.global_position, Vector3.UP)
+	check_eq(it.hp_left, T.beast_hp, "a round goes straight through it while it is liquid")
+	# Stand next to it and it comes up out of the floor. It normally keeps away for a few
+	# seconds first; this is about what it does when it decides to come, not the waiting.
+	it._patience = 0.0
+	Game.player.global_position = it.global_position + Vector3(1.2, 0.05, 0)
+	var rose: Dictionary = {"yes": false}
+	it.rose_up.connect(func() -> void: rose["yes"] = true, CONNECT_ONE_SHOT)
+	for i: int in 400:
 		await wait_physics(1)
-		ticks += 1
-		if not Game.player.alive:
+		it.dist_to_player = it.flat_distance_to(Game.player.global_position)
+		if rose["yes"]:
 			break
-	check(not Game.player.alive, "he had you")
-	check(ticks < 90, "and it took him %.1f seconds" % (ticks / 60.0))
+	check(rose["yes"], "it came up in front of you")
+	check_eq(it.form, Beast.Form.SOLID, "and now it is a thing with a shape")
+	check(not it.liquid(), "which can be shot (form %d, hp %d)" % [it.form, it.hp_left])
+	var before: int = it.hp_left
+	for i: int in T.beast_hits_before_it_melts:
+		it.on_bullet_hit(null, it.global_position + Vector3(0, 1.0, 0), Vector3.UP)
+	check_eq(it.hp_left, before - T.beast_hits_before_it_melts, "rounds tell on it (form now %d)" % it.form)
+	await wait_physics(4)
+	check(it.form == Beast.Form.SINKING or it.form == Beast.Form.LIQUID, "then it gives up the shape and goes")
 
 
-func test_he_charges_you_and_it_costs_him() -> void:
+func test_everyone_down_there_wears_the_same_colours() -> void:
 	check(Game.load_floor(12), "the basement loads")
 	await wait_physics(4)
-	var beast: Beast = get_tree().get_first_node_in_group(&"bosses") as Beast
-	beast.sense_override = true
-	beast.can_see_player = true
-	beast.alerted = true
-	Game.player.global_position = beast.global_position - beast.global_transform.basis.z * 9.0
-	var charged: bool = false
-	for i: int in 600:
+	var gradient: int = 0
+	var dudes: int = 0
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		var dude: PinkDude = node as PinkDude
+		# Only the ones grown down here: a knifeman or a spearman walked in wearing his own.
+		if dude == null or dude.get_script() != preload("res://enemies/pink_dude.gd"):
+			continue
+		dudes += 1
+		gradient += 1 if dude.skin.material is ShaderMaterial else 0
+	check(dudes >= 4, "there are people down there, got %d" % dudes)
+	check_eq(gradient, dudes, "and every one of them is red over green, not pink")
+
+
+func test_the_lights_down_there_are_on_their_way_out() -> void:
+	check(Game.load_floor(12), "the basement loads")
+	await wait_physics(4)
+	var lamps: Array[Node] = get_tree().get_nodes_in_group(&"flicker_lamps")
+	check(lamps.size() >= 6, "strip lights through the rooms, got %d" % lamps.size())
+	var lamp: FlickerLamp = lamps[0]
+	var brightest: float = 0.0
+	var dimmest: float = 100.0
+	for i: int in 240:
 		await wait_physics(1)
-		beast.dist_to_player = beast.flat_distance_to(Game.player.global_position)
-		if beast._charging >= 0.0:
-			charged = true
-			break
-	check(charged, "he put his head down and came")
-	check(T.beast_charge_speed > T.walk_speed, "faster than you can walk, while it lasts")
-	for i: int in 200:
-		await wait_physics(1)
-		if beast._charging < 0.0:
-			break
-	check(beast._charging < 0.0, "and then it is over")
+		var energy: float = (lamp.get_child(2) as OmniLight3D).light_energy
+		brightest = maxf(brightest, energy)
+		dimmest = minf(dimmest, energy)
+	check(brightest > 0.5 and dimmest < 0.2, "and it flickers: %.2f down to %.2f" % [brightest, dimmest])
 
 
 func test_the_guards_fire_carrots() -> void:

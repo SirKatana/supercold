@@ -19,10 +19,11 @@ var _arm_l: Node3D
 var _punch_left_next: bool = false
 var _arm_tween: Tween
 
-const ARM_REST_R := Vector3(0.31, -0.43, -0.26)
-const ARM_HOLD_R := Vector3(0.23, -0.25, -0.16)
-const ARM_REST_L := Vector3(-0.31, -0.43, -0.26)
-const ARM_SUPPORT_L := Vector3(0.05, -0.385, -0.30)
+const ARM_REST_R := Vector3(0.30, -0.44, -0.20)
+const ARM_HOLD_R := Vector3(0.19, -0.33, -0.26)
+const ARM_REST_L := Vector3(-0.30, -0.44, -0.20)
+## The off hand on the fore-end of a long gun: forward, inboard, and under the barrel.
+const ARM_SUPPORT_L := Vector3(0.01, -0.36, -0.62)
 
 var _supporting: bool = false
 
@@ -33,7 +34,8 @@ func _ready() -> void:
 	# Whatever is held sits in the right fist.
 	_hold_point = Node3D.new()
 	_hold_point.name = "HoldPoint"
-	_hold_point.position = Vector3(0, 0.05, -0.30)
+	# In the palm, between the wrist and the curled fingers: a held thing is gripped, not floated.
+	_hold_point.position = Vector3(0.0, -0.01, -0.215)
 	_arm_r.add_child(_hold_point)
 
 
@@ -44,13 +46,18 @@ func _build_arm(rest: Vector3, inward: float) -> Node3D:
 	arm.position = rest
 	arm.rotation = Vector3(0.12, 0.10 * inward, 0.0)
 	add_child(arm)
-	_add_arm_box(arm, Vector3(0.078, 0.074, 0.30), Vector3(0, 0, 0.10))          # forearm
-	_add_arm_box(arm, Vector3(0.066, 0.062, 0.10), Vector3(0, 0, -0.10))         # wrist, narrower
-	_add_arm_box(arm, Vector3(0.092, 0.046, 0.095), Vector3(0, 0.012, -0.195))   # back of the hand
-	for i: int in 4:                                                             # four curled fingers
-		_add_arm_box(arm, Vector3(0.0205, 0.050, 0.050), Vector3(-0.0345 + i * 0.023, -0.016, -0.262))
-		_add_arm_box(arm, Vector3(0.0205, 0.030, 0.030), Vector3(-0.0345 + i * 0.023, -0.040, -0.235))
-	_add_arm_box(arm, Vector3(0.026, 0.030, 0.075), Vector3(0.052 * inward * -1.0, -0.006, -0.225))   # thumb
+	_add_arm_box(arm, Vector3(0.088, 0.084, 0.26), Vector3(0, -0.006, 0.20))     # upper forearm
+	_add_arm_box(arm, Vector3(0.086, 0.082, 0.20), Vector3(0, -0.002, 0.02))     # forearm, tapering
+	_add_arm_box(arm, Vector3(0.070, 0.064, 0.07), Vector3(0, 0.0, -0.085))      # wrist
+	_add_arm_box(arm, Vector3(0.086, 0.050, 0.115), Vector3(0, 0.004, -0.175))   # palm, back of the hand
+	# Fingers curled round the grip: the middle joints in front of the palm, the tips tucked under.
+	for i: int in 4:
+		var across: float = -0.030 + i * 0.020
+		var length: float = 0.052 - absf(float(i) - 1.5) * 0.004
+		_add_arm_box(arm, Vector3(0.0185, 0.044, length), Vector3(across, -0.022, -0.238))
+		_add_arm_box(arm, Vector3(0.0185, 0.034, 0.030), Vector3(across, -0.048, -0.205))
+	# Thumb over the top of the grip, lying along it.
+	_add_arm_box(arm, Vector3(0.026, 0.030, 0.085), Vector3(0.040 * inward * -1.0, 0.016, -0.215))
 	return arm
 
 
@@ -352,7 +359,8 @@ func _pose_support_arm(supporting: bool) -> void:
 	_arm_l.visible = player.shield == null
 	if supporting:
 		_arm_l.position = ARM_SUPPORT_L
-		_arm_l.rotation = Vector3(0.36, -0.36, 0.0)
+		# Reaching forward and across to the fore-end, palm up under the barrel.
+		_arm_l.rotation = Vector3(0.10, 0.85, -0.22)
 	else:
 		_arm_l.position = ARM_REST_L
 		_arm_l.rotation = Vector3(0.12, 0.10, 0.0)

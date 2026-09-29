@@ -142,6 +142,18 @@ extends Resource
 @export_group("More dudes")
 @export var runner_speed: float = 6.4
 @export var runner_windup: float = 0.28
+@export_group("The gentleman")
+## An 1800s blunderbuss: one load, a fistful of shot, and a long wait to load it again.
+@export var blunderbuss_ammo: int = 2
+@export var blunderbuss_cooldown: float = 2.4
+@export var blunderbuss_pellets: int = 7
+@export var blunderbuss_spread: float = 9.0
+@export var blunderbuss_enemy_pellets: int = 4
+## He walks, he does not run, and his own gun nearly knocks him over.
+@export var gentleman_speed: float = 2.4
+@export var gentleman_recoil_seconds: float = 0.55
+@export var gentleman_recoil_push: float = 3.4
+
 @export_group("The basement")
 ## The guards down there fire carrots: slower than a bullet, and you can see them coming.
 @export var carrot_ammo: int = 12
@@ -160,17 +172,17 @@ extends Resource
 @export var beast_swipe_windup: float = 0.26
 ## How long it is winded after it runs itself into a wall. This is your window.
 @export var beast_wall_stun: float = 0.45
-## As a puddle: how fast it travels, how long it stays away before working back to you, how
-## close it gets before it pours up into a shape, and how long that takes either way.
-@export var beast_liquid_speed: float = 5.2
-@export var beast_hide_min: float = 4.0
-@export var beast_hide_max: float = 9.0
-@export var beast_rise_distance: float = 6.0
+## As a puddle: how fast it travels, how long it keeps away before working back to you, how
+## close it gets before it pours up into a shape, and how long it takes to change either way.
+@export var beast_liquid_speed: float = 5.4
+@export var beast_hide_min: float = 3.5
+@export var beast_hide_max: float = 8.0
+@export var beast_rise_distance: float = 6.5
 @export var beast_rise_seconds: float = 0.8
 @export var beast_sink_seconds: float = 0.5
 ## Rounds it will stand for before it gives up the shape and goes back into the floor.
 @export var beast_hits_before_it_melts: int = 5
-## The lift ride down to a floor that is not on the buttons.
+
 @export var basement_ride_seconds: float = 6.0
 
 @export_group("Vents")

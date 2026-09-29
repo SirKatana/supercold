@@ -32,6 +32,8 @@ var dangerous: bool = false
 var blunt_damage: int = 1
 ## Where the item sits relative to the fist when held.
 var hold_offset: Vector3 = Vector3.ZERO
+## How it lies in the hand. A knife is not held square to the wrist.
+var hold_euler: Vector3 = Vector3.ZERO
 ## Heavy things do not fly as fast.
 var throw_speed_scale: float = 1.0
 ## Brought up in the lift from the floor below. Security wants it.
@@ -122,7 +124,7 @@ func attach_to(holder: Node3D) -> void:
 		reparent(holder, false)
 	else:
 		holder.add_child(self)
-	transform = Transform3D(Basis.IDENTITY, hold_offset)
+	transform = Transform3D(Basis.from_euler(hold_euler), hold_offset)
 	# Flight leaves the mesh tumbled. In a hand it must sit straight.
 	if _mesh_root != null:
 		_mesh_root.rotation = Vector3.ZERO
