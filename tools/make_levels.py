@@ -7,12 +7,23 @@ import os
 OUT = os.path.join(os.path.dirname(__file__), "..", "levels")
 
 
-ENEMIES = "auBRSHqNUxyCQ"
+ENEMIES = "auBRSHqNUxyCQE"   # E is the basement beast: he counts for spacing too
 # Hangs from the ceiling. Not cover, not an obstacle: the scatter treats it like an item.
 DUCTS = {"f8_archive": 3, "f11_sewers": 3, "f12_kitchen": 2,
          "f16_armoury": 2, "f19_tradingfloor": 3, "f23_mirrors": 2, "f24_strongrooms": 3, "f26_morgue": 2, "f28_waterworks": 2,
          "f29_penthouse": 3}
 CHANDELIERS = {"f1_lobby": 3, "f5_executive": 4, "f10_vault": 2, "f19_tradingfloor": 5, "f23_mirrors": 4, "f25_skygarden": 3, "f29_penthouse": 6, "f6_cafeteria": 2, "f17_greenhouse": 2}
+
+# The gentleman with the blunderbuss turns up on every floor but the first: one to three of him,
+# scattered like any other dude. He is never handed to the player at the lift.
+GENTLEMEN = {
+    "f2_offices": 1, "f3_servers": 1, "f4_labs": 2, "f5_executive": 2,
+    "f6_cafeteria": 1, "f7_garage": 2, "f8_archive": 1, "f9_pool": 2, "f10_vault": 1,
+    "f11_sewers": 1, "f12_kitchen": 2, "f13_basement": 1, "f14_glassworks": 2, "f15_restrooms": 1,
+    "f16_armoury": 3, "f17_greenhouse": 1, "f18_beanworks": 2, "f19_tradingfloor": 2, "f20_generators": 3,
+    "f21_lockdown": 2, "f22_cryolab": 1, "f23_mirrors": 2, "f24_strongrooms": 2, "f25_skygarden": 3,
+    "f26_morgue": 1, "f27_furnace": 3, "f28_waterworks": 2, "f29_penthouse": 3, "roof": 2,
+}
 
 # Which floors get which gadget, and how many. f = fart grenade, F = freeze bomb, j = water bucket.
 # Deliberately uneven: seven floors have none, most have one or two, only two have all three.
@@ -192,6 +203,23 @@ class Grid:
                 self.c = trial
         raise AssertionError(f"{name}: no room for its gadgets")
 
+    def gentlemen(self, name, seed):
+        """Places this floor's gentlemen from GENTLEMEN, spaced like any other dude."""
+        wanted = GENTLEMEN.get(name, 0)
+        if not wanted:
+            return
+        everywhere = [(1, 1, self.w - 2, self.h - 2)]
+        for spread in (6.5, 5.5, 5.0):
+            for retry in range(60):
+                trial = [row[:] for row in self.c]
+                try:
+                    self.scatter({"Q": wanted}, everywhere, seed + retry * 17, floor=".", margin=True, spread=spread)
+                except AssertionError:
+                    self.c = trial
+                    continue
+                return
+        raise AssertionError(f"{name}: no room for its gentlemen")
+
     def text(self):
         return "\n".join("".join(r) for r in self.c) + "\n"
 
@@ -345,6 +373,7 @@ def f1_lobby():
     g.put("g", (11, 9))
     g.put("o", (3, 6), (7, 3), (12, 3), (16, 6), (4, 10), (15, 10), (7, 12))
     g.gadgets("f1_lobby", 799)
+    g.gentlemen("f1_lobby", 840)
     g.put("h", (4, 3), (14, 3), (8, 9))
     save("f1_lobby", g, {"intro": "LOBBY\nSTAND STILL. TIME CRAWLS."})
 
@@ -376,6 +405,7 @@ def f2_offices():
     g.pillars(1, 16, 13, 20, step=4, ox=3, oy=2)
     g.pillars(15, 16, 28, 20, step=4, ox=3, oy=2)
     g.gadgets("f2_offices", 99)
+    g.gentlemen("f2_offices", 140)
     save("f2_offices", g, {"intro": "OFFICES\nTHROW THINGS. TAKE THEIR GUNS."})
 
 
@@ -406,6 +436,7 @@ def f3_servers():
     g.pillars(1, 7, 6, 12, step=3, ox=2, oy=2)
     g.put("o", (8, 6), (12, 7), (16, 6), (20, 7), (24, 6), (26, 12))
     g.gadgets("f3_servers", 143)
+    g.gentlemen("f3_servers", 184)
     save("f3_servers", g, {"intro": "SERVER ROOM\nDOORS BREAK. SO DO THEY."})
 
 
@@ -438,6 +469,7 @@ def f4_labs():
         g.pillars(x0, 1, x0 + 10, 9, step=4, ox=2, oy=2)
         g.pillars(x0, 14, x0 + 10, 22, step=4, ox=2, oy=2)
     g.gadgets("f4_labs", 684)
+    g.gentlemen("f4_labs", 725)
     save("f4_labs", g, {
         "intro": "LABS\nLONG HALLS. WATCH THE BULLETS.",
         "waves": [{"after_kills": 6, "count": 4, "armed": 3}],
@@ -462,7 +494,6 @@ def f5_executive():
     g.put("a", (9, 6), (31, 3), (4, 13))
     g.put("x", (33, 23))
     g.put("S", (30, 12))
-    g.put("Q", (12, 2))
     g.put("R", (24, 4), (36, 10))
     g.put("H", (26, 17), (24, 11))
     g.put("g", (22, 5), (30, 9), (20, 17), (34, 17), (8, 14))
@@ -484,6 +515,7 @@ def f5_executive():
     g.pillars(27, 20, 38, 26, step=4, ox=2, oy=2)
     g.put("o", (18, 17), (24, 18), (30, 16), (35, 17))
     g.gadgets("f5_executive", 345)
+    g.gentlemen("f5_executive", 386)
     g.put("h", (4, 3), (14, 3), (24, 3), (34, 3))
     save("f5_executive", g, {
         "intro": "EXECUTIVE FLOOR\nEVERYTHING YOU LEARNED.",
@@ -517,6 +549,7 @@ def roof():
     g.put("l", (24, 5))
     g.pillars(4, 4, 25, 25, step=5, ox=3, oy=3)
     g.gadgets("roof", 455)
+    g.gentlemen("roof", 496)
     save("roof", g, {"intro": "ROOF\nTHE DIRECTOR. THREE BULLETS.", "open_sky": True, "exit": "helipad"})
 
 
@@ -814,6 +847,7 @@ def build_floor(spec):
             if CHANDELIERS.get(spec["name"]):
                 g.scatter({"h": CHANDELIERS[spec["name"]]}, rects, spec["seed"] + attempt + 23, floor=".")
             g.gadgets(spec["name"], spec["seed"] + attempt + 11)
+            g.gentlemen(spec["name"], spec["seed"] + attempt + 53)
             assert walkable_from_lift(g), "somebody cannot be reached"
             cover = len(g.cells("cso"))
             assert cover >= 12, f"only {cover} pieces of cover"
@@ -839,7 +873,7 @@ SPECS = [
          waves=[{"after_kills": 7, "count": 4, "armed": 3}]),
     dict(name="f8_archive", size=(40, 25), style="spine", seed=8, theme="paper", title="ARCHIVE",
          intro="ARCHIVE\\nFAST ONES IN THE STACKS. KEEP A KNIFE.", furnish=["racks", "racks", "office"], start=["n", "p"],
-         layout={"min_w": 7, "max_w": 11}, enemies={"a": 2, "q": 3, "u": 1, "x": 2, "y": 1, "Q": 1}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
+         layout={"min_w": 7, "max_w": 11}, enemies={"a": 2, "q": 3, "u": 1, "x": 2, "y": 1}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
     dict(name="f11_sewers", size=(42, 25), style="double", seed=11, theme="sewer", title="SEWERS",
          intro="SEWERS\\nTHEY COME AT YOU WITH BLADES DOWN HERE.", furnish=["columns", "racks"], furnished=0.5, wet=6, wet_corridor=True, start=["p", "n"],
          enemies={"x": 4, "a": 3, "S": 1, "y": 2}, items={"j": 2, "T": 1, "F": 1, "g": 3, "b": 2, "L": 1}),
@@ -863,7 +897,7 @@ SPECS = [
          layout={"min_w": 8, "max_w": 12}, enemies={"a": 5, "S": 2, "q": 3, "H": 1, "y": 1}, items={"g": 5, "M": 1, "n": 1}),
     dict(name="f19_tradingfloor", size=(50, 31), style="double", seed=19, theme="navy", title="TRADING FLOOR",
          intro="TRADING FLOOR\\nEVERYONE IS AT THEIR DESK.", furnish=["office", "office", "tables"], furnished=1.0, start=["K", "M"],
-         layout={"min_w": 9, "max_w": 14}, enemies={"a": 5, "R": 3, "U": 3, "q": 3, "x": 2, "y": 1, "Q": 1}, items={"j": 3, "F": 1, "g": 4, "k": 3},
+         layout={"min_w": 9, "max_w": 14}, enemies={"a": 5, "R": 3, "U": 3, "q": 3, "x": 2, "y": 1}, items={"j": 3, "F": 1, "g": 4, "k": 3},
          waves=[{"after_kills": 8, "count": 5, "armed": 4}, {"after_kills": 16, "count": 6, "armed": 4}], wave_points=6),
     dict(name="f20_generators", size=(42, 27), style="bsp", seed=20, theme="amber", title="GENERATORS",
          intro="GENERATOR HALL\\nONE SPARK.", furnish=["vats", "racks", "columns"], start=["V", "Y"],
@@ -873,10 +907,10 @@ SPECS = [
          enemies={"a": 4, "U": 2, "q": 3, "C": 1, "y": 2}, items={"F": 3, "M": 1, "n": 1, "g": 1, "A": 1}),
     dict(name="f23_mirrors", size=(44, 27), style="bsp", seed=23, theme="silver", title="HALL OF GLASS",
          intro="HALL OF GLASS\\nEVERYONE CAN SEE EVERYONE.", furnish=["columns", "tables"], glass=12, start=["V", "Y"],
-         layout={"min_side": 6, "max_side": 10}, enemies={"N": 2, "S": 3, "a": 4, "H": 1, "x": 1, "Q": 1}, items={"T": 1, "F": 1, "b": 2, "g": 2}),
+         layout={"min_side": 6, "max_side": 10}, enemies={"N": 2, "S": 3, "a": 4, "H": 1, "x": 1}, items={"T": 1, "F": 1, "b": 2, "g": 2}),
     dict(name="f24_strongrooms", size=(44, 27), style="double", seed=24, theme="bank", title="STRONGROOMS",
          intro="STRONGROOMS\\nA DOOR IS A SUGGESTION. SO IS A WALL.", furnish=["racks", "office"], start=["r", "p"],
-         layout={"min_w": 5, "max_w": 8}, enemies={"a": 2, "S": 3, "H": 2, "R": 2, "y": 2, "C": 1, "Q": 1}, items={"r": 1, "T": 1, "K": 1, "V": 1, "g": 3, "A": 1}),
+         layout={"min_w": 5, "max_w": 8}, enemies={"a": 2, "S": 3, "H": 2, "R": 2, "y": 2, "C": 1}, items={"r": 1, "T": 1, "K": 1, "V": 1, "g": 3, "A": 1}),
     dict(name="f25_skygarden", size=(46, 29), style="bsp", seed=25, theme="sky", title="SKY GARDEN", open_sky=True,
          intro="SKY GARDEN\\nWALLED GARDENS. LONG SIGHTLINES. THEIRS TOO.", furnish=["counters", "columns", "tables"], wet=6, glass=4, start=["Y", "K"],
          layout={"min_side": 8, "max_side": 14}, enemies={"N": 3, "R": 3, "a": 3, "q": 2, "y": 2, "x": 1}, items={"F": 1, "g": 3, "L": 1}),
@@ -892,7 +926,7 @@ SPECS = [
     dict(name="f29_penthouse", size=(52, 31), style="double", seed=29, theme="gold", title="PENTHOUSE",
          intro="PENTHOUSE\\nEVERYTHING THEY HAVE LEFT.", furnish=["office", "tables", "columns", "counters"], wet=3, ice_rooms=1, glass=5, fart=2,
          start=["K", "T"], layout={"min_w": 8, "max_w": 12},
-         enemies={"a": 4, "R": 2, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 2, "Q": 1}, items={"j": 2, "Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5, "A": 1, "L": 1},
+         enemies={"a": 4, "R": 2, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 2}, items={"j": 2, "Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5, "A": 1, "L": 1},
          waves=[{"after_kills": 9, "count": 5, "armed": 4}, {"after_kills": 18, "count": 6, "armed": 5}], wave_points=5),
 ]
 
@@ -918,6 +952,7 @@ def f9_pool():
     g.scatter({"a": 6, "S": 2, "q": 3}, [(1, 1, 40, 3), (8, 5, 40, 7), (1, 9, 40, 28)], 91, floor=".~")
     assert walkable_from_lift(g), "pool: somebody cannot be reached"
     g.gadgets("f9_pool", 713)
+    g.gentlemen("f9_pool", 754)
     save("f9_pool", g, {"title": "POOL", "intro": "POOL\\nFREEZE THEM, OR LET THEM RUN ON THE WET DECK.", "theme": theme("aqua")})
 
 
@@ -942,6 +977,7 @@ def f10_vault():
     g.put("c", (22, 28), (23, 28), (30, 30), (31, 30), (3, 27), (3, 28), (35, 7), (35, 15), (16, 2), (23, 2))
     assert walkable_from_lift(g), "vault: somebody cannot be reached"
     g.gadgets("f10_vault", 867)
+    g.gentlemen("f10_vault", 908)
     save("f10_vault", g, {"title": "THE VAULT", "intro": "THE VAULT\\nTHE BRUTE. TWELVE HITS. DO NOT LET HIM REACH YOU.",
                           "boss": "brute", "theme": theme("steel")})
 
@@ -989,6 +1025,7 @@ def f13_basement():
     ducts(g, 913, 3)      # the ducts down here are how it gets about
     assert walkable_from_lift(g), "basement: somebody cannot be reached"
     g.gadgets("f13_basement", 913)
+    g.gentlemen("f13_basement", 954)
     save("f13_basement", g, {"title": "LEVEL ????",
                              "intro": "SUB-BASEMENT\\nTHIS FLOOR IS NOT ON THE BUTTONS.",
                              "boss": "beast", "theme": theme("basement")})
@@ -1014,6 +1051,7 @@ def f21_lockdown():
     g.put("Y", (6, 19)); g.put("K", (6, 25)); g.put("V", (2, 19)); g.put("g", (12, 21), (31, 21), (20, 12))
     assert walkable_from_lift(g), "lockdown: somebody cannot be reached"
     g.gadgets("f21_lockdown", 278)
+    g.gentlemen("f21_lockdown", 319)
     save("f21_lockdown", g, {"title": "LOCKDOWN", "intro": "LOCKDOWN\\nTHE WARDEN. THREE ROUNDS THROUGH THE GLASS.",
                              "boss": "warden", "theme": theme("prison")})
 

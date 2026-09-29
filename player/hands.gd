@@ -19,11 +19,15 @@ var _arm_l: Node3D
 var _punch_left_next: bool = false
 var _arm_tween: Tween
 
-const ARM_REST_R := Vector3(0.30, -0.44, -0.20)
-const ARM_HOLD_R := Vector3(0.19, -0.33, -0.26)
-const ARM_REST_L := Vector3(-0.30, -0.44, -0.20)
+# Far enough forward that the arms are inside the view frustum at all: this close to the
+# lens, a hand a few centimetres lower than the eye is already off the bottom of the screen.
+const ARM_REST_R := Vector3(0.33, -0.38, -0.40)
+## Holding: the fist is under the crosshair line, not out to the side of it, and the weapon
+# sits on top of it.
+const ARM_HOLD_R := Vector3(0.09, -0.27, -0.46)
+const ARM_REST_L := Vector3(-0.33, -0.38, -0.40)
 ## The off hand on the fore-end of a long gun: forward, inboard, and under the barrel.
-const ARM_SUPPORT_L := Vector3(0.01, -0.36, -0.62)
+const ARM_SUPPORT_L := Vector3(-0.17, -0.40, -0.64)
 
 var _supporting: bool = false
 
@@ -34,8 +38,9 @@ func _ready() -> void:
 	# Whatever is held sits in the right fist.
 	_hold_point = Node3D.new()
 	_hold_point.name = "HoldPoint"
-	# In the palm, between the wrist and the curled fingers: a held thing is gripped, not floated.
-	_hold_point.position = Vector3(0.0, -0.01, -0.215)
+	# The weapon sits ON the hand: the palm is under it, the fingers close up round the grip.
+	# Off to one side and it reads as a gun floating beside a fist.
+	_hold_point.position = Vector3(0.0, 0.03, -0.21)
 	_arm_r.add_child(_hold_point)
 
 
@@ -356,11 +361,13 @@ func _on_ammo_changed(ammo: int) -> void:
 ## A long gun gets the off hand under its fore-end.
 func _pose_support_arm(supporting: bool) -> void:
 	_supporting = supporting
-	_arm_l.visible = player.shield == null
+	# The off hand is on screen with empty hands or on a long gun's fore-end. With a pistol it
+	# drops out of view: left up it lies across the picture like a plank.
+	_arm_l.visible = player.shield == null and (supporting or held == null)
 	if supporting:
 		_arm_l.position = ARM_SUPPORT_L
 		# Reaching forward and across to the fore-end, palm up under the barrel.
-		_arm_l.rotation = Vector3(0.10, 0.85, -0.22)
+		_arm_l.rotation = Vector3(0.38, 0.55, -0.12)
 	else:
 		_arm_l.position = ARM_REST_L
 		_arm_l.rotation = Vector3(0.12, 0.10, 0.0)

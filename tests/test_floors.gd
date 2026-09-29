@@ -4,11 +4,12 @@ extends "res://tests/test_case.gd"
 const EXPECTED: Dictionary[String, Vector3i] = {
 	# name: (width, height, enemies placed on the grid)
 	"f1_lobby": Vector3i(20, 14, 4),
-	"f2_offices": Vector3i(30, 22, 7),
-	"f3_servers": Vector3i(28, 20, 8),
-	"f4_labs": Vector3i(36, 24, 10),
-	"f5_executive": Vector3i(40, 28, 12),
-	"roof": Vector3i(30, 30, 2),
+	# Every floor but the first also carries one to three gentlemen, from GENTLEMEN.
+	"f2_offices": Vector3i(30, 22, 8),
+	"f3_servers": Vector3i(28, 20, 9),
+	"f4_labs": Vector3i(36, 24, 12),
+	"f5_executive": Vector3i(40, 28, 13),
+	"roof": Vector3i(30, 30, 4),
 }
 
 

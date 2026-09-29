@@ -285,3 +285,15 @@ One line per call made in auto mode, with why.
 - When he fires, it nearly takes him off his feet: `gentleman_recoil_push` drives him backwards for `gentleman_recoil_seconds` while he is stunned, which is the stagger pose, plus a puff of smoke. That is the window to kill him. He is on six floors, each time in place of a pistol dude so no floor got busier.
 - First-person hands rebuilt (user: "the knife is levitating over the arm, fix the arm, make it more realistic, still black"): the grip point sits in the palm rather than out past the knuckles, the arm has a tapering forearm, a wrist, a palm and fingers curled round what it holds, `Pickup.hold_euler` lets a thing lie at an angle (a knife is not held square to the wrist), and the off hand reaches forward onto the fore-end of a long gun.
 - A test failure worth writing down: the crossbow's pierce test broke when the hands moved, because a shot leaves the muzzle and converges on whatever the crosshair is on. Two dudes 2 m apart are not both on that line once the near one is what the crosshair is resting on. The test now stands them 1 m apart. Also, a test that fires from the arrival lift hits its own doors.
+
+## First-person hold and the gentleman everywhere
+
+- The viewmodel arms were outside the view frustum: at z -0.26 from the lens a hand at y -0.38
+  is already off the bottom of the screen, so only the gun showed. The rig now sits at z -0.42
+  to -0.46, the grip is tucked into the fist rather than floating above the palm, and the hold
+  arm is near the screen centre so the hand is under the gun, not beside it.
+- The off hand is hidden while a one-handed weapon is held: at rest it lay across the picture
+  like a plank. It comes back for empty hands and for a long gun's fore-end.
+- `GENTLEMEN` in `tools/make_levels.py` puts one to three gentlemen on every floor but the
+  first, scattered by `Grid.gentlemen()` like any other dude. `ENEMIES` gained `E` (the basement
+  beast) so the scatter keeps its distance from him too.
