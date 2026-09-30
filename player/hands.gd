@@ -20,14 +20,18 @@ var _punch_left_next: bool = false
 var _arm_tween: Tween
 
 # Far enough forward that the arms are inside the view frustum at all: this close to the
-# lens, a hand a few centimetres lower than the eye is already off the bottom of the screen.
-const ARM_REST_R := Vector3(0.33, -0.38, -0.40)
+# lens, a hand a few centimetres lower than the eye is already off the bottom of the screen,
+# and what is left of the forearm fills half the picture.
+const ARM_REST_R := Vector3(0.30, -0.35, -0.54)
 ## Holding: the fist is under the crosshair line, not out to the side of it, and the weapon
 # sits on top of it.
-const ARM_HOLD_R := Vector3(0.09, -0.27, -0.46)
-const ARM_REST_L := Vector3(-0.33, -0.38, -0.40)
+const ARM_HOLD_R := Vector3(0.12, -0.30, -0.56)
+const ARM_REST_L := Vector3(-0.30, -0.35, -0.54)
 ## The off hand on the fore-end of a long gun: forward, inboard, and under the barrel.
-const ARM_SUPPORT_L := Vector3(-0.17, -0.40, -0.64)
+const ARM_SUPPORT_L := Vector3(-0.01, -0.29, -0.80)
+## How far the forearms pitch: the elbow drops away toward the bottom of the screen and the
+## hand comes up to the gun. The hold point cancels it again so the weapon itself stays level.
+const ARM_PITCH: float = 0.46
 
 var _supporting: bool = false
 
@@ -41,6 +45,8 @@ func _ready() -> void:
 	# The weapon sits ON the hand: the palm is under it, the fingers close up round the grip.
 	# Off to one side and it reads as a gun floating beside a fist.
 	_hold_point.position = Vector3(0.0, 0.03, -0.21)
+	# The arm is pitched; the gun is not. Without this it points at the ceiling.
+	_hold_point.rotation = Vector3(-ARM_PITCH, 0.0, 0.0)
 	_arm_r.add_child(_hold_point)
 
 
@@ -49,7 +55,7 @@ func _ready() -> void:
 func _build_arm(rest: Vector3, inward: float) -> Node3D:
 	var arm := Node3D.new()
 	arm.position = rest
-	arm.rotation = Vector3(0.12, 0.10 * inward, 0.0)
+	arm.rotation = Vector3(ARM_PITCH, 0.10 * inward, 0.0)
 	add_child(arm)
 	_add_arm_box(arm, Vector3(0.088, 0.084, 0.26), Vector3(0, -0.006, 0.20))     # upper forearm
 	_add_arm_box(arm, Vector3(0.086, 0.082, 0.20), Vector3(0, -0.002, 0.02))     # forearm, tapering
@@ -367,17 +373,17 @@ func _pose_support_arm(supporting: bool) -> void:
 	if supporting:
 		_arm_l.position = ARM_SUPPORT_L
 		# Reaching forward and across to the fore-end, palm up under the barrel.
-		_arm_l.rotation = Vector3(0.38, 0.55, -0.12)
+		_arm_l.rotation = Vector3(ARM_PITCH + 0.06, 0.26, -0.10)
 	else:
 		_arm_l.position = ARM_REST_L
-		_arm_l.rotation = Vector3(0.12, 0.10, 0.0)
+		_arm_l.rotation = Vector3(ARM_PITCH, 0.10, 0.0)
 
 
 func _kick() -> void:
 	var tween: Tween = create_tween()
-	_arm_r.rotation.x = 0.30
+	_arm_r.rotation.x = ARM_PITCH + 0.18
 	_arm_r.position.z = ARM_HOLD_R.z + 0.05
-	tween.tween_property(_arm_r, ^"rotation:x", 0.12, 0.16)
+	tween.tween_property(_arm_r, ^"rotation:x", ARM_PITCH, 0.16)
 	tween.parallel().tween_property(_arm_r, ^"position:z", ARM_HOLD_R.z, 0.16)
 
 
