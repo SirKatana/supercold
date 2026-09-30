@@ -9,6 +9,8 @@ const T: Tuning = preload("res://data/tuning.tres")
 
 var unlocked: bool = false
 
+var helicopter: Helicopter = null
+
 var _pad: MeshInstance3D
 var _beam: MeshInstance3D
 var _area: Area3D
@@ -54,6 +56,7 @@ func unlock() -> void:
 	unlocked = true
 	_apply_look()
 	Sfx.play(&"ding", global_position)
+	_call_the_helicopter()
 	# The player may already be standing on the pad.
 	for body: Node3D in _area.get_overlapping_bodies():
 		_on_body_entered(body)
@@ -66,7 +69,30 @@ func _apply_look() -> void:
 	_beam.visible = unlocked
 
 
+## The roof exit is not a lift: a helicopter comes in and takes him off the building.
+func _call_the_helicopter() -> void:
+	if helicopter != null and is_instance_valid(helicopter):
+		return
+	helicopter = Helicopter.new()
+	Game.entities_root(self).add_child(helicopter)
+	helicopter.fly_in(global_position)
+	helicopter.landed.connect(_on_helicopter_landed)
+
+
+## It may have landed while he was already standing on the pad.
+func _on_helicopter_landed() -> void:
+	for body: Node3D in _area.get_overlapping_bodies():
+		_on_body_entered(body)
+
+
 func _on_body_entered(body: Node3D) -> void:
-	if unlocked and body is Player and (body as Player).alive:
+	if not unlocked or not (body is Player) or not (body as Player).alive:
+		return
+	if helicopter != null and is_instance_valid(helicopter):
+		if not helicopter.has_landed:
+			return      # it is still on its way in
 		entered.emit()
-		Game.next_floor.call_deferred()
+		helicopter.board(body as Player)
+		return
+	entered.emit()
+	Game.next_floor.call_deferred()

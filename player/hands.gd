@@ -28,7 +28,7 @@ const ARM_REST_R := Vector3(0.30, -0.35, -0.54)
 const ARM_HOLD_R := Vector3(0.12, -0.30, -0.56)
 const ARM_REST_L := Vector3(-0.30, -0.35, -0.54)
 ## The off hand on the fore-end of a long gun: forward, inboard, and under the barrel.
-const ARM_SUPPORT_L := Vector3(-0.01, -0.29, -0.80)
+const ARM_SUPPORT_L := Vector3(-0.11, -0.37, -0.74)
 ## How far the forearms pitch: the elbow drops away toward the bottom of the screen and the
 ## hand comes up to the gun. The hold point cancels it again so the weapon itself stays level.
 const ARM_PITCH: float = 0.46
@@ -373,7 +373,7 @@ func _pose_support_arm(supporting: bool) -> void:
 	if supporting:
 		_arm_l.position = ARM_SUPPORT_L
 		# Reaching forward and across to the fore-end, palm up under the barrel.
-		_arm_l.rotation = Vector3(ARM_PITCH + 0.06, 0.26, -0.10)
+		_arm_l.rotation = Vector3(ARM_PITCH + 0.28, 0.34, -0.10)
 	else:
 		_arm_l.position = ARM_REST_L
 		_arm_l.rotation = Vector3(ARM_PITCH, 0.10, 0.0)

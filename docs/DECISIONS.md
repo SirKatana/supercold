@@ -297,3 +297,19 @@ One line per call made in auto mode, with why.
 - `GENTLEMEN` in `tools/make_levels.py` puts one to three gentlemen on every floor but the
   first, scattered by `Grid.gentlemen()` like any other dude. `ENEMIES` gained `E` (the basement
   beast) so the scatter keeps its distance from him too.
+
+## The fist on the grip, and the helicopter off the roof
+
+- Each gun's `hold_offset` now cancels its own grip position, so the fist closes on the pistol
+  grip instead of on the receiver. A long gun's grip sits behind and below its origin, which is
+  why holding one by the origin put the hand in the middle of the weapon.
+- The support arm comes in from the lower left and stops at the fore-end instead of crossing
+  the picture.
+- `world/helicopter.gd`: the roof exit is no longer a lift in disguise. `Helipad.unlock()` calls
+  one in, it flies in over 6.5 s, lands beside the pad (never on it, or the pad could not be
+  stood on), slides its door back and tips the engine cowling up. Stepping on the pad climbs
+  the ladder, the pilot says where they are going next, and the machine lifts off before the
+  ending screen. It is modelled hollow -- floor, roof, side walls, glazed nose, seats, panel,
+  and the engine, gearbox and wire looms under that hatch. No collision, real time.
+- `Player.riding` freezes him where he is put: without it gravity pulls him out of the cabin
+  mid-tween. It doubles as the camera mount for `--do=heliview`.

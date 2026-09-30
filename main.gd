@@ -274,6 +274,40 @@ func _capture(path: String, after: float) -> void:
 		Game.player.head.rotation.x = deg_to_rad(-8.0)
 		Game.player.hands.visible = false
 		await get_tree().create_timer(float(_arg("at", "1.0")), true, false, true).timeout
+	if _arg("do", "") == "heliview" and Game.player != null:
+		# One machine on its own, nothing else in frame: `--yaw` walks the camera round it.
+		var lone := Helicopter.new()
+		Game.entities_root(self).add_child(lone)
+		lone.global_position = Game.player.global_position + Vector3(0, 0, -6.0)
+		lone.open_up()
+		var turn: float = deg_to_rad(float(_arg("yaw", "0")))
+		Game.player.riding = true
+		Game.player.global_position = lone.global_position \
+			+ Vector3(sin(turn), 0.0, cos(turn)) * float(_arg("dist", "8.5")) + Vector3(0, float(_arg("high", "2.0")), 0)
+		Game.player.look_at(lone.global_position + Vector3(0, 1.9, 0))
+		Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED
+		Game.player.hands.visible = false
+		await get_tree().create_timer(float(_arg("at", "2.0")), true, false, true).timeout
+	if _arg("do", "") == "heli" and Game.player != null:
+		# Clear the roof and watch the helicopter come in. `--at` is seconds after the call.
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			(node as PinkDude).die()
+		await get_tree().create_timer(0.4, true, false, true).timeout
+		var pad: Node3D = get_tree().get_first_node_in_group(&"exit") as Node3D
+		await get_tree().create_timer(float(_arg("at", "7.0")), true, false, true).timeout
+		if pad != null:
+			var heli: Node3D = get_tree().get_first_node_in_group(&"helicopter") as Node3D
+			var look_at_this: Vector3 = heli.global_position if heli != null else pad.global_position
+			# `riding` freezes him where he is put, so the camera can stand off the machine.
+			Game.player.riding = true
+			Game.player.global_position = look_at_this + Vector3(-7.0, 1.1, 8.6)
+			Game.player.look_at(look_at_this + Vector3(0.0, 1.4, 0.0))
+			Game.player.head.rotation.x = 0.0
+			Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED
+			Game.player.hands.visible = false
+			for arrow: Node in get_tree().get_nodes_in_group(&"way_out"):
+				(arrow as Node3D).visible = false
+			await get_tree().process_frame
 	if _arg("do", "") == "vent" and Game.player != null:
 		# Stand at a grate, or crawl in and meet what is in there with `--inside=true`.
 		var grates: Array[Node] = get_tree().get_nodes_in_group(&"grates")

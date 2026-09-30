@@ -41,6 +41,9 @@ const CRAWL_EYE: float = 0.60
 var crawling: bool = false
 ## Held by something in the dark. He cannot move, but he can still fight.
 var held_by: Node3D = null
+## Being carried by something that drives his position itself: the helicopter off the roof.
+## Gravity and movement are off while it is true, or he falls out of the cabin.
+var riding: bool = false
 
 var _crawl_bob: float = 0.0
 var _shape: CollisionShape3D
@@ -211,6 +214,11 @@ func _physics_process(delta: float) -> void:
 
 	_update_crawl()
 	_crawl_along(delta)
+	if riding:
+		velocity = Vector3.ZERO
+		TimeManager.report_move(0.0)
+		TimeManager.report_look(0.0)
+		return
 	var wish := Vector3.ZERO
 	if alive and input_enabled and held_by == null:
 		var input: Vector2 = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")

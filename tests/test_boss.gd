@@ -95,6 +95,13 @@ func test_clearing_the_roof_ends_the_run() -> void:
 		if Game.alive_enemies <= 0:
 			break
 	await wait_physics(5)
+	# The roof does not end on a lift: a helicopter has to come in and be climbed into.
+	check(pad.helicopter != null, "the helicopter is called once the roof is clear")
+	pad.helicopter.global_position = pad.global_position + Helicopter.PARKED
+	pad.helicopter._touch_down()
+	await wait_physics(2)
+	pad.helicopter.board(Game.player)
+	pad.helicopter._finish()
 	check_eq(Game.state, Game.State.ENDING, "run ends on the roof")
 	check_eq(finished["count"], 1, "run_finished fired once")
 	Game.run_finished.disconnect(on_finished)
