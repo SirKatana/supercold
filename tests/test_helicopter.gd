@@ -51,7 +51,7 @@ func test_stepping_on_the_pad_early_does_nothing() -> void:
 	check_eq(Game.level_name, "roof", "and he is still on the roof")
 
 
-func test_climbing_in_freezes_him_and_ends_the_run() -> void:
+func test_climbing_in_freezes_him_and_takes_him_to_the_station() -> void:
 	check(Game.load_level("roof"), "roof loads")
 	var pad: Helipad = _pad()
 	pad.unlock()
@@ -64,7 +64,7 @@ func test_climbing_in_freezes_him_and_ends_the_run() -> void:
 	# The rest of it is one chain of tweens; the last link is what ends the run.
 	heli._finish()
 	check(not Game.player.riding, "he is let go at the end")
-	check_eq(Game.state, Game.State.ENDING, "the run is over")
+	check_eq(Game.level_name, "f31_airlock", "and he arrives at the station")
 
 
 func test_the_pilot_says_where_they_are_going() -> void:

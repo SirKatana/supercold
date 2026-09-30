@@ -24,6 +24,9 @@ const FLOORS: PackedStringArray = [
 	"f16_armoury", "f17_greenhouse", "f18_beanworks", "f19_tradingfloor", "f20_generators",
 	"f21_lockdown", "f22_cryolab", "f23_mirrors", "f24_strongrooms", "f25_skygarden",
 	"f26_morgue", "f27_furnace", "f28_waterworks", "f29_penthouse", "roof",
+	# The station. The helicopter off the roof is how you get up here.
+	"f31_airlock", "f32_crewring", "f33_hydroponics", "f34_solararray", "f35_cargobay",
+	"f36_reactor", "f37_comms", "f38_observation", "f39_docking", "f40_bridge",
 ]
 
 var state: State = State.TITLE

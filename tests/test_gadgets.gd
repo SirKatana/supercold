@@ -31,12 +31,14 @@ func test_distribution_is_uneven_on_purpose() -> void:
 			1: one_kind += 1
 			2: two_kinds += 1
 			3: all_three.append(floor_name)
-	check(none.size() >= 5 and none.size() <= 10, "%d floors have none of the three: %s" % [none.size(), ", ".join(none)])
-	check(all_three.size() >= 1 and all_three.size() <= 3, "only a couple have all three: %s" % ", ".join(all_three))
+	var total: int = Game.FLOORS.size()
+	check(none.size() >= 5 and none.size() <= total / 3, "%d floors have none of the three: %s" % [none.size(), ", ".join(none)])
+	check(all_three.size() >= 1 and all_three.size() <= 4, "only a couple have all three: %s" % ", ".join(all_three))
 	check(one_kind >= 8, "plenty have just one kind (%d)" % one_kind)
 	check(two_kinds >= 5, "and some have two (%d)" % two_kinds)
 	for kind: StringName in KINDS:
-		check(floors_with[kind] >= 8 and floors_with[kind] <= 15, "%s is on %d of 30 floors" % [kind, floors_with[kind]])
+		check(floors_with[kind] >= 8 and floors_with[kind] <= total / 2,
+			"%s is on %d of %d floors" % [kind, floors_with[kind], total])
 
 
 func test_gadgets_are_spread_round_the_map_not_piled_at_the_lift() -> void:

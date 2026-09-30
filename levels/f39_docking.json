@@ -1,0 +1,20 @@
+{
+  "title": "DOCKING RING",
+  "intro": "DOCKING RING\\nTHE LAST WAY OFF IS BEHIND THEM.",
+  "theme": {
+    "wall": "aeb7bd",
+    "floor": "2f363b",
+    "prop": "74808a",
+    "ambient": "d6e2ea",
+    "sky": "0a0c10",
+    "energy": 0.36,
+    "sun": 0.5
+  },
+  "waves": [
+    {
+      "after_kills": 8,
+      "count": 5,
+      "armed": 4
+    }
+  ]
+}

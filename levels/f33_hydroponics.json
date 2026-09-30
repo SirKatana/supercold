@@ -1,0 +1,13 @@
+{
+  "title": "HYDROPONICS",
+  "intro": "HYDROPONICS\\nTHE ONLY GREEN FOR A HUNDRED MILES.",
+  "theme": {
+    "wall": "d6f2e8",
+    "floor": "3f7d68",
+    "prop": "7fc0a8",
+    "ambient": "e2fff5",
+    "sky": "0d1a18",
+    "energy": 0.5,
+    "sun": 0.55
+  }
+}

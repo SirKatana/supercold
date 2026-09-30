@@ -1,0 +1,14 @@
+{
+  "title": "SOLAR ARRAY",
+  "intro": "SOLAR ARRAY\\nNO COVER OUT HERE BUT WHAT THEY BUILT.",
+  "theme": {
+    "wall": "cfd6de",
+    "floor": "3a4250",
+    "prop": "8d97a8",
+    "ambient": "dfe9ff",
+    "sky": "05070d",
+    "energy": 0.34,
+    "sun": 0.75
+  },
+  "open_sky": true
+}

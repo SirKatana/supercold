@@ -1,0 +1,13 @@
+{
+  "title": "CARGO BAY",
+  "intro": "CARGO BAY\\nEVERY CRATE IS SOMEBODY ELSE'S PROBLEM.",
+  "theme": {
+    "wall": "c2c6b8",
+    "floor": "4d5245",
+    "prop": "8d9382",
+    "ambient": "eaefdf",
+    "sky": "0f120e",
+    "energy": 0.4,
+    "sun": 0.52
+  }
+}

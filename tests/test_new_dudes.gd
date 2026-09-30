@@ -220,8 +220,8 @@ func test_warden_needs_three_rounds_through_the_glass() -> void:
 	check(not warden.alive, "three: down")
 
 
-func test_bosses_sit_on_the_right_floors_and_there_are_thirty() -> void:
-	check_eq(Game.FLOORS.size(), 30, "thirty levels")
+func test_bosses_sit_on_the_right_floors_and_there_are_forty() -> void:
+	check_eq(Game.FLOORS.size(), 40, "thirty in the tower and ten on the station")
 	check_eq(LevelParser.load_level(Game.FLOORS[9]).boss_kind, &"brute", "level 10 is the Brute")
 	check_eq(LevelParser.load_level(Game.FLOORS[20]).boss_kind, &"warden", "level 21 is the Warden")
 	check(LevelParser.load_level(Game.FLOORS[29]).boss_cell.x >= 0, "level 30 is the Director")
@@ -243,7 +243,7 @@ func test_floors_use_the_new_toys_where_promised() -> void:
 		for sp: Dictionary in d.spawns:
 			totals["dude_" + String(sp["weapon"])] = totals.get("dude_" + String(sp["weapon"]), 0) + 1
 	check(with_fart.has("f15_restrooms") and with_fart.has("f18_beanworks"), "stink grenades on 15 and 18: %s" % ", ".join(with_fart))
-	check(with_fart.size() < 15, "but not everywhere (%d floors)" % with_fart.size())
+	check(with_fart.size() < Game.FLOORS.size() / 2, "but not everywhere (%d of %d floors)" % [with_fart.size(), Game.FLOORS.size()])
 	for key: String in ["knife", "freeze", "smg", "revolver", "sniper", "dude_runner", "dude_knifeman", "dude_spearman", "dude_sniper", "dude_smg"]:
 		check(totals.get(key, 0) >= 5, "%s appears %d times across the game" % [key, totals.get(key, 0)])
 	check(totals["water"] > 300, "plenty of wet floor (%d cells)" % totals["water"])

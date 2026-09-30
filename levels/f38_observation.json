@@ -1,0 +1,14 @@
+{
+  "title": "OBSERVATION DECK",
+  "intro": "OBSERVATION DECK\\nGLASS ALL ROUND. SO ARE THEY.",
+  "theme": {
+    "wall": "eef4ff",
+    "floor": "9aa7bd",
+    "prop": "c6d2e6",
+    "ambient": "f4f8ff",
+    "sky": "02040a",
+    "energy": 0.46,
+    "sun": 0.66
+  },
+  "open_sky": true
+}

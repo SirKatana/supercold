@@ -1,0 +1,13 @@
+{
+  "title": "CREW RING",
+  "intro": "CREW RING\\nBUNKS, MESS, AND EVERYONE IN THEM.",
+  "theme": {
+    "wall": "e9e2ea",
+    "floor": "6b6070",
+    "prop": "aa9fb4",
+    "ambient": "f6efff",
+    "sky": "14101c",
+    "energy": 0.44,
+    "sun": 0.58
+  }
+}

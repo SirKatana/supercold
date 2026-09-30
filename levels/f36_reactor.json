@@ -1,0 +1,13 @@
+{
+  "title": "REACTOR",
+  "intro": "REACTOR\\nMIND THE BARRELS. MIND ALL OF THEM.",
+  "theme": {
+    "wall": "6b5a74",
+    "floor": "2a2230",
+    "prop": "9b7fae",
+    "ambient": "ffd0f2",
+    "sky": "160f1c",
+    "energy": 0.3,
+    "sun": 0.3
+  }
+}

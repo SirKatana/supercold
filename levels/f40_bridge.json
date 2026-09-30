@@ -1,0 +1,25 @@
+{
+  "title": "THE BRIDGE",
+  "intro": "THE BRIDGE\\nEVERYONE LEFT IS IN THIS ROOM.",
+  "theme": {
+    "wall": "dfe7f2",
+    "floor": "44506a",
+    "prop": "97a6c2",
+    "ambient": "e9f1ff",
+    "sky": "080b14",
+    "energy": 0.44,
+    "sun": 0.56
+  },
+  "waves": [
+    {
+      "after_kills": 10,
+      "count": 6,
+      "armed": 5
+    },
+    {
+      "after_kills": 20,
+      "count": 6,
+      "armed": 5
+    }
+  ]
+}

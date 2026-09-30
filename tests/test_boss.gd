@@ -102,6 +102,7 @@ func test_clearing_the_roof_ends_the_run() -> void:
 	await wait_physics(2)
 	pad.helicopter.board(Game.player)
 	pad.helicopter._finish()
-	check_eq(Game.state, Game.State.ENDING, "run ends on the roof")
-	check_eq(finished["count"], 1, "run_finished fired once")
+	# The roof is not the end any more: the helicopter takes him up to the station.
+	check_eq(Game.level_name, "f31_airlock", "the helicopter goes to the station")
+	check_eq(finished["count"], 0, "and the run is not finished yet")
 	Game.run_finished.disconnect(on_finished)

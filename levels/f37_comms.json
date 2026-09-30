@@ -1,0 +1,13 @@
+{
+  "title": "COMMS",
+  "intro": "COMMS DECK\\nCUT THE SIGNAL BEFORE THEY CALL HOME.",
+  "theme": {
+    "wall": "b9c9d6",
+    "floor": "38505f",
+    "prop": "7d9cb0",
+    "ambient": "dcefff",
+    "sky": "070d14",
+    "energy": 0.38,
+    "sun": 0.48
+  }
+}

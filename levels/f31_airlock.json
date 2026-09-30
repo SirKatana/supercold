@@ -1,0 +1,13 @@
+{
+  "title": "AIRLOCK",
+  "intro": "STATION AIRLOCK\\nTHEY WERE EXPECTING THE HELICOPTER.",
+  "theme": {
+    "wall": "dde6ee",
+    "floor": "6e7b88",
+    "prop": "9fb0be",
+    "ambient": "e8f2ff",
+    "sky": "10131a",
+    "energy": 0.42,
+    "sun": 0.62
+  }
+}

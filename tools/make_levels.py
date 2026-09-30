@@ -11,7 +11,8 @@ ENEMIES = "auBRSHqNUxyCQE"   # E is the basement beast: he counts for spacing to
 # Hangs from the ceiling. Not cover, not an obstacle: the scatter treats it like an item.
 DUCTS = {"f8_archive": 3, "f11_sewers": 3, "f12_kitchen": 2,
          "f16_armoury": 2, "f19_tradingfloor": 3, "f23_mirrors": 2, "f24_strongrooms": 3, "f26_morgue": 2, "f28_waterworks": 2,
-         "f29_penthouse": 3}
+         "f29_penthouse": 3,
+         "f32_crewring": 3, "f35_cargobay": 3, "f37_comms": 2, "f39_docking": 3}
 CHANDELIERS = {"f1_lobby": 3, "f5_executive": 4, "f10_vault": 2, "f19_tradingfloor": 5, "f23_mirrors": 4, "f25_skygarden": 3, "f29_penthouse": 6, "f6_cafeteria": 2, "f17_greenhouse": 2}
 
 # The gentleman with the blunderbuss turns up on every floor but the first: one to three of him,
@@ -23,6 +24,8 @@ GENTLEMEN = {
     "f16_armoury": 3, "f17_greenhouse": 1, "f18_beanworks": 2, "f19_tradingfloor": 2, "f20_generators": 3,
     "f21_lockdown": 2, "f22_cryolab": 1, "f23_mirrors": 2, "f24_strongrooms": 2, "f25_skygarden": 3,
     "f26_morgue": 1, "f27_furnace": 3, "f28_waterworks": 2, "f29_penthouse": 3, "roof": 2,
+    "f31_airlock": 1, "f32_crewring": 2, "f33_hydroponics": 1, "f34_solararray": 2, "f35_cargobay": 2,
+    "f36_reactor": 2, "f37_comms": 1, "f38_observation": 2, "f39_docking": 3, "f40_bridge": 3,
 }
 
 # Which floors get which gadget, and how many. f = fart grenade, F = freeze bomb, j = water bucket.
@@ -39,6 +42,13 @@ GADGETS = {
     "f11_sewers": {"j": 3},
     "f12_kitchen": {"j": 3, "f": 2},
     "f13_basement": {"F": 2},
+    "f31_airlock": {"j": 2},
+    "f33_hydroponics": {"j": 3, "F": 1},
+    "f35_cargobay": {"f": 3},
+    "f36_reactor": {"F": 3, "f": 2},
+    "f38_observation": {"F": 2},
+    "f39_docking": {"j": 2, "f": 2},
+    "f40_bridge": {"F": 2, "f": 2, "j": 2},
     "f15_restrooms": {"f": 4, "j": 3},
     "f16_armoury": {"f": 2, "F": 2, "j": 2},
     "f17_greenhouse": {"j": 3, "f": 2},
@@ -252,6 +262,17 @@ THEMES = {
     "furnace":  ("57514c", "2b2724", "7a7068", "ffc98a", "3c3632", 0.34, 0.30),
     "harbour":  ("cbd8e2", "4e6b82", "8aa2b5", "e4f1fb", "bccddb", 0.52, 0.42),
     "gold":     ("fbf6ea", "c9b27a", "e4d3a3", "fffaec", "f8f1de", 0.62, 0.52),
+    # The station. Everything above 30 is up there, so the light is hard and the sky is black.
+    "airlock":  ("dde6ee", "6e7b88", "9fb0be", "e8f2ff", "10131a", 0.42, 0.62),
+    "crewring": ("e9e2ea", "6b6070", "aa9fb4", "f6efff", "14101c", 0.44, 0.58),
+    "hydro":    ("d6f2e8", "3f7d68", "7fc0a8", "e2fff5", "0d1a18", 0.50, 0.55),
+    "solar":    ("cfd6de", "3a4250", "8d97a8", "dfe9ff", "05070d", 0.34, 0.75),
+    "cargo":    ("c2c6b8", "4d5245", "8d9382", "eaefdf", "0f120e", 0.40, 0.52),
+    "reactor":  ("6b5a74", "2a2230", "9b7fae", "ffd0f2", "160f1c", 0.30, 0.30),
+    "comms":    ("b9c9d6", "38505f", "7d9cb0", "dcefff", "070d14", 0.38, 0.48),
+    "observ":   ("eef4ff", "9aa7bd", "c6d2e6", "f4f8ff", "02040a", 0.46, 0.66),
+    "docking":  ("aeb7bd", "2f363b", "74808a", "d6e2ea", "0a0c10", 0.36, 0.50),
+    "bridge":   ("dfe7f2", "44506a", "97a6c2", "e9f1ff", "080b14", 0.44, 0.56),
 }
 
 
@@ -928,6 +949,39 @@ SPECS = [
          start=["K", "T"], layout={"min_w": 8, "max_w": 12},
          enemies={"a": 4, "R": 2, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 2}, items={"j": 2, "Y": 1, "F": 2, "r": 1, "n": 1, "V": 1, "g": 5, "A": 1, "L": 1},
          waves=[{"after_kills": 9, "count": 5, "armed": 4}, {"after_kills": 18, "count": 6, "armed": 5}], wave_points=5),
+    dict(name="f31_airlock", size=(40, 25), style="spine", seed=31, theme="airlock", title="AIRLOCK",
+         intro="STATION AIRLOCK\\nTHEY WERE EXPECTING THE HELICOPTER.", furnish=["racks", "office"], start=["p"],
+         layout={"min_w": 6, "max_w": 10}, enemies={"a": 5, "u": 2, "q": 2, "x": 1}, items={"p": 2, "k": 2, "g": 2}),
+    dict(name="f32_crewring", size=(44, 27), style="double", seed=32, theme="crewring", title="CREW RING",
+         intro="CREW RING\\nBUNKS, MESS, AND EVERYONE IN THEM.", furnish=["tables", "office", "counters"], start=["K"],
+         enemies={"a": 5, "R": 2, "q": 3, "y": 1, "x": 1}, items={"j": 2, "m": 3, "b": 2, "g": 2, "n": 2}),
+    dict(name="f33_hydroponics", size=(42, 27), style="spine", seed=33, theme="hydro", title="HYDROPONICS",
+         intro="HYDROPONICS\\nTHE ONLY GREEN FOR A HUNDRED MILES.", furnish=["counters", "tables"], glass=6, wet=5, start=["p", "n"],
+         layout={"min_w": 7, "max_w": 12}, enemies={"C": 1, "a": 4, "q": 2, "x": 2, "y": 1}, items={"j": 3, "M": 1, "F": 1, "g": 2, "A": 1}),
+    dict(name="f34_solararray", size=(46, 29), style="bsp", seed=34, theme="solar", title="SOLAR ARRAY", open_sky=True,
+         intro="SOLAR ARRAY\\nNO COVER OUT HERE BUT WHAT THEY BUILT.", furnish=["columns", "racks"], start=["Y", "p"],
+         layout={"min_side": 7, "max_side": 12}, enemies={"N": 3, "a": 4, "R": 2, "H": 1, "q": 2}, items={"V": 1, "F": 1, "g": 3, "L": 1}),
+    dict(name="f35_cargobay", size=(46, 29), style="double", seed=35, theme="cargo", title="CARGO BAY",
+         intro="CARGO BAY\\nEVERY CRATE IS SOMEBODY ELSE'S PROBLEM.", furnish=["racks", "racks", "columns"], start=["T", "r"],
+         enemies={"a": 5, "S": 3, "U": 2, "H": 2, "x": 2}, items={"r": 1, "K": 1, "g": 5, "k": 2, "n": 1}),
+    dict(name="f36_reactor", size=(44, 27), style="bsp", seed=36, theme="reactor", title="REACTOR",
+         intro="REACTOR\\nMIND THE BARRELS. MIND ALL OF THEM.", furnish=["vats", "columns", "racks"], start=["M", "F"],
+         enemies={"a": 4, "R": 3, "S": 2, "N": 1, "y": 2, "C": 1}, items={"g": 9, "F": 2, "V": 1, "r": 1}),
+    dict(name="f37_comms", size=(42, 25), style="spine", seed=37, theme="comms", title="COMMS",
+         intro="COMMS DECK\\nCUT THE SIGNAL BEFORE THEY CALL HOME.", furnish=["office", "racks", "tables"], furnished=1.0, start=["A", "p"],
+         layout={"min_w": 6, "max_w": 10}, enemies={"a": 4, "U": 3, "q": 3, "x": 1, "y": 1}, items={"M": 1, "n": 2, "k": 3, "g": 2, "j": 2}),
+    dict(name="f38_observation", size=(46, 29), style="bsp", seed=38, theme="observ", title="OBSERVATION DECK", open_sky=True,
+         intro="OBSERVATION DECK\\nGLASS ALL ROUND. SO ARE THEY.", furnish=["tables", "columns"], glass=12, start=["Y", "V"],
+         layout={"min_side": 7, "max_side": 12}, enemies={"N": 3, "S": 2, "a": 4, "H": 2, "q": 2}, items={"F": 2, "T": 1, "b": 2, "g": 2}),
+    dict(name="f39_docking", size=(48, 29), style="double", seed=39, theme="docking", title="DOCKING RING",
+         intro="DOCKING RING\\nTHE LAST WAY OFF IS BEHIND THEM.", furnish=["racks", "columns", "office"], start=["K", "T"],
+         layout={"min_w": 7, "max_w": 12}, enemies={"a": 5, "R": 3, "S": 2, "U": 2, "H": 2, "x": 2, "y": 1}, items={"r": 1, "Y": 1, "F": 1, "g": 4, "A": 1},
+         waves=[{"after_kills": 8, "count": 5, "armed": 4}], wave_points=5),
+    dict(name="f40_bridge", size=(50, 31), style="bsp", seed=40, theme="bridge", title="THE BRIDGE",
+         intro="THE BRIDGE\\nEVERYONE LEFT IS IN THIS ROOM.", furnish=["office", "tables", "columns"], glass=6, start=["K", "V"],
+         layout={"min_side": 8, "max_side": 13},
+         enemies={"a": 5, "R": 3, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 2}, items={"Y": 1, "F": 2, "M": 1, "r": 1, "g": 5, "L": 1, "A": 1},
+         waves=[{"after_kills": 10, "count": 6, "armed": 5}, {"after_kills": 20, "count": 6, "armed": 5}], wave_points=6),
 ]
 
 
