@@ -25,6 +25,11 @@ extends Resource
 @export var accel: float = 40.0
 @export var jump_velocity: float = 4.5
 @export var gravity: float = 12.0
+## The orbiters over the open station floors: how many rocks, how big, how high, how many men.
+@export var orbiter_rocks: int = 4
+@export var orbiter_rock_radius: float = 1.9
+@export var orbiter_height: float = 9.5
+@export var orbiter_count: int = 2
 @export var eye_height: float = 1.6
 @export var death_restart_delay: float = 2.4
 @export var ragdoll_speed: float = 0.75
@@ -135,9 +140,6 @@ extends Resource
 @export var scope_fov: float = 14.0
 @export var scope_zoom_speed: float = 9.0
 ## Super gun: a laser. Instant, goes through every dude in line, melts them. Recharges each level.
-@export var super_charges: int = 8
-@export var super_cooldown: float = 0.45
-@export var super_range: float = 70.0
 
 @export_group("More dudes")
 @export var runner_speed: float = 6.4

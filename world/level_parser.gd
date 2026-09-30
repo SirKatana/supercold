@@ -101,6 +101,7 @@ static func parse(text: String, json_text: String = "") -> LevelData:
 			var d: Dictionary = parsed
 			data.intro = str(d.get("intro", ""))
 			data.open_sky = bool(d.get("open_sky", false))
+			data.in_space = bool(d.get("in_space", false))
 			data.exit_kind = StringName(str(d.get("exit", "elevator")))
 			data.boss_kind = StringName(str(d.get("boss", "director")))
 			data.title = str(d.get("title", ""))

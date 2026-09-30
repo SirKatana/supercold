@@ -234,7 +234,7 @@ func _physics_process(delta: float) -> void:
 	if swimming():
 		_swim(delta)
 	elif not is_on_floor():
-		velocity.y -= T.gravity * delta
+		velocity.y -= T.gravity * Game.gravity_scale * delta
 	move_and_slide()
 
 	var real: Vector3 = get_real_velocity()

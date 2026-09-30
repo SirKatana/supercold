@@ -181,7 +181,7 @@ func _physics_process(delta: float) -> void:
 func step_flight(wd: float) -> void:
 	if wd <= 0.0:
 		return
-	velocity.y -= T.throw_gravity * wd
+	velocity.y -= T.throw_gravity * Game.gravity_scale * wd
 	var from: Vector3 = global_position
 	var to: Vector3 = from + velocity * wd
 	var query := PhysicsRayQueryParameters3D.create(from, to, HIT_MASK)

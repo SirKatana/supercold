@@ -10,7 +10,6 @@ signal run_finished
 ## The player stepped out of the arrival elevator. The HUD announces the level on this.
 signal floor_announced(label: String, intro: String)
 signal helper_changed(active: bool)
-signal super_gun_granted
 
 enum State { TITLE, PLAYING, DEAD, CLEARED, ENDING }
 
@@ -28,6 +27,11 @@ const FLOORS: PackedStringArray = [
 	"f31_airlock", "f32_crewring", "f33_hydroponics", "f34_solararray", "f35_cargobay",
 	"f36_reactor", "f37_comms", "f38_observation", "f39_docking", "f40_bridge",
 ]
+
+## A fraction of a g. One on every floor in the tower, `SPACE_GRAVITY` up on the station:
+## the jumps go higher, thrown things sail, and a ragdoll takes its time coming down.
+var gravity_scale: float = 1.0
+const SPACE_GRAVITY: float = 0.38
 
 var state: State = State.TITLE
 var level_root: Node3D
@@ -47,7 +51,6 @@ var deaths_this_floor: int = 0
 var helper_time_left: float = 0.0
 var helper: Helper = null
 ## Won from the Brute. From then on the player starts every floor holding it.
-var has_super_gun: bool = false
 ## Furthest floor reached, for Continue on the title screen.
 var best_floor: int = 0
 ## A run started from the command line for testing. Nothing is saved.
@@ -103,7 +106,6 @@ func start_run(from_floor: int = 0) -> void:
 
 ## Tests: forget the run so one test's deaths and helper do not leak into the next.
 func start_run_state_for_tests() -> void:
-	has_super_gun = false
 	carried = {}
 	testing = false
 	free_helper = false
@@ -224,6 +226,7 @@ func load_level(name_of_level: String) -> bool:
 		deaths_this_floor = 0
 		helper_time_left = 0.0
 	level_name = name_of_level
+	gravity_scale = SPACE_GRAVITY if data.in_space else 1.0
 	kills = 0
 	# Set before anything is built, so nothing in the new level sees the old floor's "cleared".
 	state = State.PLAYING
@@ -253,8 +256,8 @@ func load_level(name_of_level: String) -> bool:
 	arrow.target = data.cell_center(data.exit_cell, 0.0) if data.exit_cell.x >= 0 else Vector3.ZERO
 
 	_place_lurkers()
+	_place_orbiters()
 	_hand_back_what_was_carried()
-	_arm_player_with_super_gun()
 	var index: int = FLOORS.find(level_name)
 	if index > best_floor and not god_mode:
 		best_floor = index
@@ -273,26 +276,6 @@ func load_level(name_of_level: String) -> bool:
 
 # ---------------------------------------------------------------- super gun and progress
 
-## The Brute is down. The gun appears where he fell and is the player's from now on.
-func grant_super_gun(at: Vector3) -> void:
-	has_super_gun = true
-	save_progress()
-	var prize: SuperGun = SuperGun.create()
-	entities_root(self).add_child(prize)
-	prize.global_position = Vector3(at.x, 1.1, at.z)
-	super_gun_granted.emit()
-
-
-func _arm_player_with_super_gun() -> void:
-	if not has_super_gun or player == null:
-		return
-	var gun: SuperGun = SuperGun.create()
-	entities_root(self).add_child(gun)
-	if not player.hands.pick_up(gun):
-		# Hands already full with something brought up in the lift. It waits at their feet.
-		gun.global_position = player.global_position + Vector3(0.3, Pickup.REST_HEIGHT, 0.2)
-
-
 ## Whatever rode up in the lift is back in the player's hand. If it is a weapon, security is waiting.
 func _hand_back_what_was_carried() -> void:
 	guard = null
@@ -301,8 +284,6 @@ func _hand_back_what_was_carried() -> void:
 		return
 	var state: Dictionary = carried
 	carried = {}
-	if StringName(state.get("kind", &"")) == &"super":
-		return      # the next floor hands over a fresh one anyway
 	var item: Pickup = LevelBuilder.create_pickup(StringName(state["kind"]))
 	item.apply_carry_state(state)
 	entities_root(self).add_child(item)
@@ -366,6 +347,55 @@ func _place_lurkers() -> void:
 	lurker.global_position = data.cell_center(farthest, 0.05)
 
 
+## Open floors on the station get a few rocks hanging over them with a man standing on each.
+## He never comes down, so the only answer to him is a long shot.
+func _place_orbiters() -> void:
+	if data == null or not data.in_space or not data.open_sky:
+		return
+	var open_cells: Array[Vector2i] = []
+	for y: int in data.height:
+		for x: int in data.width:
+			var cell := Vector2i(x, y)
+			if not data.is_solid(cell) and data.rows[y][x] not in "PXBw":
+				open_cells.append(cell)
+	if open_cells.size() < 40:
+		return
+	var start: Vector3 = data.cell_center(data.player_start, 0.0)
+	var rocks: Array[Node3D] = []
+	var tries: int = 0
+	while rocks.size() < T.orbiter_rocks and tries < 400:
+		tries += 1
+		var cell: Vector2i = open_cells[randi() % open_cells.size()]
+		var at: Vector3 = data.cell_center(cell, 0.0)
+		# Well away from the lift he walks out of, and spread out from each other.
+		if at.distance_to(start) < 14.0:
+			continue
+		var clear: bool = true
+		for rock: Node3D in rocks:
+			if rock.global_position.distance_to(at) < 11.0:
+				clear = false
+				break
+		if not clear:
+			continue
+		var stone := Planetoid.new()
+		stone.name = "Planetoid"
+		stone.radius = T.orbiter_rock_radius + randf() * 0.8
+		stone.ringed = rocks.size() % 3 == 1
+		entities_root(self).add_child(stone)
+		stone.global_position = at + Vector3.UP * (T.orbiter_height + randf() * 2.5)
+		rocks.append(stone)
+	if rocks.size() < 2:
+		for rock: Node3D in rocks:
+			rock.queue_free()
+		return
+	for i: int in mini(T.orbiter_count, rocks.size()):
+		var flyer := Orbiter.new()
+		flyer.name = "Orbiter"
+		entities_root(self).add_child(flyer)
+		flyer.stand_on(rocks, i)
+		count_new_enemy(flyer)
+
+
 func _post_guard() -> void:
 	var lift: Transform3D = LevelBuilder.elevator_transform(data, data.player_start)
 	var out: Vector3 = -lift.basis.z
@@ -387,7 +417,6 @@ func save_progress() -> void:
 		return
 	var cfg := ConfigFile.new()
 	cfg.set_value("run", "best_floor", best_floor)
-	cfg.set_value("run", "has_super_gun", has_super_gun)
 	cfg.save(PROGRESS_PATH)
 
 
@@ -395,12 +424,10 @@ func load_progress() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(PROGRESS_PATH) == OK:
 		best_floor = int(cfg.get_value("run", "best_floor", 0))
-		has_super_gun = bool(cfg.get_value("run", "has_super_gun", false))
 
 
 func erase_progress() -> void:
 	best_floor = 0
-	has_super_gun = false
 	save_progress()
 
 

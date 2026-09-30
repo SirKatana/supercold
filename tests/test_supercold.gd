@@ -214,7 +214,7 @@ func test_smg_is_automatic_and_sprays() -> void:
 
 
 func test_every_new_gun_has_a_detailed_model() -> void:
-	for gun: Gun in [Smg.create(), Revolver.create(), SniperRifle.create(), SuperGun.create()]:
+	for gun: Gun in [Smg.create(), Revolver.create(), SniperRifle.create()]:
 		var mesh: ArrayMesh = MeshKit.cached(gun.mesh_key(), gun._model)
 		var triangles: int = 0
 		for surface: int in mesh.get_surface_count():
@@ -224,27 +224,7 @@ func test_every_new_gun_has_a_detailed_model() -> void:
 		gun.free()
 
 
-# ---------------------------------------------------------------- super gun
-
-func test_laser_melts_every_dude_in_line_with_no_ragdoll() -> void:
-	var a: PinkDude = _dude(Vector3(0, 0, 0))
-	var b: PinkDude = _dude(Vector3(5, 0, 0), &"shield")
-	var c: PinkDude = _dude(Vector3(10, 0, 0), &"rifle")
-	for d: PinkDude in [a, b, c]:
-		d.set_physics_process(false)
-		d.look_at(d.global_position + Vector3(-5, 0, 0))
-		d._animate(0.0)
-	await wait_physics(3)
-	var gun: SuperGun = SuperGun.create()
-	Game.entities_root(self).add_child(gun)
-	check(gun.fire(_spot + Vector3(-3, 1.1, 0), Vector3.RIGHT, null), "fires")
-	check_eq(gun.ammo, T.super_charges - 1, "one charge spent")
-	for d: Variant in [a, b, c] as Array:
-		check(not is_instance_valid(d) or not (d as PinkDude).alive, "melted")
-	check_eq(get_tree().get_nodes_in_group(&"melts").size(), 3, "three puddles in the making")
-	check_eq(get_tree().get_nodes_in_group(&"ragdolls").size(), 0, "and not one ragdoll")
-	check_eq(BulletPool.for_node(gun).active_count(), 0, "a laser throws no bullet")
-
+# ---------------------------------------------------------------- melting
 
 func test_melting_sinks_the_body_into_a_puddle() -> void:
 	var dude: PinkDude = _dude()
@@ -259,13 +239,3 @@ func test_melting_sinks_the_body_into_a_puddle() -> void:
 	check(melt._skin == null, "the body is gone")
 	check(melt._puddle.scale.x > 0.6, "a puddle is left (%.2f m)" % melt._puddle.scale.x)
 	check(head_before > 1.5, "he was standing when it hit him")
-
-
-func test_laser_stops_at_walls() -> void:
-	var behind_wall: PinkDude = _dude(Vector3(0, 0, -30))
-	behind_wall.set_physics_process(false)
-	await wait_physics(2)
-	var gun: SuperGun = SuperGun.create()
-	Game.entities_root(self).add_child(gun)
-	gun.fire(_spot + Vector3(0, 1.1, 0), Vector3(0, 0, 1), null)
-	check(behind_wall.alive, "wrong direction, and the wall stops it anyway")

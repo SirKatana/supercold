@@ -10,5 +10,6 @@
     "energy": 0.34,
     "sun": 0.75
   },
-  "open_sky": true
+  "open_sky": true,
+  "in_space": true
 }

@@ -630,6 +630,18 @@ static func clone_copy() -> StandardMaterial3D:
 		return m)
 
 
+## The orbiters: a white pressure suit that catches what little light there is up there.
+static func spacesuit() -> StandardMaterial3D:
+	return _cached(&"spacesuit", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.90, 0.93, 0.98)
+		m.roughness = 0.55
+		m.emission_enabled = true
+		m.emission = Color(0.42, 0.62, 0.86)
+		m.emission_energy_multiplier = 0.55
+		return m)
+
+
 static func hot_pink() -> StandardMaterial3D:
 	return _cached(&"hot_pink", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

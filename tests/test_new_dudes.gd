@@ -155,7 +155,7 @@ func test_killing_the_cloner_takes_every_copy_with_him() -> void:
 	check_eq(Game.alive_enemies, 0, "and the floor is clear")
 
 
-func test_brute_is_huge_takes_twelve_hits_calls_waves_and_drops_the_super_gun() -> void:
+func test_brute_is_huge_takes_twelve_hits_and_calls_waves() -> void:
 	check(Game.load_level("f10_vault"), "vault loads")
 	await wait_physics(3)
 	var brute: Brute = get_tree().get_first_node_in_group(&"bosses") as Brute
@@ -168,16 +168,9 @@ func test_brute_is_huge_takes_twelve_hits_calls_waves_and_drops_the_super_gun() 
 	for i: int in 4:
 		brute.on_bullet_hit(null, brute.global_position + Vector3.UP, Vector3.LEFT)
 	check(Game.alive_enemies > before, "a third down, reinforcements")
-	check(not Game.has_super_gun, "no prize yet")
 	for i: int in 8:
 		brute.on_bullet_hit(null, brute.global_position + Vector3.UP, Vector3.LEFT)
 	check(not brute.alive, "down on the twelfth")
-	check(Game.has_super_gun, "the super gun is yours")
-	var prize: bool = false
-	for node: Node in get_tree().get_nodes_in_group(&"pickups"):
-		if node is SuperGun:
-			prize = true
-	check(prize, "and it is lying where he fell")
 
 
 func test_brute_slam_kills_a_player_who_lets_him_close() -> void:
@@ -192,14 +185,6 @@ func test_brute_slam_kills_a_player_who_lets_him_close() -> void:
 		if not Game.player.alive:
 			break
 	check(not Game.player.alive, "both fists")
-
-
-func test_player_starts_later_floors_holding_the_super_gun() -> void:
-	Game.has_super_gun = true
-	check(Game.load_level("f11_sewers"), "level loads")
-	await wait_physics(2)
-	check(Game.player.hands.held is SuperGun, "in hand from the first second")
-	check_eq((Game.player.hands.held as SuperGun).ammo, T.super_charges, "fully charged")
 
 
 func test_warden_needs_three_rounds_through_the_glass() -> void:
@@ -265,7 +250,6 @@ func test_progress_is_saved_and_continue_picks_it_up() -> void:
 	check(Game.load_floor(6), "floor 7 loads")
 	check_eq(Game.best_floor, 6, "remembered")
 	Game.best_floor = 0
-	Game.has_super_gun = false
 	Game.load_progress()
 	check_eq(Game.best_floor, 6, "read back from disk")
 	Game.erase_progress()

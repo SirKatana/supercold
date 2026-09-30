@@ -16,5 +16,7 @@
       "count": 5,
       "armed": 4
     }
-  ]
+  ],
+  "open_sky": true,
+  "in_space": true
 }

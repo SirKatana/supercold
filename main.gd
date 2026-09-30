@@ -10,6 +10,7 @@ const ENDING_SCENE: PackedScene = preload("res://ui/ending.tscn")
 var _title: TitleScreen
 var _ending: EndingScreen
 var _env: Environment
+var _stars: Sky
 var _sun: DirectionalLight3D
 
 
@@ -55,8 +56,6 @@ func _ready() -> void:
 func _start_test_run(level_number: int) -> void:
 	_title.visible = false
 	Game.testing = true
-	if level_number >= 11:
-		Game.has_super_gun = true
 	Game.start_run(level_number - 1)
 	if _flag("helper"):
 		Game.free_helper = true
@@ -68,11 +67,30 @@ func _start_test_run(level_number: int) -> void:
 func _apply_theme(data: LevelData) -> void:
 	var t: Dictionary = data.theme if data != null else {}
 	var sky := Color(str(t.get("sky", "edf0f5")))
-	_env.background_color = sky
+	_apply_sky(sky, data != null and data.in_space)
 	_env.ambient_light_color = Color(str(t.get("ambient", "ffffff")))
 	_env.ambient_light_energy = float(t.get("energy", 0.55))
 	_sun.light_energy = float(t.get("sun", 0.45))
 	RenderingServer.set_default_clear_color(sky)
+
+
+## In the tower the sky is one flat colour. On the station it is a star field, so the open
+## floors and every window have something behind them.
+func _apply_sky(colour: Color, stars: bool) -> void:
+	_env.background_color = colour
+	if not stars:
+		_env.background_mode = Environment.BG_COLOR
+		_env.sky = null
+		return
+	if _stars == null:
+		var material := ShaderMaterial.new()
+		material.shader = load("res://fx/starfield.gdshader")
+		_stars = Sky.new()
+		_stars.sky_material = material
+		_stars.radiance_size = Sky.RADIANCE_SIZE_128
+	(_stars.sky_material as ShaderMaterial).set_shader_parameter(&"base_colour", colour)
+	_env.sky = _stars
+	_env.background_mode = Environment.BG_SKY
 
 
 func _start_run(from_floor: int) -> void:
@@ -274,6 +292,24 @@ func _capture(path: String, after: float) -> void:
 		Game.player.head.rotation.x = deg_to_rad(-8.0)
 		Game.player.hands.visible = false
 		await get_tree().create_timer(float(_arg("at", "1.0")), true, false, true).timeout
+	if _arg("do", "") == "orbiter" and Game.player != null:
+		# Stand under the rocks and look up at whoever is on them.
+		var rock: Node3D = null
+		for node: Node in Game.entities_root(self).get_children():
+			if node is Planetoid:
+				rock = node
+				break
+		if rock != null:
+			var away: Vector3 = Vector3(rock.global_position.x, 0.0, rock.global_position.z) \
+				- Vector3(Game.player.global_position.x, 0.0, Game.player.global_position.z)
+			Game.player.global_position = rock.global_position \
+				- Vector3(0, rock.global_position.y, 0) - away.normalized() * float(_arg("back", "13"))
+			Game.player.look_at(rock.global_position + Vector3(0, 1.0, 0))
+			Game.player.head.rotation.x = Game.player.rotation.x
+			Game.player.rotation.x = 0.0
+			Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED
+			Game.player.hands.visible = false
+		await get_tree().create_timer(float(_arg("at", "1.5")), true, false, true).timeout
 	if _arg("do", "") == "heliview" and Game.player != null:
 		# One machine on its own, nothing else in frame: `--yaw` walks the camera round it.
 		var lone := Helicopter.new()

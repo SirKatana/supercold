@@ -25,7 +25,7 @@ var _arm_tween: Tween
 const ARM_REST_R := Vector3(0.30, -0.35, -0.54)
 ## Holding: the fist is under the crosshair line, not out to the side of it, and the weapon
 # sits on top of it.
-const ARM_HOLD_R := Vector3(0.12, -0.30, -0.56)
+const ARM_HOLD_R := Vector3(0.18, -0.30, -0.56)
 const ARM_REST_L := Vector3(-0.30, -0.35, -0.54)
 ## The off hand on the fore-end of a long gun: forward, inboard, and under the barrel.
 const ARM_SUPPORT_L := Vector3(-0.11, -0.37, -0.74)

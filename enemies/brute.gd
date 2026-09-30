@@ -140,9 +140,3 @@ func _physics_process(delta: float) -> void:
 				p.hit_from(p.global_position - global_position)
 
 
-func die(at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: StringName = &"ragdoll") -> void:
-	var was_alive: bool = alive
-	var here: Vector3 = global_position
-	super(at, push, style)
-	if was_alive:
-		Game.grant_super_gun(here)

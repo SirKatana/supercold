@@ -102,8 +102,7 @@ func test_empty_hands_mean_no_guard() -> void:
 	check(Game.player.hands.held == null, "nothing in hand")
 
 
-func test_super_gun_is_not_contraband() -> void:
-	check(not SuperGun.create().is_weapon(), "security has been told about the super gun")
+func test_security_knows_a_weapon_from_a_mug() -> void:
 	for weapon: Pickup in [Pistol.create(), Rifle.create(), Knife.create(), Ram.create(), FreezeBomb.create(), FartGrenade.create()]:
 		check(weapon.is_weapon(), "%s is a weapon" % weapon.name)
 		weapon.free()

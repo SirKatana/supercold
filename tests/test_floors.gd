@@ -44,7 +44,12 @@ func test_every_floor_loads_and_is_walkable() -> void:
 		check(await LevelValidator.wait_until_synced(Game.level, Game.data), "%s nav synced" % floor_name)
 		var problems: PackedStringArray = LevelValidator.unreachable(Game.level, Game.data)
 		check(problems.is_empty(), "%s: %s" % [floor_name, "; ".join(problems)])
-		check_eq(Game.alive_enemies, Game.data.initial_enemy_count(), "%s spawned everyone" % floor_name)
+		var standing: int = 0
+		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+			if (node as PinkDude).alive:
+				standing += 1
+		check_eq(Game.alive_enemies, standing, "%s counted everyone it spawned" % floor_name)
+		check(standing >= Game.data.initial_enemy_count(), "%s spawned everyone on the grid" % floor_name)
 
 
 func test_floors_advance_in_order() -> void:

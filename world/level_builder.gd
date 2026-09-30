@@ -147,7 +147,7 @@ static func create_pickup(kind: StringName) -> Pickup:
 		return Spear.create()
 	if kind == &"crossbow":
 		return Crossbow.create()
-	if kind == &"smg" or kind == &"revolver" or kind == &"sniper" or kind == &"super":
+	if kind == &"smg" or kind == &"revolver" or kind == &"sniper":
 		return PinkDude.create_gun(kind)
 	return Throwable.create(kind)
 

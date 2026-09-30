@@ -139,8 +139,6 @@ static func create_gun(gun_kind: StringName) -> Gun:
 			return Revolver.create()
 		&"sniper":
 			return SniperRifle.create()
-		&"super":
-			return SuperGun.create()
 		&"crossbow":
 			return Crossbow.create()
 		&"carrot":

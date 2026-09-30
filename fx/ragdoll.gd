@@ -195,7 +195,7 @@ func step(dt: float) -> void:
 	for i: int in count:
 		var velocity: Vector3 = (pos[i] - prev[i]) * DAMPING * ratio
 		prev[i] = pos[i]
-		pos[i] += velocity + Vector3.DOWN * GRAVITY * dt * dt
+		pos[i] += velocity + Vector3.DOWN * GRAVITY * Game.gravity_scale * dt * dt
 
 	# Where is the ground under each joint? One ray each, then the clamp is free to run
 	# inside the solver loop, which is what keeps bones from stretching against the floor.

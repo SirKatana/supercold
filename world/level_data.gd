@@ -34,6 +34,8 @@ var triggers: Array[Vector2i] = []
 
 var intro: String = ""
 var open_sky: bool = false
+## On the station: stars behind the windows and a fraction of the pull.
+var in_space: bool = false
 ## &"elevator" or &"helipad"
 var exit_kind: StringName = &"elevator"
 ## {after_kills: int, on_trigger: bool, count: int, armed: int}

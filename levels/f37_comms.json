@@ -9,5 +9,6 @@
     "sky": "070d14",
     "energy": 0.38,
     "sun": 0.48
-  }
+  },
+  "in_space": true
 }

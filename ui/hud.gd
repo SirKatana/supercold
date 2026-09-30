@@ -123,10 +123,6 @@ func _ready() -> void:
 	_boss_name.add_theme_font_size_override(&"font_size", 22)
 	_boss_name.add_theme_color_override(&"font_color", Color(0.04, 0.04, 0.05))
 	add_child(_boss_name)
-	Game.super_gun_granted.connect(func() -> void:
-		_words.flash(["SUPER", "GUN"], 0.7, 2)
-		_hint.text = "THE SUPER GUN IS YOURS. IT MELTS THEM.")
-
 	_words = WordFlash.new()
 	add_child(_words)
 

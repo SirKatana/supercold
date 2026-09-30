@@ -323,3 +323,21 @@ One line per call made in auto mode, with why.
 - Ten new themes, all with a near-black sky and a hard sun, so the station reads as being
   outside rather than in the tower. A test still fails if two floors share colours.
 - Tests that counted thirty floors now scale off `Game.FLOORS.size()` instead of the literal.
+
+## The station, and no more super gun
+
+- The super gun is gone at the user's request: the class, its tuning, the Brute's grant, the
+  saved `has_super_gun`, the HUD flash and the tests that fired it. `&"melt"` and
+  `PinkDude.on_laser` stay, because that is still how a melt death works and the Brute's own
+  laser damage reads it.
+- The hold moved 6 cm right (`ARM_HOLD_R.x` 0.12 to 0.18): the user said it needed a little
+  more right and that would be it.
+- `fx/starfield.gdshader` replaces the flat background on any floor whose sidecar says
+  `in_space`. Stars are hashed per cell in three sizes; the milky band uses smoothed value
+  noise, because hashing `floor(dir * n)` straight off left the band as visible facets.
+- `Game.gravity_scale` is 1.0 in the tower and 0.38 on the station, read by the player, thrown
+  pickups and the ragdoll solver.
+- `enemies/orbiter.gd` keeps the dude FSM but replaces `_physics_process` with flight: he never
+  touches the navmesh, stands on a `Planetoid`, hops between rocks on an arc and carries a
+  sniper rifle. He is counted with `count_new_enemy`, so the floors test now takes its head
+  count from the tree rather than from the ASCII grid.
