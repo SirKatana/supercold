@@ -28,7 +28,9 @@ func test_third_person_moves_the_camera_back_and_shows_the_body() -> void:
 	check(me.third_person, "switched")
 	check(me.camera.position.length() > 1.0, "the camera is behind him (%.2f m)" % me.camera.position.length())
 	check(me.camera.position.z > 0.0, "behind, not in front")
-	check(not me.hands.visible, "and the first-person arms are put away")
+	# The arms go, but whatever is in them stays: it moves into the body's own hand.
+	check(not me.hands._arm_r.visible, "the first-person arms are put away")
+	check(not me.hands._arm_l.visible, "both of them")
 	me.set_third_person(false)
 	await wait_physics(2)
 	check_eq(me.camera.position, Vector3.ZERO, "and back into his head again")

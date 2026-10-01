@@ -59,6 +59,11 @@ var material: Material
 var names: Array[StringName] = Humanoid.JOINTS
 var pos: PackedVector3Array = []
 var prev: PackedVector3Array = []
+## A body that has stopped moving can be picked up and carried, and thrown at somebody. While
+## it is being carried nothing about it ticks: it does not fall, and it does not shatter.
+var carried_by: Node3D = null
+## Seconds left in which a thrown body knocks over whoever it lands on.
+var thrown_for: float = 0.0
 
 var _links: Array = []
 var _skin: Humanoid
@@ -160,9 +165,15 @@ func motion() -> float:
 
 
 func _physics_process(delta: float) -> void:
+	if carried_by != null and is_instance_valid(carried_by):
+		_ride_along()
+		return
 	var dt: float = (TimeManager.world_delta(delta) if use_world_time else delta) * speed
 	if dt <= 0.0:
 		return
+	if thrown_for > 0.0:
+		thrown_for = maxf(0.0, thrown_for - dt)
+		_knock_over_whoever_it_lands_on()
 	_age += dt / speed
 	if shatter_after >= 0.0 and _age >= shatter_after:
 		shatter()
@@ -171,6 +182,57 @@ func _physics_process(delta: float) -> void:
 		return    # lying still: stop simulating, keep counting toward the shatter
 	step(dt)
 	_still_frames = _still_frames + 1 if motion() < 0.06 else 0
+
+
+## Can this be lifted? Only once it has come to rest: catching a body mid-fall would be a
+## different trick altogether.
+func liftable() -> bool:
+	return carried_by == null and _still_frames > 20
+
+
+## Taken up. The whole body is moved to `at` and held there, out of the solver's hands.
+func lift(who: Node3D) -> void:
+	carried_by = who
+	thrown_for = 0.0
+
+
+## Carried: the body hangs where it is put, keeping the shape it settled into.
+func _ride_along() -> void:
+	var hold: Vector3 = carried_by.global_position + Vector3(0, 1.15, 0) \
+		- carried_by.global_transform.basis.z * 1.0
+	var middle: Vector3 = point(&"chest")
+	var shift: Vector3 = hold - middle
+	for i: int in pos.size():
+		pos[i] += shift
+		prev[i] += shift
+	_skin.apply(pos)
+
+
+## Thrown. Every point gets the same push, which the Verlet solver reads as a velocity.
+func throw_body(impulse: Vector3) -> void:
+	carried_by = null
+	thrown_for = T.body_throw_danger
+	_still_frames = 0
+	var step_time: float = 1.0 / 60.0
+	for i: int in pos.size():
+		prev[i] = pos[i] - impulse * step_time
+
+
+## A body in flight takes the legs from anybody it reaches. It does not kill: they get up.
+func _knock_over_whoever_it_lands_on() -> void:
+	var chest: Vector3 = point(&"chest")
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		var dude: PinkDude = node as PinkDude
+		if dude == null or not dude.alive or dude.flung:
+			continue
+		if dude.global_position.distance_to(chest) > T.body_throw_reach:
+			continue
+		var away: Vector3 = (dude.global_position - chest).normalized()
+		dude.shove(Vector3(away.x, 0.0, away.z).normalized() * T.blunt_shove + Vector3.UP * T.blunt_lift)
+		dude.stun(T.throw_stun)
+		Sfx.play(&"punch", chest)
+		thrown_for = 0.0
+		return
 
 
 ## Bursts the body into shards of its own colour at the big joints, and removes it.

@@ -99,7 +99,9 @@ func _spill(away: Vector3) -> void:
 		var at: Vector3 = global_position + Vector3(0, randf_range(-0.4, 0.9), 0) \
 			+ global_transform.basis.z * along
 		var toss: Vector3 = away * randf_range(1.2, 3.4) + Vector3.UP * randf_range(0.6, 2.2)
-		Shatter.burst(root, at, 1, _stock_material(i), _stock_size(), toss, randf_range(2.5, 4.5))
+		# The last argument is the shard's size in metres. Passing the throw strength there
+		# filled the room with four-metre slabs of yellow.
+		Shatter.burst(root, at, 1, _stock_material(i), _stock_size(), toss, _stock_shard())
 	_drop_the_pots(away, length, root)
 
 
@@ -124,12 +126,17 @@ func _stock_material(index: int) -> Material:
 		_: return Mats.book(index * 7 + 3)
 
 
+## How far from the shelf a piece may start, and how big each piece is.
 func _stock_size() -> Vector3:
+	return Vector3(0.10, 0.08, 0.10)
+
+
+func _stock_shard() -> float:
 	match stock:
-		&"suits": return Vector3(0.09, 0.09, 0.09)
-		&"cleaning": return Vector3(0.08, 0.10, 0.08)
-		&"store": return Vector3(0.12, 0.10, 0.12)
-		_: return Vector3(0.11, 0.03, 0.08)      # a book, on its side
+		&"suits": return 0.13
+		&"cleaning": return 0.14
+		&"store": return 0.16
+		_: return 0.11      # a book
 
 
 ## Anybody caught under a run of shelves comes out of it limping.

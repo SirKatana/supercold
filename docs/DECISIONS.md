@@ -543,3 +543,17 @@ One line per call made in auto mode, with why.
   flat** -- a pot that lands at a man's feet landed on him.
 - Neither kills. `PinkDude.break_a_leg()` puts him down for `limp_stun` and leaves him
   `limping`: `move_speed()` drops to `limp_speed_scale` and the walk gets a hitch.
+
+## Bodies, and the view behind you
+
+- A settled ragdoll can be picked up (`Ragdoll.liftable()`, E) and thrown (Q). Carried, the
+  solver is switched off and the whole body is shifted to hang in front of the player; thrown,
+  every point gets the same push, which the Verlet solver reads as a velocity. A body in flight
+  knocks whoever it reaches off his feet for `body_throw_danger` seconds. It never kills: they
+  get up. Catching one mid-fall is deliberately not allowed.
+- Third person keeps the held weapon: the arms are hidden rather than the whole viewmodel, and
+  the weapon is placed in the body's own right hand from its joints.
+- In a duct the boom tucks in to `tps_crawl_boom` with no lift at all, or the camera ends up
+  in the wall. The kick works in there, which it always did.
+- `Shatter.burst`'s last argument is the shard's size in metres. Passing the throw strength
+  there filled the room with four-metre slabs, which is what the collapsing shelves were doing.

@@ -182,16 +182,18 @@ func _run_the_boom(delta: float) -> void:
 	if not third_person:
 		return
 	var from: Vector3 = head.global_position
-	var back: Vector3 = head.global_transform.basis * Vector3(T.tps_shoulder, T.tps_lift, 1.0)
-	var want: float = T.tps_boom
-	var query := PhysicsRayQueryParameters3D.create(from, from + back.normalized() * (T.tps_boom + 0.3), 1 | 32)
+	# Flat on your belly in a duct the camera has to stay in the tunnel with you.
+	var lift: float = 0.0 if crawling else T.tps_lift
+	var back: Vector3 = head.global_transform.basis * Vector3(T.tps_shoulder, lift, 1.0)
+	var want: float = T.tps_crawl_boom if crawling else T.tps_boom
+	var query := PhysicsRayQueryParameters3D.create(from, from + back.normalized() * (want + 0.3), 1 | 32)
 	query.exclude = [get_rid()]
 	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():
 		want = maxf(0.25, from.distance_to(hit["position"]) - 0.3)
 	# Out slowly, in at once: a wall should never put the camera inside the player's head.
 	_boom = want if want < _boom else lerpf(_boom, want, clampf(delta * 6.0, 0.0, 1.0))
-	camera.position = Vector3(T.tps_shoulder, T.tps_lift, 1.0).normalized() * _boom
+	camera.position = Vector3(T.tps_shoulder, lift, 1.0).normalized() * _boom
 
 
 func chest_position() -> Vector3:

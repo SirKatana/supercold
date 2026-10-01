@@ -12,6 +12,8 @@ const PUNCH_MASK: int = 1 | 4 | 32
 var player: Player
 var held: Pickup = null
 var punch_cooldown_left: float = 0.0
+## The dead man currently over your shoulder, if any.
+var carried_body: Ragdoll = null
 var kick_cooldown_left: float = 0.0
 
 var _hold_point: Node3D
@@ -118,8 +120,13 @@ func _physics_process(delta: float) -> void:
 	# A ram or a thrown gun may have been freed by the input handled just above.
 	var can_scope: bool = is_instance_valid(held) and held is Gun and (held as Gun).has_scope
 	player.fx.scope_wanted = can_scope and Input.is_action_pressed(&"secondary")
-	# No first-person arms while the camera is behind him: he already has a pair.
-	visible = player.fx.scope_amount < 0.55 and player.alive and not player.third_person
+	# The arms go away when the camera is behind him -- he already has a pair -- but whatever
+	# he is holding does not: it moves into his body's own right hand instead.
+	visible = player.fx.scope_amount < 0.55 and player.alive
+	_arm_r.visible = not player.third_person
+	_arm_l.visible = not player.third_person and (_supporting or held == null) and player.shield == null
+	if player.third_person:
+		_hold_in_the_body_hand()
 	if Input.is_action_just_pressed(&"kick"):
 		kick()
 	if Input.is_action_just_pressed(&"interact"):
@@ -196,6 +203,8 @@ func secondary() -> void:
 
 func interact() -> void:
 	var target: Pickup = find_target()
+	if target == null and carried_body == null and _lift_a_body():
+		return
 	if target == null:
 		# Nothing to pick up: take a grate off, or climb into the duct behind one.
 		if not _pull_off_a_grate():
@@ -333,7 +342,15 @@ func kick() -> bool:
 	return true
 
 
+## A body in your arms goes before anything else does.
 func throw_held() -> void:
+	if carried_body != null and is_instance_valid(carried_body):
+		var dir: Vector3 = player.aim_direction()
+		carried_body.throw_body(dir * T.body_throw_speed + Vector3.UP * 1.6)
+		carried_body = null
+		TimeManager.burst(T.burst_action, T.burst_strength_throw)
+		Sfx.play(&"throw")
+		return
 	if held == null:
 		return
 	var item: Pickup = held
@@ -352,6 +369,48 @@ func pick_up(item: Pickup) -> bool:
 	TimeManager.burst(T.burst_pickup, T.burst_strength_pickup)
 	Sfx.play(&"pickup")
 	return true
+
+
+## Picks up the nearest body that has finished falling. Returns true if one was lifted.
+func _lift_a_body() -> bool:
+	var best: Ragdoll = null
+	var best_distance: float = T.body_lift_range
+	for node: Node in get_tree().get_nodes_in_group(&"ragdolls"):
+		var body: Ragdoll = node as Ragdoll
+		if body == null or not body.liftable():
+			continue
+		var distance: float = body.point(&"chest").distance_to(player.global_position)
+		if distance < best_distance:
+			best_distance = distance
+			best = body
+	if best == null:
+		return false
+	best.lift(player)
+	carried_body = best
+	TimeManager.burst(T.burst_pickup, T.burst_strength_pickup)
+	Sfx.play(&"pickup")
+	return true
+
+
+## Third person: put the held thing in the hand everybody can see, worked out from the body's
+## own joints the same way a pink dude's hand anchor is.
+func _hold_in_the_body_hand() -> void:
+	if held == null or not is_instance_valid(held) or player.body_joints.is_empty():
+		return
+	var wrist: Vector3 = player.body_joints[Humanoid.index_of(&"wrist_r")]
+	var hand: Vector3 = player.body_joints[Humanoid.index_of(&"hand_r")]
+	var elbow: Vector3 = player.body_joints[Humanoid.index_of(&"elbow_r")]
+	var forward: Vector3 = (wrist - elbow).normalized()
+	if forward.length() < 0.5:
+		return
+	var up: Vector3 = Vector3.UP if absf(forward.y) < 0.95 else -player.global_transform.basis.z
+	var palm: Vector3 = wrist.lerp(hand, 0.5)
+	# Pointed the way he is facing rather than the way his forearm happens to hang: he is
+	# holding it out in front of him, not letting it dangle.
+	var aim: Vector3 = -player.global_transform.basis.z
+	var frame := Basis.looking_at(aim, up)
+	held.global_transform = Transform3D(frame, palm + aim * 0.26 + Vector3(0, 0.16, 0)) \
+		* Transform3D(Basis.from_euler(held.hold_euler), held.hold_offset)
 
 
 ## Best available pickup inside the reach cone, with a clear line to it.

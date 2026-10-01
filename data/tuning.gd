@@ -47,10 +47,18 @@ extends Resource
 @export var shelf_heap_height: float = 0.55
 @export var shelf_crush_radius: float = 1.4
 @export var pot_hurt_radius: float = 1.3
+## Carrying a body: how far it can be picked up from, how hard it is thrown, how long it stays
+## dangerous in flight and how close it has to get to knock somebody down.
+@export var body_lift_range: float = 2.4
+@export var body_throw_speed: float = 11.0
+@export var body_throw_danger: float = 3.5
+@export var body_throw_reach: float = 1.5
 ## Third person (T): straight behind him and a little above, not off one shoulder.
-@export var tps_boom: float = 3.4
+@export var tps_boom: float = 3.0
 @export var tps_shoulder: float = 0.0
-@export var tps_lift: float = 0.62
+@export var tps_lift: float = 0.22
+## In a duct there is nowhere to put a camera: it tucks right in behind his head.
+@export var tps_crawl_boom: float = 0.85
 ## How close an open window has to be for a punch to put somebody through it.
 @export var window_punch_reach: float = 3.2
 @export var blunt_lift: float = 2.1

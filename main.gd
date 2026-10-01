@@ -834,6 +834,10 @@ func _capture(path: String, after: float) -> void:
 		await get_tree().create_timer(0.1, true, false, true).timeout
 	if _arg("do", "") == "tps" and Game.player != null:
 		Game.player.set_third_person(true)
+		if _arg("with", "") != "":
+			var carried: Pickup = LevelBuilder.create_pickup(StringName(_arg("with", "")))
+			Game.entities_root(self).add_child(carried)
+			Game.player.hands.pick_up(carried)
 		if _flag("walk"):
 			Game.player.global_position += -Game.player.global_transform.basis.z * 3.0
 		await get_tree().create_timer(float(_arg("at", "0.6")), true, false, true).timeout
