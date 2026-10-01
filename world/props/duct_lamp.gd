@@ -1,10 +1,12 @@
 class_name DuctLamp
 extends Node3D
-## A little lamp in the roof of a duct, of the sort nobody has changed in years. It buzzes on
-## and off at its own rate, so a tunnel is never evenly lit and never quite dark either.
+## A little lamp in the roof of a duct, of the sort nobody has changed in years. It is mostly
+## on, with the odd blink: flickering it every few frames made the whole tunnel strobe, and the
+## light only updates when it actually changes.
 
 var _phase: float = 0.0
 var _rate: float = 1.0
+var _on: bool = true
 var _lamp: OmniLight3D
 var _glass: MeshInstance3D
 var _bright: StandardMaterial3D
@@ -13,7 +15,7 @@ var _dim: StandardMaterial3D
 
 func _ready() -> void:
 	_phase = randf() * 10.0
-	_rate = randf_range(0.6, 2.4)
+	_rate = randf_range(0.5, 1.1)
 	_bright = Mats.lift_light()
 	_dim = Mats.gunmetal()
 	var mesh := MeshInstance3D.new()
@@ -45,8 +47,11 @@ static func _model(kit: MeshKit) -> void:
 
 func _process(delta: float) -> void:
 	_phase += delta * _rate
-	# Mostly on, with a stutter: two quick drops and a longer dead spell now and then.
-	var wave: float = sin(_phase * 5.3) * sin(_phase * 1.7 + 1.1)
-	var on: bool = wave > -0.55 and fmod(_phase, 9.0) > 0.7
-	_lamp.light_energy = 0.5 if on else 0.03
+	# One short blink every several seconds, and nothing in between.
+	var blink: float = fmod(_phase, 7.4)
+	var on: bool = blink > 0.22
+	if on == _on:
+		return      # nothing to write: a light that is set every frame costs every frame
+	_on = on
+	_lamp.light_energy = 0.55 if on else 0.05
 	_glass.material_override = _bright if on else _dim

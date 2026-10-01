@@ -21,6 +21,7 @@ var _clock: float = 0.0
 var _drift: float = 0.0
 var _turn: float = 0.0
 var _roll_phase: float = 0.0
+var _frame: int = 0
 
 
 func _ready() -> void:
@@ -38,6 +39,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_inside_tree():
 		return
+	_frame += 1
 	var wd: float = TimeManager.world_delta(delta)
 	if wd <= 0.0:
 		_pose(0.0)      # still, but still floating where it should be
@@ -48,12 +50,17 @@ func _physics_process(delta: float) -> void:
 	if offset > run_length * 0.5:
 		offset = -run_length * 0.5
 		sideways = (randf() - 0.5) * 1.2
-	_pose(wd)
+	# Moving it is cheap; solving and applying twenty-one joints is not. Far away, that part
+	# happens every fourth frame.
+	var watcher: Player = Game.player
+	var close: bool = watcher == null or not is_instance_valid(watcher) \
+		or global_position.distance_to(watcher.global_position) <= T.sewer_body_detail
+	_pose(wd, close or _frame % 4 == 0)
 
 
 ## Face up, limbs spread, rolling with the water and still moving: an arm sweeps, a knee comes
 ## up, the body turns. Dead enough, but not a plank.
-func _pose(_wd: float) -> void:
+func _pose(_wd: float, apply_it: bool = true) -> void:
 	var bob: float = sin(_clock * 0.9 + _roll_phase) * 0.05
 	var roll: float = sin(_clock * 0.55 + _roll_phase) * 0.26
 	var yaw: float = _turn * _clock + (0.0 if along_x else PI * 0.5)
@@ -70,6 +77,8 @@ func _pose(_wd: float) -> void:
 	var right: float = 0.45 + 0.30 * sin(_clock * 0.8 + _roll_phase)
 	var left: float = 0.45 + 0.30 * sin(_clock * 0.7 + _roll_phase + 2.1)
 	var kick: float = 0.12 * maxf(sin(_clock * 0.6 + _roll_phase), 0.0)
+	if not apply_it:
+		return
 	var joints: PackedVector3Array = Humanoid.to_world(
 		Humanoid.pose(kick, kick * 2.0, right, left, 0.0, true), at, 1.0)
 	_skin.apply(joints)

@@ -9,6 +9,9 @@ extends RefCounted
 const HEIGHT: float = 1.15
 const WIDTH: float = 1.10
 const GRATE_THICKNESS: float = 0.09
+## How much smaller than a cell the duct's own slabs are. Exactly a cell and their faces sit in
+## the same plane as the wall next door, which flickers wherever the two are seen edge on.
+const SHRINK: float = 0.04
 
 
 ## Builds every duct cell and its grates. `geometry` takes the solid parts (they are world
@@ -37,7 +40,7 @@ static func build(data: LevelData, geometry: Node3D, entities: Node3D) -> void:
 			pan.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			geometry.add_child(pan)
 			# The wall above the tunnel, so a duct still reads as a wall from the room.
-			_slab(geometry, Vector3(cell, T.wall_height - HEIGHT, cell),
+			_slab(geometry, Vector3(cell - SHRINK, T.wall_height - HEIGHT, cell - SHRINK),
 				centre + Vector3(0, HEIGHT + (T.wall_height - HEIGHT) * 0.5, 0), true)
 			# Which way does the tunnel run through this cell? A cell can connect on both
 			# axes, and then it is an open junction: no side walls at all, or they would
@@ -69,14 +72,14 @@ static func build(data: LevelData, geometry: Node3D, entities: Node3D) -> void:
 						var across := Vector3(0, 0, jamb) if along_x else Vector3(jamb, 0, 0)
 						_slab(geometry, Vector3(GRATE_THICKNESS, HEIGHT, side) if along_x else Vector3(side, HEIGHT, GRATE_THICKNESS),
 							centre + offset * 0.92 + across * (cell - side) * 0.5 + Vector3(0, HEIGHT * 0.5, 0), true)
-					_slab(geometry, Vector3(cell, T.wall_height - HEIGHT, GRATE_THICKNESS) if not along_x else Vector3(GRATE_THICKNESS, T.wall_height - HEIGHT, cell),
+					_slab(geometry, Vector3(cell - SHRINK, T.wall_height - HEIGHT, GRATE_THICKNESS) if not along_x else Vector3(GRATE_THICKNESS, T.wall_height - HEIGHT, cell - SHRINK),
 						centre + offset * 0.92 + Vector3(0, HEIGHT + (T.wall_height - HEIGHT) * 0.5, 0), true)
 				else:
 					# Solid that way: cap the end of the tunnel. The cap is thin along the
 					# direction it faces and as wide as the cell across it: the other way round
 					# and it lies across the tunnel and seals it.
-					_slab(geometry, Vector3(GRATE_THICKNESS, HEIGHT, cell) if along_x else Vector3(cell, HEIGHT, GRATE_THICKNESS),
-						centre + offset - Vector3(dir.x, 0, dir.y) * GRATE_THICKNESS * 0.5 + Vector3(0, HEIGHT * 0.5, 0), true)
+					_slab(geometry, Vector3(GRATE_THICKNESS, HEIGHT, cell - SHRINK) if along_x else Vector3(cell - SHRINK, HEIGHT, GRATE_THICKNESS),
+						centre + offset - Vector3(dir.x, 0, dir.y) * (GRATE_THICKNESS * 0.5 + SHRINK) + Vector3(0, HEIGHT * 0.5, 0), true)
 			if not junction:
 				# A straight length: narrow it to `WIDTH` with a cheek down each side.
 				for cheek: float in [-1.0, 1.0]:

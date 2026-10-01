@@ -38,6 +38,8 @@ extends Resource
 @export var kick_shove: float = 7.4
 @export var kick_lift: float = 3.0
 @export var kick_camera: float = 0.09
+## How long the leg is out, real seconds: the swing is the body's, not a viewmodel's.
+@export var kick_swing: float = 0.42
 ## How close an open window has to be for a punch to put somebody through it.
 @export var window_punch_reach: float = 3.2
 @export var blunt_lift: float = 2.1
@@ -117,6 +119,8 @@ extends Resource
 @export var pool_depth: float = 2.2
 ## How fast what is floating in the sewer goes past, metres of world time.
 @export var sewer_drift: float = 0.42
+## Past this many metres a floating body is posed a quarter as often.
+@export var sewer_body_detail: float = 14.0
 @export var swim_speed: float = 3.0
 @export var swim_up_speed: float = 3.2
 @export var swim_sink_speed: float = 1.4

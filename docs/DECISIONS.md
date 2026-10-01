@@ -472,3 +472,22 @@ One line per call made in auto mode, with why.
   middle of the next kick.
 - The lurker's grab now throws the view about, drags it round to face him, and he keeps
   scrabbling while he has hold of you.
+
+## The kick is the body's leg, and the gun is in the fist
+
+- The kick used a separate viewmodel leg floating in front of the camera. It is the player's
+  own right leg now: `Player.start_kick()` runs a timer and `_swing_the_leg()` solves hip,
+  knee and ankle with `Humanoid.two_bone`, so the joints stay joined and the knee bends the
+  right way.
+- The grip point and the fist were two unrelated numbers that only lined up by luck.
+  `Hands._grip_home()` works the grip out from the arm's own transform and `FIST_IN_ARM`, and
+  the support hand is placed from the grip rather than guessed, so a weapon is always in the
+  hand instead of near it.
+- The vent walls flickered because the duct's slabs were exactly a cell across and shared a
+  plane with the wall boxes next door. `VentDuct.SHRINK` keeps them a few centimetres inside.
+- The duct lamps rewrote a light and a material every frame and strobed the tunnel. One short
+  blink every seven seconds, written only when it changes, and one lamp every fifth cell
+  instead of every third.
+- A floating sewer body moves every frame but only solves and applies its twenty-one joints
+  every fourth one once it is more than `sewer_body_detail` away.
+- The AK's magazine was `Mats.steel()`, which reads as a white brick hanging off the gun.

@@ -115,7 +115,7 @@ func _model(kit: MeshKit) -> void:
 	for i: int in 6:
 		var angle: float = 0.02 + i * 0.105
 		var at := Vector3(0, -0.030 - i * 0.034, -0.060 - i * i * 0.0028)
-		kit.box(Vector3(0.028, 0.038, 0.066), at, steel, Vector3(angle, 0, 0))
+		kit.box(Vector3(0.028, 0.038, 0.066), at, dark, Vector3(angle, 0, 0))   # steel read as a white brick
 		for side: float in [-1.0, 1.0]:
 			kit.box(Vector3(0.002, 0.030, 0.006), at + Vector3(0.0148 * side, 0, -0.018), bright, Vector3(angle, 0, 0))
 			kit.box(Vector3(0.002, 0.030, 0.006), at + Vector3(0.0148 * side, 0, 0.014), bright, Vector3(angle, 0, 0))

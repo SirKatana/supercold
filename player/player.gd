@@ -44,6 +44,8 @@ var held_by: Node3D = null
 ## Being carried by something that drives his position itself: the helicopter off the roof.
 ## Gravity and movement are off while it is true, or he falls out of the cabin.
 var riding: bool = false
+## Seconds left in the kick's swing. The leg is the body's own, posed in `_pose_body`.
+var kick_left: float = 0.0
 
 var _crawl_bob: float = 0.0
 var _shape: CollisionShape3D
@@ -119,7 +121,39 @@ func _pose_body(delta: float) -> void:
 	# Set back a little so the camera sits in front of the chest, not inside it.
 	var at := Transform3D(global_transform.basis, global_position + global_transform.basis.z * 0.16)
 	body_joints = Humanoid.to_world(Humanoid.pose(_walk_phase, moving, 0.0, 0.0, 0.0), at, 1.0)
+	if kick_left > 0.0:
+		kick_left = maxf(0.0, kick_left - delta)
+		_swing_the_leg()
 	body.apply(body_joints)
+
+
+## The kick is the player's own right leg, solved at the knee so the joints stay joined. A
+## separate viewmodel leg floating in front of the camera is not a leg.
+func _swing_the_leg() -> void:
+	var along: float = 1.0 - kick_left / T.kick_swing
+	# Out fast, back slower: a snap rather than a sweep.
+	var reach: float = sin(clampf(along, 0.0, 1.0) * PI) if along < 1.0 else 0.0
+	reach = pow(reach, 0.65)
+	var hip: Vector3 = body_joints[Humanoid.index_of(&"hip_r")]
+	var forward: Vector3 = -global_transform.basis.z
+	var thigh: float = hip.distance_to(body_joints[Humanoid.index_of(&"knee_r")])
+	var shin: float = body_joints[Humanoid.index_of(&"knee_r")].distance_to(body_joints[Humanoid.index_of(&"ankle_r")])
+	var planted: Vector3 = body_joints[Humanoid.index_of(&"ankle_r")]
+	var out: Vector3 = hip + forward * (thigh + shin) * 0.92 + Vector3.UP * 0.30
+	var goal: Vector3 = planted.lerp(out, reach)
+	# The knee leads upward and forward, which is what keeps it bending the right way.
+	var pole: Vector3 = forward * 1.0 + Vector3.UP * 0.55
+	var solved: Array[Vector3] = Humanoid.two_bone(hip, goal, thigh, shin, pole)
+	body_joints[Humanoid.index_of(&"knee_r")] = solved[0]
+	body_joints[Humanoid.index_of(&"ankle_r")] = solved[1]
+	var shin_dir: Vector3 = (solved[1] - solved[0]).normalized()
+	var toe_out: Vector3 = forward.lerp(shin_dir, 0.35).normalized()
+	body_joints[Humanoid.index_of(&"toe_r")] = solved[1] + toe_out * 0.20
+
+
+## Starts the kick's swing. `Hands` calls it; the leg is posed in `_pose_body`.
+func start_kick() -> void:
+	kick_left = T.kick_swing
 
 
 func chest_position() -> Vector3:

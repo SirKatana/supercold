@@ -33,21 +33,16 @@ const ARM_SUPPORT_L := Vector3(-0.11, -0.37, -0.74)
 ## How far the forearms pitch: the elbow drops away toward the bottom of the screen and the
 ## hand comes up to the gun.
 const ARM_PITCH: float = 0.46
-## Where a held weapon sits, in the Hands node's own space: right of the crosshair, below it,
-## and far enough forward to clear the lens. The fist is placed under this, not the other way
-## round, so nothing the arm does can roll the gun.
-const GRIP := Vector3(0.17, -0.20, -0.62)
+## Where the fist closes, in the arm's own space: between the knuckles and the thumb. The grip
+## point is worked out from this and the arm's transform, so the weapon is always in the hand
+## rather than near it. Two unrelated numbers never line up twice.
+const FIST_IN_ARM := Vector3(0.0, 0.012, -0.178)
 ## A rifle is a metre long and the hand holds it near the back, so held at the same spot as a
 ## pistol its butt ends up inside the camera. Long guns are pushed forward by this much.
 const LONG_GUN_PUSH: float = 0.26
 
 var _supporting: bool = false
-var _leg: Node3D
-var _leg_tween: Tween
 
-## Where the kicking leg waits and where it lands.
-const LEG_REST := Vector3(0.14, -0.62, -0.55)
-const LEG_OUT := Vector3(0.05, -0.24, -1.00)
 
 
 func _ready() -> void:
@@ -58,8 +53,8 @@ func _ready() -> void:
 	# into the middle of the screen.
 	_hold_point = Node3D.new()
 	_hold_point.name = "HoldPoint"
-	_hold_point.position = GRIP
 	add_child(_hold_point)
+	_hold_point.position = _grip_home()
 
 
 ## A forearm and a closed fist, built out of round parts and merged into one mesh. Boxes read
@@ -318,7 +313,7 @@ func kick() -> bool:
 	kick_cooldown_left = T.kick_cooldown
 	TimeManager.burst(T.burst_action, T.burst_strength_punch)
 	Sfx.play(&"punch", player.global_position)
-	_animate_kick()
+	player.start_kick()
 	player.fx.kick(T.kick_camera)
 	var from: Vector3 = player.aim_origin()
 	var query := PhysicsRayQueryParameters3D.create(from, from + player.aim_direction() * T.kick_range, PUNCH_MASK)
@@ -397,8 +392,7 @@ func _set_held(item: Pickup) -> void:
 	held = item
 	held_changed.emit(item)
 	_arm_r.position = ARM_HOLD_R if item != null else ARM_REST_R
-	var long_gun: bool = item is Gun and (item as Gun).two_handed
-	_hold_point.position = GRIP + (Vector3(0, 0, -LONG_GUN_PUSH) if long_gun else Vector3.ZERO)
+	_hold_point.position = _grip_home()
 	_pose_support_arm(item is Gun and (item as Gun).two_handed)
 	if item is Gun:
 		var pistol: Gun = item
@@ -432,10 +426,13 @@ func _pose_support_arm(supporting: bool) -> void:
 		_arm_l.rotation = Vector3(ARM_PITCH, 0.10, 0.0)
 
 
-## Where the grip rests for whatever is in the hand at the moment.
+## Where the grip rests for whatever is in the hand at the moment: in the right fist, pushed
+## forward if the thing is a long gun so its butt is not inside the camera.
 func _grip_home() -> Vector3:
+	var arm_at: Vector3 = ARM_HOLD_R if held != null else ARM_REST_R
+	var in_hand: Vector3 = arm_at + Basis.from_euler(Vector3(ARM_PITCH, -0.10, 0.0)) * FIST_IN_ARM
 	var long_gun: bool = held is Gun and (held as Gun).two_handed
-	return GRIP + (Vector3(0, 0, -LONG_GUN_PUSH) if long_gun else Vector3.ZERO)
+	return in_hand + (Vector3(0, 0, -LONG_GUN_PUSH) if long_gun else Vector3.ZERO)
 
 
 func _kick() -> void:
@@ -462,47 +459,6 @@ func _animate_thrust() -> void:
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_arm_tween.tween_property(_arm_r, ^"position", ARM_HOLD_R, 0.24).set_trans(Tween.TRANS_QUAD)
 	_arm_tween.parallel().tween_property(_hold_point, ^"position", _grip_home(), 0.24).set_trans(Tween.TRANS_QUAD)
-
-
-## The boot swings up into the bottom of the frame and drops away again.
-func _animate_kick() -> void:
-	if _leg == null:
-		_leg = _build_leg()
-	_leg.visible = true
-	if _leg_tween != null and _leg_tween.is_valid():
-		_leg_tween.kill()      # or an older swing's callback hides the leg mid-kick
-	var tween: Tween = create_tween()
-	_leg_tween = tween
-	_leg.position = LEG_REST
-	_leg.rotation = Vector3(-0.6, 0.12, 0.0)
-	tween.tween_property(_leg, ^"position", LEG_OUT, 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(_leg, ^"rotation:x", 0.22, 0.09)
-	tween.tween_property(_leg, ^"position", LEG_REST, 0.22).set_trans(Tween.TRANS_QUAD)
-	tween.parallel().tween_property(_leg, ^"rotation:x", -0.6, 0.22)
-	tween.tween_callback(func() -> void: _leg.visible = false)
-
-
-## The leg: thigh, shin and a boot, in the same dark material as the arms.
-func _build_leg() -> Node3D:
-	var leg := Node3D.new()
-	leg.position = LEG_REST
-	leg.visible = false
-	add_child(leg)
-	var mi := MeshInstance3D.new()
-	mi.mesh = MeshKit.cached(&"viewmodel_leg", _model_leg)
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	leg.add_child(mi)
-	return leg
-
-
-static func _model_leg(kit: MeshKit) -> void:
-	var trouser: Material = Mats.arm_cuff()
-	var boot: Material = Mats.black()
-	kit.tube(0.085, 0.105, 0.42, Vector3(0, 0, 0.26), trouser, true, 10)      # thigh
-	kit.tube(0.068, 0.085, 0.40, Vector3(0, 0, -0.12), trouser, true, 10)     # shin
-	kit.ball(0.072, Vector3(0, 0, -0.32), boot, Vector3(1.0, 0.9, 1.0))       # ankle
-	kit.box(Vector3(0.115, 0.095, 0.26), Vector3(0, -0.02, -0.44), boot)      # boot
-	kit.box(Vector3(0.12, 0.03, 0.27), Vector3(0, -0.062, -0.45), boot)       # sole
 
 
 ## A short jab from alternating sides that ends near the crosshair, then pulls back.
