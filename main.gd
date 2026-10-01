@@ -24,6 +24,12 @@ func _ready() -> void:
 	add_child(PAUSE_SCENE.instantiate())
 	_title = TITLE_SCENE.instantiate()
 	add_child(_title)
+	# The room behind the menu, with its own camera: at the title there is no player to look
+	# through, so the stage brings one of its own and gives it up when a run starts.
+	var stage := TitleStage.new()
+	stage.name = "TitleStage"
+	add_child(stage)
+	_title.use_stage(stage)
 	_title.start_requested.connect(_start_run)
 	_ending = ENDING_SCENE.instantiate()
 	add_child(_ending)

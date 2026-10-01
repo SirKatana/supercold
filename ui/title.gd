@@ -1,42 +1,79 @@
 class_name TitleScreen
 extends CanvasLayer
-## White screen, black words. Click to start.
+## The main menu. The words sit on the left; behind them is `TitleStage`, the white room with
+## the agent turning in his glass capsule and three pink dudes hammering on it.
+##
+## PLAY picks up where the last run left off. SETTINGS swaps the buttons for the sliders.
+## EXIT quits.
 
 signal start_requested(from_floor: int)
 
-var _continue: Button
+var _stage: TitleStage
+var _menu: VBoxContainer
+var _settings: VBoxContainer
+var _play: Button
+var _fresh: Button
 
 
 func _ready() -> void:
 	layer = 5
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var bg := ColorRect.new()
-	bg.color = Color(0.95, 0.96, 0.98)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
 
-	var box := VBoxContainer.new()
-	box.set_anchors_preset(Control.PRESET_FULL_RECT)
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_theme_constant_override(&"separation", 18)
-	add_child(box)
+	# A soft wash down the left so the words stay readable over whatever the room is doing.
+	var wash := ColorRect.new()
+	wash.color = Color(0.95, 0.96, 0.98, 0.86)
+	wash.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
+	wash.offset_right = 540
+	wash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(wash)
 
-	box.add_child(_label("SUPER", 130, Color(0.04, 0.04, 0.05)))
-	box.add_child(_label("COLD", 130, Mats.PINK))
-	box.add_child(_label("TIME CRAWLS WHEN YOU STAND STILL", 24, Color(0.04, 0.04, 0.05)))
-	box.add_child(_label("", 10, Color.BLACK))
-	var buttons := HBoxContainer.new()
-	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
-	buttons.add_theme_constant_override(&"separation", 24)
-	box.add_child(buttons)
-	_continue = _button(buttons, "CONTINUE", func() -> void: start_requested.emit(Game.best_floor))
-	_button(buttons, "NEW GAME", func() -> void:
+	var column := VBoxContainer.new()
+	column.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
+	column.offset_left = 64
+	column.offset_right = 500
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.add_theme_constant_override(&"separation", 12)
+	add_child(column)
+
+	column.add_child(_label("SUPER", 112, Color(0.04, 0.04, 0.05)))
+	column.add_child(_label("COLD", 112, Mats.PINK))
+	column.add_child(_label("TIME CRAWLS WHEN YOU STAND STILL", 20, Color(0.04, 0.04, 0.05)))
+	column.add_child(_label("", 14, Color.BLACK))
+
+	_menu = VBoxContainer.new()
+	_menu.add_theme_constant_override(&"separation", 12)
+	column.add_child(_menu)
+	_play = _button(_menu, "PLAY", func() -> void: start_requested.emit(Game.best_floor))
+	_fresh = _button(_menu, "NEW GAME", func() -> void:
 		Game.erase_progress()
 		start_requested.emit(0))
+	_button(_menu, "SETTINGS", func() -> void: _show_settings(true))
+	_button(_menu, "EXIT", func() -> void: get_tree().quit())
+
+	_settings = VBoxContainer.new()
+	_settings.add_theme_constant_override(&"separation", 12)
+	_settings.visible = false
+	column.add_child(_settings)
+	_settings.add_child(SettingsPanel.new())
+	_button(_settings, "BACK", func() -> void: _show_settings(false))
+
+	column.add_child(_label("", 14, Color.BLACK))
+	column.add_child(_label("WASD move   MOUSE look   LMB punch / shoot   RMB grab / throw\nE swap   Q throw   F shield   R restart   ESC pause",
+		14, Color(0.3, 0.32, 0.36)))
+
 	visibility_changed.connect(_refresh)
 	_refresh()
-	box.add_child(_label("WASD move   MOUSE look   LMB punch / shoot   RMB grab / throw   E swap   Q throw   F shield   RMB scope (sniper)   R restart   ESC pause",
-		16, Color(0.3, 0.32, 0.36)))
+
+
+## The room behind the menu. Main hands it in, because the stage is 3D and this is a layer.
+func use_stage(stage: TitleStage) -> void:
+	_stage = stage
+	_refresh()
+
+
+func _show_settings(on: bool) -> void:
+	_menu.visible = not on
+	_settings.visible = on
 
 
 func _label(text: String, size: int, color: Color) -> Label:
@@ -51,16 +88,26 @@ func _label(text: String, size: int, color: Color) -> Label:
 func _button(parent: Control, caption: String, on_press: Callable) -> Button:
 	var b := Button.new()
 	b.text = caption
-	b.custom_minimum_size = Vector2(240, 56)
+	b.custom_minimum_size = Vector2(300, 52)
 	b.add_theme_font_size_override(&"font_size", 24)
 	b.pressed.connect(on_press)
 	parent.add_child(b)
 	return b
 
 
-## Continue only shows once there is somewhere to continue from.
+## PLAY says where it is going; NEW GAME only shows once there is something to lose.
 func _refresh() -> void:
-	if _continue == null:
+	if _play == null:
 		return
-	_continue.visible = Game.best_floor > 0
-	_continue.text = "CONTINUE  %s" % Game.floor_label(Game.FLOORS[clampi(Game.best_floor, 0, Game.FLOORS.size() - 1)])
+	var has_progress: bool = Game.best_floor > 0
+	_fresh.visible = has_progress
+	_play.text = "PLAY" if not has_progress else "CONTINUE  %s" % \
+		Game.floor_label(Game.FLOORS[clampi(Game.best_floor, 0, Game.FLOORS.size() - 1)])
+	if not visible:
+		_show_settings(false)
+	if _stage != null and is_instance_valid(_stage):
+		_stage.visible = visible
+		if visible:
+			_stage.show_again()
+		else:
+			_stage.release()

@@ -341,3 +341,19 @@ One line per call made in auto mode, with why.
   touches the navmesh, stands on a `Planetoid`, hops between rocks on an arc and carries a
   sniper rifle. He is counted with `count_new_enemy`, so the floors test now takes its head
   count from the tree rather than from the ASCII grid.
+
+## A main menu with something behind it
+
+- `ui/title_stage.gd` is the room the menu sits in front of: the white room, a glass capsule
+  with the agent turning inside it holding a pistol, and three pink dudes outside hammering on
+  the glass. It brings its own `Camera3D`, because at the title there is no player to look
+  through, and gives it up (`release`) when a run starts.
+- The three outside are plain `Humanoid`s, not `PinkDude`s: there is no level and no navmesh at
+  the title and they have nowhere to walk. They are posed with `reach_straight`, which throws
+  both arms out in front -- the shape of a man beating on glass rather than aiming at it.
+- They stand on the camera's side of the capsule on purpose. Behind it they read as being
+  inside it, which the test now checks.
+- The menu is PLAY / NEW GAME / SETTINGS / EXIT. `ui/settings_panel.gd` holds the sliders and
+  the sunglasses toggle so the pause menu and the main menu share one copy.
+- A camera aimed before it is in the tree needs `look_at_from_position`; `look_at` pushes an
+  error and leaves it pointing at the floor.
