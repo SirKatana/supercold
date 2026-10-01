@@ -48,7 +48,7 @@ func test_breaking_one_leaves_a_hole_and_says_so() -> void:
 	Game.window_broken.disconnect(on_broken)
 
 
-func test_a_punch_puts_a_dude_in_the_air() -> void:
+func test_a_punch_only_throws_him_when_there_is_a_window_to_throw_him_through() -> void:
 	check(Game.load_level("test_room"), "test room loads")
 	await wait_physics(2)
 	var dude := PinkDude.new()
@@ -56,10 +56,15 @@ func test_a_punch_puts_a_dude_in_the_air() -> void:
 	dude.global_position = Game.player.global_position + Vector3(2.0, 0.0, 0.0)
 	await wait_physics(2)
 	dude.sense_override = true
+	# An ordinary punch leaves him on his feet: knocking everybody across the room was wrong.
 	dude.on_punched(Game.player, dude.global_position)
-	check(dude.flung, "the punch takes him off his feet")
-	await wait_physics(4)
-	check(dude.global_position.y > 0.05, "and he is off the floor (%.2f m)" % dude.global_position.y)
+	check(not dude.flung, "an ordinary punch does not launch him")
+	check(not dude.has_weapon(), "but it does take his gun off him")
+	# Now put a hole in the wall behind him and try again.
+	Game.open_windows.append(dude.global_position + Vector3(1.6, 0.0, 0.0))
+	dude.on_punched(Game.player, dude.global_position)
+	check(dude.flung, "with a window there, out he goes")
+	Game.open_windows.clear()
 	dude.queue_free()
 
 

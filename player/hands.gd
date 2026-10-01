@@ -25,13 +25,20 @@ var _arm_tween: Tween
 const ARM_REST_R := Vector3(0.30, -0.35, -0.54)
 ## Holding: the fist is under the crosshair line, not out to the side of it, and the weapon
 # sits on top of it.
-const ARM_HOLD_R := Vector3(0.15, -0.33, -0.56)
+const ARM_HOLD_R := Vector3(0.17, -0.30, -0.47)
 const ARM_REST_L := Vector3(-0.30, -0.35, -0.54)
 ## The off hand on the fore-end of a long gun: forward, inboard, and under the barrel.
 const ARM_SUPPORT_L := Vector3(-0.11, -0.37, -0.74)
 ## How far the forearms pitch: the elbow drops away toward the bottom of the screen and the
-## hand comes up to the gun. The hold point cancels it again so the weapon itself stays level.
+## hand comes up to the gun.
 const ARM_PITCH: float = 0.46
+## Where a held weapon sits, in the Hands node's own space: right of the crosshair, below it,
+## and far enough forward to clear the lens. The fist is placed under this, not the other way
+## round, so nothing the arm does can roll the gun.
+const GRIP := Vector3(0.17, -0.20, -0.62)
+## A rifle is a metre long and the hand holds it near the back, so held at the same spot as a
+## pistol its butt ends up inside the camera. Long guns are pushed forward by this much.
+const LONG_GUN_PUSH: float = 0.26
 
 var _supporting: bool = false
 
@@ -39,50 +46,55 @@ var _supporting: bool = false
 func _ready() -> void:
 	_arm_r = _build_arm(ARM_REST_R, -1.0)
 	_arm_l = _build_arm(ARM_REST_L, 1.0)
-	# Whatever is held sits in the right fist.
+	# The grip hangs off the Hands node, NOT off the arm. Parented to the arm it inherited the
+	# arm's pitch and yaw, which rolled every weapon onto its side and swung the magazine out
+	# into the middle of the screen.
 	_hold_point = Node3D.new()
 	_hold_point.name = "HoldPoint"
-	# The weapon sits ON the hand: the palm is under it, the fingers close up round the grip.
-	# Off to one side and it reads as a gun floating beside a fist.
-	# High enough that the fist is visibly below the weapon. Level with the palm the two black
-	# shapes merge into one slab and it stops reading as a hand holding anything.
-	_hold_point.position = Vector3(0.0, 0.10, -0.20)
-	# The arm is pitched; the gun is not. Without this it points at the ceiling.
-	_hold_point.rotation = Vector3(-ARM_PITCH, 0.0, 0.0)
-	_arm_r.add_child(_hold_point)
+	_hold_point.position = GRIP
+	add_child(_hold_point)
 
 
-## A forearm and fist that reach in from a lower screen corner. `inward` is -1 for the
-## right arm and +1 for the left, so both angle toward the crosshair.
+## A forearm and a closed fist, built out of round parts and merged into one mesh. Boxes read
+## as planks this close to the lens; a tapered tube with knuckles on it reads as an arm.
+## `inward` is -1 for the right arm and +1 for the left.
 func _build_arm(rest: Vector3, inward: float) -> Node3D:
 	var arm := Node3D.new()
 	arm.position = rest
 	arm.rotation = Vector3(ARM_PITCH, 0.10 * inward, 0.0)
 	add_child(arm)
-	_add_arm_box(arm, Vector3(0.088, 0.084, 0.20), Vector3(0, -0.006, 0.17))     # upper forearm
-	_add_arm_box(arm, Vector3(0.086, 0.082, 0.20), Vector3(0, -0.002, 0.02))     # forearm, tapering
-	_add_arm_box(arm, Vector3(0.070, 0.064, 0.07), Vector3(0, 0.0, -0.085))      # wrist
-	_add_arm_box(arm, Vector3(0.086, 0.050, 0.115), Vector3(0, 0.004, -0.175))   # palm, back of the hand
-	# Fingers curled round the grip: the middle joints in front of the palm, the tips tucked under.
-	for i: int in 4:
-		var across: float = -0.030 + i * 0.020
-		var length: float = 0.052 - absf(float(i) - 1.5) * 0.004
-		_add_arm_box(arm, Vector3(0.0185, 0.044, length), Vector3(across, -0.022, -0.238))
-		_add_arm_box(arm, Vector3(0.0185, 0.034, 0.030), Vector3(across, -0.048, -0.205))
-	# Thumb over the top of the grip, lying along it.
-	_add_arm_box(arm, Vector3(0.026, 0.030, 0.085), Vector3(0.040 * inward * -1.0, 0.016, -0.215))
+	var mi := MeshInstance3D.new()
+	var side: float = inward
+	mi.mesh = MeshKit.cached(&"viewmodel_arm_r" if inward < 0.0 else &"viewmodel_arm_l",
+		func(kit: MeshKit) -> void: _model_arm(kit, side))
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	arm.add_child(mi)
 	return arm
 
 
-func _add_arm_box(arm: Node3D, size: Vector3, at: Vector3) -> void:
-	var mi := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	mesh.material = Mats.arm()
-	mi.mesh = mesh
-	mi.position = at
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	arm.add_child(mi)
+## -Z is the way the hand points. Sleeve, forearm, wrist, fist, fingers, thumb.
+static func _model_arm(kit: MeshKit, inward: float) -> void:
+	var skin: Material = Mats.arm()
+	var cuff: Material = Mats.arm_cuff()
+	# Sleeve, then the forearm tapering toward the wrist.
+	kit.tube(0.052, 0.058, 0.13, Vector3(0, -0.005, 0.235), cuff, true, 10)
+	kit.tube(0.043, 0.052, 0.24, Vector3(0, -0.004, 0.055), skin, true, 10)
+	kit.ball(0.042, Vector3(0, -0.002, -0.068), skin, Vector3(1.0, 0.85, 1.0))        # wrist
+	# The fist: a block of hand with four knuckles on top and the fingers curled under it.
+	kit.box(Vector3(0.082, 0.062, 0.105), Vector3(0, 0.0, -0.132), skin)
+	for i: int in 4:
+		var across: float = (-0.028 + i * 0.019) * -inward
+		var knuckle: float = 0.019 - absf(float(i) - 1.5) * 0.0015
+		kit.ball(knuckle, Vector3(across, 0.028, -0.172), skin, Vector3(1.0, 0.9, 1.1))
+		# Middle joint in front, fingertip tucked back under the palm.
+		kit.tube(knuckle * 0.92, knuckle, 0.052, Vector3(across, 0.012, -0.200), skin, true, 8,
+			Vector3(0.75, 0, 0))
+		kit.tube(knuckle * 0.85, knuckle * 0.92, 0.040, Vector3(across, -0.030, -0.196), skin, true, 8,
+			Vector3(2.0, 0, 0))
+	# Thumb, lying along the top of whatever is being gripped.
+	kit.tube(0.020, 0.023, 0.072, Vector3(0.036 * -inward, 0.020, -0.168), skin, true, 8,
+		Vector3(0.25, -0.55 * inward, 0))
+	kit.ball(0.020, Vector3(0.050 * -inward, 0.026, -0.200), skin)
 
 
 func _physics_process(delta: float) -> void:
@@ -348,6 +360,8 @@ func _set_held(item: Pickup) -> void:
 	held = item
 	held_changed.emit(item)
 	_arm_r.position = ARM_HOLD_R if item != null else ARM_REST_R
+	var long_gun: bool = item is Gun and (item as Gun).two_handed
+	_hold_point.position = GRIP + (Vector3(0, 0, -LONG_GUN_PUSH) if long_gun else Vector3.ZERO)
 	_pose_support_arm(item is Gun and (item as Gun).two_handed)
 	if item is Gun:
 		var pistol: Gun = item
@@ -381,12 +395,22 @@ func _pose_support_arm(supporting: bool) -> void:
 		_arm_l.rotation = Vector3(ARM_PITCH, 0.10, 0.0)
 
 
+## Where the grip rests for whatever is in the hand at the moment.
+func _grip_home() -> Vector3:
+	var long_gun: bool = held is Gun and (held as Gun).two_handed
+	return GRIP + (Vector3(0, 0, -LONG_GUN_PUSH) if long_gun else Vector3.ZERO)
+
+
 func _kick() -> void:
 	var tween: Tween = create_tween()
 	_arm_r.rotation.x = ARM_PITCH + 0.18
 	_arm_r.position.z = ARM_HOLD_R.z + 0.05
+	_hold_point.position = _grip_home() + Vector3(0, 0.012, 0.055)
+	_hold_point.rotation.x = -0.10
 	tween.tween_property(_arm_r, ^"rotation:x", ARM_PITCH, 0.16)
 	tween.parallel().tween_property(_arm_r, ^"position:z", ARM_HOLD_R.z, 0.16)
+	tween.parallel().tween_property(_hold_point, ^"position", _grip_home(), 0.16)
+	tween.parallel().tween_property(_hold_point, ^"rotation:x", 0.0, 0.16)
 
 
 ## The ram goes straight out from the hip and back.
@@ -397,7 +421,10 @@ func _animate_thrust() -> void:
 	_arm_tween = create_tween()
 	_arm_tween.tween_property(_arm_r, ^"position", ARM_HOLD_R + Vector3(-0.10, 0.06, -0.42), 0.08) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_arm_tween.parallel().tween_property(_hold_point, ^"position", _grip_home() + Vector3(-0.10, 0.06, -0.42), 0.08) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_arm_tween.tween_property(_arm_r, ^"position", ARM_HOLD_R, 0.24).set_trans(Tween.TRANS_QUAD)
+	_arm_tween.parallel().tween_property(_hold_point, ^"position", _grip_home(), 0.24).set_trans(Tween.TRANS_QUAD)
 
 
 ## A short jab from alternating sides that ends near the crosshair, then pulls back.

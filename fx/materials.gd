@@ -692,6 +692,16 @@ static func arm() -> StandardMaterial3D:
 		return m)
 
 
+## The sleeve at the end of the first-person arm: a shade darker than the hand, so the wrist
+## reads as a join rather than one long plank.
+static func arm_cuff() -> StandardMaterial3D:
+	return _cached(&"arm_cuff", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.13, 0.14, 0.16)
+		m.roughness = 0.85
+		return m)
+
+
 static func pink() -> StandardMaterial3D:
 	return _cached(&"pink", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

@@ -38,16 +38,17 @@ func _ready() -> void:
 static func _model(kit: MeshKit) -> void:
 	var steel: Material = Mats.steel()
 	var dark: Material = Mats.gunmetal()
+	# The slats take the brighter steel: nine dark ones at an angle read as a smudge from across a room.
 	var w: float = VentDuct.WIDTH
 	var h: float = VentDuct.HEIGHT
 	kit.box(Vector3(w, 0.06, 0.05), Vector3(0, h * 0.5 - 0.03, 0), steel)
 	kit.box(Vector3(w, 0.06, 0.05), Vector3(0, -h * 0.5 + 0.03, 0), steel)
 	kit.box(Vector3(0.06, h, 0.05), Vector3(-w * 0.5 + 0.03, 0, 0), steel)
 	kit.box(Vector3(0.06, h, 0.05), Vector3(w * 0.5 - 0.03, 0, 0), steel)
-	var louvres: int = 9
+	var louvres: int = 7
 	for i: int in louvres:
 		var y: float = -h * 0.42 + h * 0.84 * i / (louvres - 1.0)
-		kit.box(Vector3(w - 0.10, 0.045, 0.030), Vector3(0, y, 0), dark, Vector3(-0.45, 0, 0))
+		kit.box(Vector3(w - 0.10, 0.052, 0.030), Vector3(0, y, 0), steel, Vector3(-0.45, 0, 0))
 	for sx: float in [-1.0, 1.0]:
 		for sy: float in [-1.0, 1.0]:
 			kit.tube(0.016, 0.016, 0.014, Vector3(sx * (w * 0.5 - 0.03), sy * (h * 0.5 - 0.03), 0.022), steel, true, 8)

@@ -32,6 +32,10 @@ const FLOORS: PackedStringArray = [
 
 ## A fraction of a g. One on every floor in the tower, `SPACE_GRAVITY` up on the station:
 ## thrown things sail and a ragdoll takes its time coming down.
+## Where the windows that have been broken are. A punch only throws somebody when there is one
+## of these to throw him through; everywhere else a punch does what it always did.
+var open_windows: Array[Vector3] = []
+
 var gravity_scale: float = 1.0
 const SPACE_GRAVITY: float = 0.5
 
@@ -235,6 +239,7 @@ func load_level(name_of_level: String) -> bool:
 		deaths_this_floor = 0
 		helper_time_left = 0.0
 	level_name = name_of_level
+	open_windows.clear()
 	gravity_scale = SPACE_GRAVITY if data.in_space else 1.0
 	kills = 0
 	# Set before anything is built, so nothing in the new level sees the old floor's "cleared".

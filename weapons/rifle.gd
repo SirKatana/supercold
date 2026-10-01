@@ -119,8 +119,8 @@ func _model(kit: MeshKit) -> void:
 		for side: float in [-1.0, 1.0]:
 			kit.box(Vector3(0.002, 0.030, 0.006), at + Vector3(0.0148 * side, 0, -0.018), bright, Vector3(angle, 0, 0))
 			kit.box(Vector3(0.002, 0.030, 0.006), at + Vector3(0.0148 * side, 0, 0.014), bright, Vector3(angle, 0, 0))
-	kit.box(Vector3(0.031, 0.006, 0.072), Vector3(0, -0.238, -0.136), bright, Vector3(0.58, 0, 0))   # floor plate
-	kit.box(Vector3(0.010, 0.030, 0.006), Vector3(0, -0.028, -0.010), bright, Vector3(0.25, 0, 0))   # magazine catch
+	kit.box(Vector3(0.031, 0.006, 0.072), Vector3(0, -0.238, -0.136), dark, Vector3(0.58, 0, 0))   # floor plate
+	kit.box(Vector3(0.010, 0.030, 0.006), Vector3(0, -0.028, -0.010), dark, Vector3(0.25, 0, 0))   # magazine catch
 
 	# --- trigger group
 	kit.box(Vector3(0.012, 0.004, 0.070), Vector3(0, -0.048, 0.030), steel)

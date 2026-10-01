@@ -321,6 +321,16 @@ func _physics_process(delta: float) -> void:
 		_animate(wd)
 
 
+## Is there a hole in the outside wall close by, the way this blow is pushing him?
+func _an_open_window_that_way(push: Vector3) -> bool:
+	var flat: Vector3 = Vector3(push.x, 0.0, push.z).normalized()
+	for at: Vector3 in Game.open_windows:
+		var to_hole: Vector3 = Vector3(at.x - global_position.x, 0.0, at.z - global_position.z)
+		if to_hole.length() <= T.window_punch_reach and flat.dot(to_hole.normalized()) > 0.6:
+			return true
+	return false
+
+
 ## Shoved hard enough to leave the floor. Anything can do it: a punch, a ram, a blast.
 func shove(impulse: Vector3) -> void:
 	if not alive or flung:
@@ -698,7 +708,9 @@ func _take_blunt(damage: int, stun_time: float, push: Vector3) -> void:
 		return
 	disarm()
 	stun(stun_time)
-	if push.length() > 0.01:
+	# A punch only throws him when there is an open window to throw him through. Everywhere
+	# else it does what it always did: takes his gun off him and leaves him standing.
+	if push.length() > 0.01 and _an_open_window_that_way(push):
 		shove(Vector3(push.x, 0.0, push.z).normalized() * T.blunt_shove + Vector3.UP * T.blunt_lift)
 
 

@@ -30,6 +30,8 @@ extends Resource
 ## How hard a punch or a bash moves a dude, and how far off the floor it takes him. Enough to
 ## put him through an open window, not enough to launch him across the room.
 @export var blunt_shove: float = 5.2
+## How close an open window has to be for a punch to put somebody through it.
+@export var window_punch_reach: float = 3.2
 @export var blunt_lift: float = 2.1
 ## The orbiters over the open station floors: how many rocks, how big, how high, how many men.
 @export var orbiter_rocks: int = 4

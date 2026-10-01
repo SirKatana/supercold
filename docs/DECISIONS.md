@@ -410,3 +410,19 @@ One line per call made in auto mode, with why.
   sat in the same place, so they merged into one slab. The hold point is 10 cm above the palm
   now, which puts the fist visibly beneath the weapon, and the forearm is shorter so it reads
   as an arm rather than a plank.
+
+## The viewmodel, rebuilt
+
+- The grip used to be a child of the arm, so it inherited the arm's pitch and yaw: every weapon
+  was rolled onto its side and the magazine swung into the middle of the screen. `Hands.GRIP`
+  now hangs off the Hands node with no rotation and the fist is placed under it.
+- The arms were boxes, which read as grey planks at viewmodel distance. They are one merged
+  MeshKit mesh each now: sleeve, tapered forearm, wrist, fist with knuckles, curled fingers and
+  a thumb.
+- A long gun is held near its back end, so at the pistol's grip position its butt was inside
+  the camera. `LONG_GUN_PUSH` moves two-handed weapons 26 cm forward.
+- The punch knockback was wrong: it threw every dude across the room and made the disarm look
+  like it had failed. A blow only throws somebody when `Game.open_windows` has a hole within
+  `window_punch_reach` the way the blow is pushing.
+- The duct grate's slats are steel rather than gunmetal, and there are seven of them: nine dark
+  ones at an angle read as a smudge from across a dim room.

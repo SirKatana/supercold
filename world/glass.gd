@@ -61,6 +61,7 @@ func take_damage(amount: int, direction: Vector3) -> void:
 	Sfx.play(&"shatter", global_position)
 	if opens_onto_the_drop:
 		# The frame stays and the hole stays: this is the way out of the building now.
+		Game.open_windows.append(global_position)
 		Game.window_broken.emit(global_position)
 	queue_free()
 
