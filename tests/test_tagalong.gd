@@ -32,7 +32,7 @@ func test_standing_with_the_cleaner_when_he_leaves_takes_you_with_him() -> void:
 	check_eq(Game.back_to, "f6_cafeteria", "and it knows where you came from")
 
 
-func test_standing_well_clear_of_him_does_not() -> void:
+func test_he_holds_the_doors_then_goes_without_you() -> void:
 	check(Game.load_level("f6_cafeteria"), "floor loads")
 	await wait_physics(3)
 	var mop := Cleaner.new()
@@ -41,9 +41,14 @@ func test_standing_well_clear_of_him_does_not() -> void:
 	# the first step, which is the point.
 	mop.report_for_duty(Game.player.global_position + Vector3(6, 0, 0))
 	mop.mode = Cleaner.Mode.LEAVING
-	for step: int in 120:
+	await wait_physics(3)
+	check(is_instance_valid(mop), "he does not vanish into the lift")
+	check_eq(mop.mode, Cleaner.Mode.HOLDING_THE_LIFT, "he holds the doors")
+	check(mop._lift_wait > 0.0, "with a few seconds on the clock (%.1f)" % mop._lift_wait)
+	# Nobody gets in, so eventually he goes down on his own.
+	for step: int in int(T.cleaner_lift_wait * 110.0):
 		await wait_physics(1)
 		if not is_instance_valid(mop):
 			break
-	check(not is_instance_valid(mop), "he has gone")
-	check_eq(Game.level_name, "f6_cafeteria", "and left you where you were")
+	check(not is_instance_valid(mop), "and leaves without you")
+	check_eq(Game.level_name, "f6_cafeteria", "having left you where you were")

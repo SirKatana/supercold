@@ -51,6 +51,8 @@ extends Resource
 ## How close you have to be standing when a member of staff takes the lift for you to be in it
 ## with them.
 @export var cleaner_lift_share: float = 1.9
+## How long a member of staff holds the lift doors before going down without you. Real seconds.
+@export var cleaner_lift_wait: float = 6.0
 @export var lair_cleaners: int = 15
 @export var lair_guards: int = 20
 ## Carrying a body: how far it can be picked up from, how hard it is thrown, how long it stays

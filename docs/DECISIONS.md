@@ -619,3 +619,10 @@ One line per call made in auto mode, with why.
 - The LAN panel's BACK button was **off the bottom of the screen**: the big SUPER COLD words
   plus a panel of controls do not fit in 720. The title stands down while any panel is open,
   and a test now fails if a visible button ends below the viewport.
+
+## Holding the doors
+
+- The cleaner and the guard no longer walk into the lift and vanish. They stand in it with the
+  doors open for `cleaner_lift_wait` (6 real seconds), the cleaner says "GOING DOWN?", and
+  anybody who steps in within `cleaner_lift_share` goes down to the staff room with them.
+  Nobody gets in, they leave on their own and the floor carries on.

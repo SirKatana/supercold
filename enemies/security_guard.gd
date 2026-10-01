@@ -171,6 +171,8 @@ func _progress(p: Player) -> float:
 
 ## Set before he is added to the tree, for the ones waiting in their own room.
 var born_angry: bool = false
+## Seconds he has been holding the lift doors open.
+var _lift_wait: float = 0.0
 
 
 func _open_fire() -> void:
@@ -309,18 +311,20 @@ func _walk_to_lift(wd: float, delta: float) -> void:
 	_leaving_for += delta
 	var flat := Vector3(_lift.x - global_position.x, 0, _lift.z - global_position.z)
 	if flat.length() < 0.5 or _leaving_for > 30.0:
-		# Standing in the lift with him when he leaves means going where he is going.
+		# He holds the doors rather than vanishing into them: a few seconds to get in with him.
+		_lift_wait += delta
 		var tag_along: Player = Game.player
 		var shared: bool = tag_along != null and is_instance_valid(tag_along) and tag_along.alive \
 			and tag_along.global_position.distance_to(global_position) < T.cleaner_lift_share
-		left.emit()
 		if shared:
 			# Left standing: the level unload takes him away. Freeing him and loading a level in
 			# the same step crashes the engine.
-			_leaving_for = 0.0
+			left.emit()
 			Game.take_me_to_the_lair.call_deferred(&"security")
 			return
-		queue_free()
+		if _lift_wait >= T.cleaner_lift_wait:
+			left.emit()
+			queue_free()
 		return
 	var door: Vector3 = _lift + _out * 2.2
 	if flat.length() > 3.2 and _flat_distance(door) > 0.6 and absf((global_position - _lift).cross(_out).y) > 0.5:

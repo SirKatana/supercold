@@ -16,7 +16,7 @@ signal snapped
 signal left
 signal outraged(at_whom: Node3D)
 
-enum Mode { WALKING_TO_SPILL, MOPPING, LEAVING, HUNTING, SWINGING, STAGGERED }
+enum Mode { WALKING_TO_SPILL, MOPPING, LEAVING, HOLDING_THE_LIFT, HUNTING, SWINGING, STAGGERED }
 
 const T: Tuning = preload("res://data/tuning.tres")
 
@@ -28,6 +28,8 @@ var born_angry: bool = false
 ## He does nothing at all until he has been told where he comes in and goes out. Running his
 ## walk before that sent him to the middle of the world and took the engine with him.
 var _on_duty: bool = false
+## Seconds he keeps the doors open before riding down on his own.
+var _lift_wait: float = 0.0
 var skin: Humanoid
 var joints: PackedVector3Array = []
 var voice: HelperVoice
@@ -266,22 +268,26 @@ func _physics_process(delta: float) -> void:
 					mode = Mode.WALKING_TO_SPILL
 		Mode.LEAVING:
 			if _flat(_home) < 0.6:
-				# He is back at the lift and about to ride down. Anybody standing in it with him
-				# is coming too, which is not where they wanted to go.
-				var tag_along: Player = _player()
-				if tag_along != null and tag_along.alive \
-						and tag_along.global_position.distance_to(global_position) < T.cleaner_lift_share:
-					# Do NOT free him here. The level is torn down to build the staff room, and
-					# freeing a node and then loading a level from inside the same physics step
-					# takes the engine down with it.
-					left.emit()
-					mode = Mode.WALKING_TO_SPILL
-					Game.take_me_to_the_lair.call_deferred(&"cleaner")
-					return
-				left.emit()
-				queue_free()
+				# He does not vanish into the lift. He stands in it and holds the doors for a
+				# few seconds, which is the window to get in with him.
+				mode = Mode.HOLDING_THE_LIFT
+				_lift_wait = T.cleaner_lift_wait
+				shout("GOING DOWN?")
 				return
 			_walk(_home, T.cleaner_speed, wd, delta)
+		Mode.HOLDING_THE_LIFT:
+			_lift_wait -= delta
+			var p: Player = _player()
+			if p != null and p.alive and p.global_position.distance_to(global_position) < T.cleaner_lift_share:
+				# Somebody got in. Do NOT free him here: freeing a node and then loading a level
+				# in the same physics step takes the engine down with it.
+				left.emit()
+				mode = Mode.WALKING_TO_SPILL
+				Game.take_me_to_the_lair.call_deferred(&"cleaner")
+				return
+			if _lift_wait <= 0.0:
+				left.emit()
+				queue_free()
 		Mode.HUNTING:
 			var p: Player = _player()
 			if p != null and p.alive:
