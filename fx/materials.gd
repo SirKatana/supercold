@@ -792,15 +792,6 @@ static func city_ground() -> StandardMaterial3D:
 		return m)
 
 
-## The glove that stops you leaving the building.
-static func glove_red() -> StandardMaterial3D:
-	return _cached(&"glove_red", func() -> StandardMaterial3D:
-		var m := StandardMaterial3D.new()
-		m.albedo_color = Color(0.72, 0.09, 0.11)
-		m.roughness = 0.55
-		return m)
-
-
 static func pink() -> StandardMaterial3D:
 	return _cached(&"pink", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

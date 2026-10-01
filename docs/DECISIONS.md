@@ -455,3 +455,20 @@ One line per call made in auto mode, with why.
   falling, so a pool or a sewer channel never triggers it.
 - The channel cut the sewer corridor in two and made half the level unreachable. The generator
   leaves a crossing every seven cells, which the reachability test checks.
+
+## The glove was wrong, and the carve was worse
+
+- The window carve ran outward through any wall that reached the edge of the map. A thick
+  interior wall qualifies, so it opened a trench straight through the middle of the floor with
+  a drop in it, indoors, and the player fell into it. `Grid.touches_a_room()` now rejects any
+  run with floor beside it, and the border ring counts as a candidate, because on most layouts
+  the corridor runs right up to it and that is the only outside wall there is.
+- The boxing glove is gone at the user's word: falling out of the building kills the player.
+  `fx/boxing_glove.gd`, the tumble state and their tuning went with it.
+- The **kick** (`C`) is the new home for knockback: longer reach than a punch, one damage, and
+  it always takes a dude off his feet. The viewmodel grows a leg for it. A kicking leg at
+  0.8 m below the eye is off the bottom of the screen -- the same lesson as the arms.
+- A swing animation must kill the previous tween: the old one's callback hid the leg in the
+  middle of the next kick.
+- The lurker's grab now throws the view about, drags it round to face him, and he keeps
+  scrabbling while he has hold of you.

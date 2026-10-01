@@ -12,6 +12,7 @@ const PUNCH_MASK: int = 1 | 4 | 32
 var player: Player
 var held: Pickup = null
 var punch_cooldown_left: float = 0.0
+var kick_cooldown_left: float = 0.0
 
 var _hold_point: Node3D
 var _arm_r: Node3D
@@ -41,6 +42,12 @@ const GRIP := Vector3(0.17, -0.20, -0.62)
 const LONG_GUN_PUSH: float = 0.26
 
 var _supporting: bool = false
+var _leg: Node3D
+var _leg_tween: Tween
+
+## Where the kicking leg waits and where it lands.
+const LEG_REST := Vector3(0.14, -0.62, -0.55)
+const LEG_OUT := Vector3(0.05, -0.24, -1.00)
 
 
 func _ready() -> void:
@@ -99,6 +106,7 @@ static func _model_arm(kit: MeshKit, inward: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	punch_cooldown_left = maxf(0.0, punch_cooldown_left - TimeManager.world_delta(delta))
+	kick_cooldown_left = maxf(0.0, kick_cooldown_left - TimeManager.world_delta(delta))
 	if held != null and not is_instance_valid(held):
 		_set_held(null)
 	if player == null or not player.alive or not player.input_enabled:
@@ -116,6 +124,8 @@ func _physics_process(delta: float) -> void:
 	var can_scope: bool = is_instance_valid(held) and held is Gun and (held as Gun).has_scope
 	player.fx.scope_wanted = can_scope and Input.is_action_pressed(&"secondary")
 	visible = player.fx.scope_amount < 0.55 and player.alive
+	if Input.is_action_just_pressed(&"kick"):
+		kick()
 	if Input.is_action_just_pressed(&"interact"):
 		interact()
 	if Input.is_action_just_pressed(&"use_shield"):
@@ -300,6 +310,33 @@ func punch() -> bool:
 	return true
 
 
+## A boot, with both hands full or empty. Longer reach than a punch and it takes a dude off
+## his feet: the knockback that used to be on every punch lives here instead.
+func kick() -> bool:
+	if kick_cooldown_left > 0.0 or player == null or not player.alive:
+		return false
+	kick_cooldown_left = T.kick_cooldown
+	TimeManager.burst(T.burst_action, T.burst_strength_punch)
+	Sfx.play(&"punch", player.global_position)
+	_animate_kick()
+	player.fx.kick(T.kick_camera)
+	var from: Vector3 = player.aim_origin()
+	var query := PhysicsRayQueryParameters3D.create(from, from + player.aim_direction() * T.kick_range, PUNCH_MASK)
+	query.exclude = [player.get_rid()]
+	var result: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if result.is_empty():
+		return true
+	var collider: Object = result["collider"]
+	var away: Vector3 = player.aim_direction()
+	if collider is PinkDude:
+		var dude: PinkDude = collider
+		dude.take_kick(away)
+	elif collider.has_method(&"on_punched"):
+		collider.call(&"on_punched", player, result["position"])
+	punched.emit(collider)
+	return true
+
+
 func throw_held() -> void:
 	if held == null:
 		return
@@ -425,6 +462,47 @@ func _animate_thrust() -> void:
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_arm_tween.tween_property(_arm_r, ^"position", ARM_HOLD_R, 0.24).set_trans(Tween.TRANS_QUAD)
 	_arm_tween.parallel().tween_property(_hold_point, ^"position", _grip_home(), 0.24).set_trans(Tween.TRANS_QUAD)
+
+
+## The boot swings up into the bottom of the frame and drops away again.
+func _animate_kick() -> void:
+	if _leg == null:
+		_leg = _build_leg()
+	_leg.visible = true
+	if _leg_tween != null and _leg_tween.is_valid():
+		_leg_tween.kill()      # or an older swing's callback hides the leg mid-kick
+	var tween: Tween = create_tween()
+	_leg_tween = tween
+	_leg.position = LEG_REST
+	_leg.rotation = Vector3(-0.6, 0.12, 0.0)
+	tween.tween_property(_leg, ^"position", LEG_OUT, 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(_leg, ^"rotation:x", 0.22, 0.09)
+	tween.tween_property(_leg, ^"position", LEG_REST, 0.22).set_trans(Tween.TRANS_QUAD)
+	tween.parallel().tween_property(_leg, ^"rotation:x", -0.6, 0.22)
+	tween.tween_callback(func() -> void: _leg.visible = false)
+
+
+## The leg: thigh, shin and a boot, in the same dark material as the arms.
+func _build_leg() -> Node3D:
+	var leg := Node3D.new()
+	leg.position = LEG_REST
+	leg.visible = false
+	add_child(leg)
+	var mi := MeshInstance3D.new()
+	mi.mesh = MeshKit.cached(&"viewmodel_leg", _model_leg)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	leg.add_child(mi)
+	return leg
+
+
+static func _model_leg(kit: MeshKit) -> void:
+	var trouser: Material = Mats.arm_cuff()
+	var boot: Material = Mats.black()
+	kit.tube(0.085, 0.105, 0.42, Vector3(0, 0, 0.26), trouser, true, 10)      # thigh
+	kit.tube(0.068, 0.085, 0.40, Vector3(0, 0, -0.12), trouser, true, 10)     # shin
+	kit.ball(0.072, Vector3(0, 0, -0.32), boot, Vector3(1.0, 0.9, 1.0))       # ankle
+	kit.box(Vector3(0.115, 0.095, 0.26), Vector3(0, -0.02, -0.44), boot)      # boot
+	kit.box(Vector3(0.12, 0.03, 0.27), Vector3(0, -0.062, -0.45), boot)       # sole
 
 
 ## A short jab from alternating sides that ends near the crosshair, then pulls back.

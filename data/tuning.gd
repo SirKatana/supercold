@@ -25,18 +25,19 @@ extends Resource
 @export var accel: float = 40.0
 @export var jump_velocity: float = 4.5
 @export var gravity: float = 12.0
-## Below this height there is no building left to land on: whatever is falling is finished.
-## The player never reaches it -- a glove puts him back long before.
+## Below this height there is no building left to land on: whatever is falling is finished,
+## the player included.
 @export var fall_death_y: float = -4.0
-## The glove: how hard it throws him back inside, how long he is in the air, and how long he
-## takes to pick himself up.
-@export var tumble_speed: float = 9.5
-@export var tumble_lift: float = 4.2
-@export var tumble_seconds: float = 1.1
-@export var tumble_get_up: float = 0.55
 ## How hard a punch or a bash moves a dude, and how far off the floor it takes him. Enough to
 ## put him through an open window, not enough to launch him across the room.
 @export var blunt_shove: float = 5.2
+## The kick: reach, how long before the next one, how hard it throws a dude and how much it
+## moves the view.
+@export var kick_range: float = 2.3
+@export var kick_cooldown: float = 0.75
+@export var kick_shove: float = 7.4
+@export var kick_lift: float = 3.0
+@export var kick_camera: float = 0.09
 ## How close an open window has to be for a punch to put somebody through it.
 @export var window_punch_reach: float = 3.2
 @export var blunt_lift: float = 2.1

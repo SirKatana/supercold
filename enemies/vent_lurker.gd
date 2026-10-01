@@ -93,7 +93,11 @@ func _physics_process(delta: float) -> void:
 				global_position = global_position.lerp(p.global_position - _facing_player(p) * 0.9, minf(1.0, wd * 6.0))
 				_face(p.global_position, wd)
 				_hold_left -= wd
-				p.fx.shake(0.25)
+				# He is shaking you the whole time he has hold of you, and he keeps scrabbling.
+				_crawl += delta * 9.0
+				p.fx.shake(0.34)
+				if fmod(_hold_left, 0.5) < wd:
+					Sfx.play(&"punch", global_position)
 				if _hold_left <= 0.0:
 					p.die()
 					_release()
@@ -111,6 +115,12 @@ func _take_hold(p: Player) -> void:
 	_hold_left = T.lurker_hold_seconds
 	p.held_by = self
 	Sfx.play(&"punch", global_position)
+	# Unmistakable: the view is thrown about and dragged round to face him.
+	p.fx.shake(0.55)
+	p.fx.punch_fov(7.0)
+	var toward: Vector3 = global_position - p.global_position
+	if Vector2(toward.x, toward.z).length() > 0.05:
+		p.rotation.y = atan2(-toward.x, -toward.z)
 	grabbed.emit(p)
 
 

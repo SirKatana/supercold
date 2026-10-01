@@ -362,21 +362,6 @@ func _capture(path: String, after: float) -> void:
 		Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED
 		Game.player.hands.visible = false
 		await get_tree().create_timer(0.4, true, false, true).timeout
-	if _arg("do", "") == "glove" and Game.player != null:
-		# Step out of a window and get put back. `--at` is when the picture is taken.
-		var holes: Array[Node] = get_tree().get_nodes_in_group(&"windows")
-		if not holes.is_empty():
-			var hole: GlassPane = holes[mini(int(_arg("which", "0")), holes.size() - 1)]
-			var cell: Vector2i = Game.data.cell_of(hole.global_position)
-			var air := Vector2i.ZERO
-			for step: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				if Game.data.char_at(cell + step) == " ":
-					air = step
-			hole.take_damage(9, Vector3(air.x, 0, air.y))
-			Game.player.global_position = Game.data.cell_center(cell + air * 2, 0.1)
-			Game.player.rotation.y = atan2(float(air.x), float(air.y))
-			Game.player.head.rotation.x = deg_to_rad(float(_arg("pitch", "-20")))
-		await get_tree().create_timer(float(_arg("at", "0.35")), true, false, true).timeout
 	if _arg("do", "") == "window" and Game.player != null:
 		# Stand in front of a window, looking out of it. `--break=true` takes the glass out.
 		var panes: Array[Node] = get_tree().get_nodes_in_group(&"windows")
@@ -847,6 +832,12 @@ func _capture(path: String, after: float) -> void:
 		Game.entities_root(self).add_child(pistol)
 		Game.player.hands.pick_up(pistol)
 		await get_tree().create_timer(0.1, true, false, true).timeout
+	if _arg("do", "") == "kick" and Game.player != null:
+		# Kick on a loop so whenever the frame is grabbed the boot is somewhere in its swing.
+		for i: int in 14:
+			Game.player.hands.kick_cooldown_left = 0.0
+			Game.player.hands.kick()
+			await get_tree().create_timer(0.12, true, false, true).timeout
 	if _arg("do", "") == "punch" and Game.player != null:
 		Game.player.hands.punch()
 		await get_tree().create_timer(0.06, true, false, true).timeout

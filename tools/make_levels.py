@@ -249,16 +249,21 @@ class Grid:
             return
         rng = random.Random(seed)
         spots = []
-        for y in range(1, self.h - 1):
-            for x in range(1, self.w - 1):
+        # The border ring counts: on most layouts the corridor runs right up to it, so the only
+        # outside wall there is the border itself.
+        for y in range(0, self.h):
+            for x in range(0, self.w):
                 if self.c[y][x] != "#":
                     continue
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    if self.c[y + dy][x + dx] != ".":
+                    ix, iy = x + dx, y + dy
+                    if not (0 <= ix < self.w and 0 <= iy < self.h):
+                        continue
+                    if self.c[iy][ix] != ".":
                         continue      # the room has to be on this side
                     behind = self.run_to_the_edge(x, y, -dx, -dy)
-                    if behind is None or len(behind) > 12:
-                        continue      # something else is back there
+                    if behind is None or self.touches_a_room(behind):
+                        continue      # something else is back there, or it is not the outer skin
                     spots.append((x, y, tuple(behind)))
                     break
         rng.shuffle(spots)
@@ -274,6 +279,16 @@ class Grid:
             for bx, by in behind:
                 self.c[by][bx] = " "      # open air: the builder puts nothing here
             placed.append((x, y))
+
+    def touches_a_room(self, cells):
+        """Does any of these wall cells have floor beside it? If so it is interior wall, and
+        carving it would open a trench inside the building."""
+        for x, y in cells:
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.w and 0 <= ny < self.h and self.c[ny][nx] in ".~i=":
+                    return True
+        return False
 
     def run_to_the_edge(self, x, y, dx, dy):
         """The wall cells from (x,y) outward to the edge of the map, or None if anything other

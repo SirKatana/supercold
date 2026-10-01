@@ -321,6 +321,17 @@ func _physics_process(delta: float) -> void:
 		_animate(wd)
 
 
+## A boot in the chest: it hurts like a punch and it always takes him off his feet, window or
+## no window. This is where the knockback belongs, not on every punch.
+func take_kick(direction: Vector3) -> void:
+	if not alive:
+		return
+	var flat: Vector3 = Vector3(direction.x, 0.0, direction.z).normalized()
+	_take_blunt(1, T.throw_stun, Vector3.ZERO)
+	if alive:
+		shove(flat * T.kick_shove + Vector3.UP * T.kick_lift)
+
+
 ## Is there a hole in the outside wall close by, the way this blow is pushing him?
 func _an_open_window_that_way(push: Vector3) -> bool:
 	var flat: Vector3 = Vector3(push.x, 0.0, push.z).normalized()
