@@ -25,6 +25,11 @@ var two_handed: bool = false
 ## Right click looks through a scope instead of throwing the gun. Q still throws it.
 var has_scope: bool = false
 var muzzle_local: Vector3 = Vector3(0, 0.048, -0.20)
+## Where the firing hand closes on this weapon, and where the other hand goes on a long one.
+## Both are points in the model, so a hand can be put exactly on the gun instead of near it --
+## the same way a pink dude's hand anchors sit on his.
+var grip_local: Vector3 = Vector3(0, -0.05, 0.0)
+var fore_grip_local: Vector3 = Vector3(0, -0.02, -0.28)
 ## How far a shot lifts the world clock, and how hard it kicks the camera.
 var burst_strength: float = 0.10
 var kick: float = 0.05

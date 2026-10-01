@@ -8,9 +8,12 @@ func before_each() -> void:
 	Game.lurker_always = true
 	check(Game.load_level("f11_sewers"), "the sewers load")
 	await wait_physics(4)
+	# Clear the floor of ordinary dudes, but leave whatever lives in the ducts: he is in the
+	# enemies group now too.
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		node.free()
-	Game.alive_enemies = 0
+	# Whatever is in the ducts still counts, and is still standing.
+	Game.alive_enemies = get_tree().get_nodes_in_group(&"lurkers").size()
 
 
 func after_each() -> void:
@@ -161,20 +164,24 @@ func test_dudes_cannot_use_the_ducts() -> void:
 		check(nearest.distance_to(want) > 0.6, "the navmesh does not reach into the duct at %s" % cell)
 
 
-func test_the_lurker_waits_in_the_duct_and_is_not_part_of_clearing_the_floor() -> void:
+func test_the_lurker_waits_in_the_duct_and_has_to_be_dealt_with() -> void:
 	var lurkers: Array[Node] = get_tree().get_nodes_in_group(&"lurkers")
 	check_eq(lurkers.size(), 1, "one of them is in there")
 	var green: VentLurker = lurkers[0]
 	check_eq(green.skin.material, Mats.lurker(), "green")
 	check(VentDuct.inside(Game.data, green.global_position), "and he is in the ducts, not the corridor")
-	check(not green.is_in_group(&"enemies"), "he is not counted as an enemy")
+	check(Game.alive_enemies > 0, "he counts: the duct is not optional")
 	var before: int = Game.alive_enemies
 	await wait_physics(60)
 	check_eq(green.mode, VentLurker.Mode.WAITING, "he stays put while you keep out")
-	check_eq(Game.alive_enemies, before, "and the floor can be cleared without ever meeting him")
+	check_eq(Game.alive_enemies, before, "and he is still standing")
+	green.on_punched(Game.player, green.global_position)
+	green.on_punched(Game.player, green.global_position)
+	await wait_physics(3)
+	check_eq(Game.alive_enemies, before - 1, "killing him clears the last of the floor")
 
 
-func test_he_comes_for_you_in_the_duct_grabs_you_and_can_be_killed_first() -> void:
+func test_he_comes_for_you_in_the_duct_swings_and_can_be_killed_first() -> void:
 	Game.god_mode = false
 	var green: VentLurker = get_tree().get_nodes_in_group(&"lurkers")[0]
 	var cells: Array[Vector2i] = _duct_cells()
@@ -189,14 +196,13 @@ func test_he_comes_for_you_in_the_duct_grabs_you_and_can_be_killed_first() -> vo
 		await wait_physics(1)
 		if held["yes"]:
 			break
-	check(held["yes"], "he took hold of you")
-	check(Game.player.held_by == green, "and you are going nowhere")
+	check(held["yes"], "he drew back to swing at you")
+	check(Game.player.held_by == null, "he does not pin you: you can still move and fight")
 	check(Game.player.alive, "not dead yet: you have a moment")
 	green.on_punched(Game.player, green.global_position)
 	green.on_punched(Game.player, green.global_position)
 	await wait_physics(3)
 	check(not is_instance_valid(green) or not green.alive, "two punches and he is finished")
-	check(Game.player.held_by == null, "he lets go")
 	check(Game.player.alive, "and you crawl on")
 
 

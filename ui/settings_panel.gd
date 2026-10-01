@@ -14,6 +14,10 @@ func _ready() -> void:
 	_slider("VOLUME", 0.0, 1.0, 0.05, Settings.volume,
 		func(v: float) -> void: Settings.volume = v)
 
+	_toggle("MINIMAP", Settings.minimap, func(on: bool) -> void:
+		Settings.minimap = on
+		Settings.apply())
+
 	var shades := CheckButton.new()
 	shades.text = "SUNGLASSES ON ENEMIES"
 	shades.button_pressed = Settings.sunglasses
@@ -23,6 +27,17 @@ func _ready() -> void:
 		Settings.sunglasses = on
 		Settings.apply())
 	add_child(shades)
+
+
+## A labelled switch, dark text so it reads on the pale panel.
+func _toggle(caption: String, value: bool, on_change: Callable) -> void:
+	var box := CheckButton.new()
+	box.text = caption
+	box.button_pressed = value
+	for state: StringName in [&"font_color", &"font_pressed_color", &"font_hover_color", &"font_hover_pressed_color"]:
+		box.add_theme_color_override(state, Color(0.04, 0.04, 0.05))
+	box.toggled.connect(on_change)
+	add_child(box)
 
 
 func _slider(caption: String, low: float, high: float, step: float, value: float, on_change: Callable) -> void:

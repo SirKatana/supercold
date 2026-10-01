@@ -10,6 +10,14 @@ static func create(item_kind: StringName) -> Throwable:
 	t.kind = item_kind
 	t.fragile = item_kind in FRAGILE_KINDS
 	t.name = String(item_kind).capitalize()
+	# A mug is held by its handle, not by the middle of the cup. The handle stands at
+	# (0.072, 0.004) in the model, so the mug hangs off to the left of the fist.
+	if item_kind == &"mug":
+		t.hold_offset = Vector3(-0.072, -0.004, 0.0)
+		t.hold_euler = Vector3(0.0, 0.0, -0.12)
+	elif item_kind == &"bottle":
+		# Round the body, a third of the way up, the way anybody holds a flask.
+		t.hold_offset = Vector3(0.0, -0.09, 0.0)
 	return t
 
 

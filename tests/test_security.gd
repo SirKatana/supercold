@@ -49,6 +49,8 @@ func test_exit_lift_is_absent_until_every_enemy_is_dead() -> void:
 	Game.player.global_position = Game.data.cell_center(Vector2i(2, 2), 0.05)
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		(node as PinkDude).die()
+	for node: Node in get_tree().get_nodes_in_group(&"lurkers"):
+		(node as VentLurker).take_damage(9)
 	await wait_physics(10)
 	check(lift.present and lift.visible, "last enemy dead: the lift arrives")
 	check_eq(lift.phase, Elevator.Phase.READY, "and waits for its button")
@@ -61,6 +63,8 @@ func test_a_new_floor_does_not_inherit_the_cleared_lift() -> void:
 	await wait_physics(2)
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		(node as PinkDude).die()
+	for node: Node in get_tree().get_nodes_in_group(&"lurkers"):
+		(node as VentLurker).take_damage(9)
 	await wait_physics(3)
 	check_eq(Game.state, Game.State.CLEARED, "lobby cleared")
 	Game.next_floor()
@@ -75,6 +79,8 @@ func test_player_standing_where_the_lift_lands_is_not_shut_in() -> void:
 	Game.player.global_position = lift.global_position + Vector3(0, 0.05, 0)
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		(node as PinkDude).die()
+	for node: Node in get_tree().get_nodes_in_group(&"lurkers"):
+		(node as VentLurker).take_damage(9)
 	await wait_physics(2)
 	check(lift.phase != Elevator.Phase.READY or lift.door_open > 0.0, "doors opened for him rather than wait for a button he cannot reach")
 

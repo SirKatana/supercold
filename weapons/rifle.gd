@@ -16,7 +16,11 @@ static func create(rounds: int = -1) -> Rifle:
 	r.spread_deg = T.rifle_spread_deg
 	r.two_handed = true
 	r.muzzle_local = Vector3(0, 0.038, -0.60 * LENGTH_FIX)
-	r.hold_offset = Vector3(-0.015, 0.052, 0.0)
+	# The grip and the handguard, straight off the model: the pistol grip sits at -0.052 and
+	# the wood runs from about -0.20 to -0.34.
+	r.grip_local = Vector3(0.0, -0.052, 0.0)
+	r.fore_grip_local = Vector3(0.0, -0.012, -0.27)
+	r.hold_offset = Vector3(-0.015, 0.0, 0.0) - r.grip_local
 	r.burst_strength = 0.16
 	r.kick = 0.022
 	r.enemy_burst = T.rifle_enemy_burst

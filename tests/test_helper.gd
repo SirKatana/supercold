@@ -228,6 +228,8 @@ func test_helper_leaves_when_the_floor_is_cleared() -> void:
 	check(Game.helper_time_left > 100.0, "plenty of time left")
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		(node as PinkDude).die()
+	for node: Node in get_tree().get_nodes_in_group(&"lurkers"):
+		(node as VentLurker).take_damage(9)
 	await wait_physics(2)
 	check_eq(Game.state, Game.State.CLEARED, "floor cleared")
 	check(helper.leaving, "the job is done, he goes")

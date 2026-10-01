@@ -10,6 +10,9 @@ var fov: float = 85.0
 var volume: float = 0.8
 ## Pink dudes and security wear sunglasses. Some people would rather they did not.
 var sunglasses: bool = true
+## The minimap in the corner: off, or on with a dot per enemy. Each kind of dude has its own
+## colour, so a crowd of pink with one violet in it reads at a glance.
+var minimap: bool = false
 var _read_only: bool = false
 
 
@@ -25,6 +28,7 @@ func load_settings() -> void:
 	fov = float(cfg.get_value("video", "fov", fov))
 	volume = float(cfg.get_value("audio", "volume", volume))
 	sunglasses = bool(cfg.get_value("video", "sunglasses", sunglasses))
+	minimap = bool(cfg.get_value("video", "minimap", minimap))
 	_apply_volume()
 
 
@@ -35,6 +39,7 @@ func use_defaults_for_tests() -> void:
 	fov = 85.0
 	volume = 0.8
 	sunglasses = true
+	minimap = false
 	_read_only = true
 
 
@@ -46,6 +51,7 @@ func save_settings() -> void:
 	cfg.set_value("video", "fov", fov)
 	cfg.set_value("audio", "volume", volume)
 	cfg.set_value("video", "sunglasses", sunglasses)
+	cfg.set_value("video", "minimap", minimap)
 	cfg.save(PATH)
 
 

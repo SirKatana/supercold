@@ -126,6 +126,8 @@ func _ready() -> void:
 	_words = WordFlash.new()
 	add_child(_words)
 
+	add_child(Minimap.new())      # hidden unless the player has switched it on
+
 	Game.floor_loaded.connect(_on_floor_loaded)
 	Game.state_changed.connect(_on_state_changed)
 	Game.floor_announced.connect(_on_floor_announced)

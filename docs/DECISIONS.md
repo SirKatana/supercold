@@ -491,3 +491,20 @@ One line per call made in auto mode, with why.
 - A floating sewer body moves every frame but only solves and applies its twenty-one joints
   every fourth one once it is more than `sewer_body_detail` away.
 - The AK's magazine was `Mats.steel()`, which reads as a white brick hanging off the gun.
+
+## The thing in the ducts fights now, and a map
+
+- The vent lurker no longer pins the player. Holding him still while the screen shook was
+  unreadable, so he draws back (`lurker_windup`) and swings; the blow kills if you are still
+  in front of him when it lands, and you can punch or shoot him the whole time.
+- He counts toward clearing the floor through `Game.count_other_enemy()` and
+  `count_enemy_down()`. He is deliberately **not** in the `enemies` group: half the game casts
+  the members of that group straight to `PinkDude`.
+- `ui/minimap.gd`, off by default and switched on in settings: walls from `Game.data`, the exit,
+  and a dot per enemy taken from his own `body_material`, so every kind of dude has his own
+  colour on the map and a new one needs no work.
+- The bucket hangs from its bail and the mug is held by its handle, both from the model's own
+  measurements rather than a guess.
+- Guns carry `grip_local` and `fore_grip_local`: where the firing hand closes and where the
+  other hand goes. The AK and the shotgun set theirs from their own models, so the player holds
+  them where a pink dude holds them.

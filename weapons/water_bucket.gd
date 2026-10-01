@@ -16,7 +16,10 @@ static func create() -> WaterBucket:
 	b.kind = &"bucket"
 	b.name = "WaterBucket"
 	b.blunt_damage = 1
-	b.hold_offset = Vector3(0.04, -0.20, 0.02)
+	# By the bail: its wooden grip is at y 0.375 in the model, so the pail hangs under the fist
+	# rather than being carried by thin air halfway up its side.
+	b.hold_offset = Vector3(0.0, -0.375, 0.02)
+	b.hold_euler = Vector3(0.0, 0.0, 0.0)
 	return b
 
 

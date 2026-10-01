@@ -359,6 +359,7 @@ func _place_lurkers() -> void:
 	lurker.name = "VentLurker"
 	entities_root(self).add_child(lurker)
 	lurker.global_position = data.cell_center(farthest, 0.05)
+	count_other_enemy()      # the duct is not optional: he has to go too
 
 
 ## Open floors on the station get a few rocks hanging over them with a man standing on each.
@@ -582,6 +583,21 @@ func _register(dude: PinkDude, at: Vector3) -> void:
 func count_new_enemy(dude: PinkDude) -> void:
 	dude.died.connect(_on_dude_died)
 	alive_enemies += 1
+
+
+## Somebody who counts toward clearing the floor but is not a PinkDude: the vent lurker.
+func count_other_enemy() -> void:
+	alive_enemies += 1
+
+
+## And the other end of it, called when one of those dies.
+func count_enemy_down(_who: Node) -> void:
+	kills += 1
+	alive_enemies = maxi(0, alive_enemies - 1)
+	enemy_killed.emit(alive_enemies)
+	if is_floor_clear() and state == State.PLAYING:
+		_set_state(State.CLEARED)
+		floor_cleared.emit()
 
 
 func spawn_wave(count: int, armed: int, kind: StringName = &"pistol") -> void:

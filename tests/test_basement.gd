@@ -30,6 +30,8 @@ func test_the_lift_down_to_it_comes_apart() -> void:
 	await wait_physics(3)
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		(node as PinkDude).die()
+	for node: Node in get_tree().get_nodes_in_group(&"lurkers"):
+		(node as VentLurker).take_damage(9)
 	await wait_physics(3)
 	var lift: Elevator = get_tree().get_first_node_in_group(&"elevator") as Elevator
 	check(lift.present, "the lift has arrived")

@@ -48,6 +48,10 @@ func test_every_floor_loads_and_is_walkable() -> void:
 		for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 			if (node as PinkDude).alive:
 				standing += 1
+		# Whatever is in the ducts counts toward clearing the floor without being in that group.
+		for node: Node in get_tree().get_nodes_in_group(&"lurkers"):
+			if (node as VentLurker).alive:
+				standing += 1
 		check_eq(Game.alive_enemies, standing, "%s counted everyone it spawned" % floor_name)
 		check(standing >= Game.data.initial_enemy_count(), "%s spawned everyone on the grid" % floor_name)
 

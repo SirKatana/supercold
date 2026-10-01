@@ -1,17 +1,17 @@
 class_name VentLurker
 extends CharacterBody3D
-## Green, and he lives in the ducts. He does not walk the floors and he never counts toward
-## clearing one: he is what happens when you decide to take the short way round.
+## Green, and he lives in the ducts. He comes down the tunnel after you, flat on his belly,
+## arms out, and **swings at you** when he gets there. He does not hold you still -- being
+## pinned while the screen shook was unreadable -- so the fight in a duct is a fight: punch
+## him, shoot him, or back out.
 ##
-## Crawl into a duct and he comes down it after you, flat on his belly, arms out. Within
-## `lurker_grab_range` he takes hold of you: you cannot move, but you can still shoot him or
-## punch him, and you have `lurker_hold_seconds` to do it. Kill him and he lets go.
+## He counts toward clearing the floor like anybody else, so a duct is not optional any more.
 
 signal grabbed(player: Player)
 signal let_go
 signal died
 
-enum Mode { WAITING, COMING, HOLDING, DEAD }
+enum Mode { WAITING, COMING, SWINGING, DEAD }
 
 const T: Tuning = preload("res://data/tuning.tres")
 ## Small enough that lying flat he fits the width of a duct. A full-sized man laid out in a
@@ -24,7 +24,9 @@ var hp: int = 2
 var skin: Humanoid
 var joints: PackedVector3Array = []
 
-var _hold_left: float = 0.0
+## Seconds of windup left before the blow lands, and until he may swing again.
+var _swing_left: float = 0.0
+var _rest_left: float = 0.0
 var _crawl: float = 0.0
 var _agent: NavigationAgent3D
 var _home: Vector3
@@ -32,6 +34,8 @@ var _home: Vector3
 
 func _ready() -> void:
 	add_to_group(&"lurkers")
+	# Deliberately NOT in the `enemies` group: half the game casts the members of that group to
+	# PinkDude. He blocks the floor clear through `Game.count_other_enemy()` instead.
 	collision_layer = 4          # an enemy to every bullet, punch, blade and blast
 	collision_mask = 1
 	hp = T.lurker_hp
@@ -82,25 +86,26 @@ func _physics_process(delta: float) -> void:
 					_crawl_toward(_home, wd, delta)
 				else:
 					mode = Mode.WAITING
-			elif global_position.distance_to(p.global_position) <= T.lurker_grab_range:
-				_take_hold(p)
+			elif global_position.distance_to(p.global_position) <= T.lurker_grab_range and _rest_left <= 0.0:
+				_start_swing(p)
 			else:
+				_rest_left = maxf(0.0, _rest_left - wd)
 				_crawl_toward(p.global_position, wd, delta)
-		Mode.HOLDING:
+		Mode.SWINGING:
 			if p == null or not p.alive:
-				_release()
+				mode = Mode.COMING
 			else:
-				global_position = global_position.lerp(p.global_position - _facing_player(p) * 0.9, minf(1.0, wd * 6.0))
 				_face(p.global_position, wd)
-				_hold_left -= wd
-				# He is shaking you the whole time he has hold of you, and he keeps scrabbling.
-				_crawl += delta * 9.0
-				p.fx.shake(0.34)
-				if fmod(_hold_left, 0.5) < wd:
-					Sfx.play(&"punch", global_position)
-				if _hold_left <= 0.0:
-					p.die()
-					_release()
+				_swing_left -= wd
+				_crawl += delta * 7.0
+				if _swing_left <= 0.0:
+					# The blow lands if you are still in front of him when it does.
+					if global_position.distance_to(p.global_position) <= T.lurker_grab_range + 0.35:
+						p.die()
+					else:
+						Sfx.play(&"punch", global_position)
+					mode = Mode.COMING
+					_rest_left = T.lurker_swing_rest
 	_pose(wd)
 
 
@@ -110,17 +115,12 @@ func _facing_player(p: Player) -> Vector3:
 	return flat.normalized() if flat.length() > 0.01 else global_transform.basis.z
 
 
-func _take_hold(p: Player) -> void:
-	mode = Mode.HOLDING
-	_hold_left = T.lurker_hold_seconds
-	p.held_by = self
-	Sfx.play(&"punch", global_position)
-	# Unmistakable: the view is thrown about and dragged round to face him.
-	p.fx.shake(0.55)
-	p.fx.punch_fov(7.0)
-	var toward: Vector3 = global_position - p.global_position
-	if Vector2(toward.x, toward.z).length() > 0.05:
-		p.rotation.y = atan2(-toward.x, -toward.z)
+## He draws back for a moment before he swings, which is the window to hit him first.
+func _start_swing(p: Player) -> void:
+	mode = Mode.SWINGING
+	_swing_left = T.lurker_windup
+	Sfx.play(&"choke", global_position)
+	p.fx.shake(0.18)
 	grabbed.emit(p)
 
 
@@ -236,6 +236,11 @@ func on_explosion(_centre: Vector3) -> void:
 	_hurt(T.lurker_hp)
 
 
+## Hurt him from outside: tests and anything that wants him gone without a bullet.
+func take_damage(amount: int) -> void:
+	_hurt(amount)
+
+
 func _hurt(amount: int) -> void:
 	if not alive:
 		return
@@ -247,6 +252,7 @@ func _hurt(amount: int) -> void:
 	mode = Mode.DEAD
 	collision_layer = 0
 	_release()
+	Game.count_enemy_down(self)
 	Ragdoll.spawn(Game.entities_root(self), joints, BODY_SCALE, Vector3.UP * 1.5, Mats.lurker(), 1.0)
 	Sfx.play(&"shatter", global_position)
 	died.emit()

@@ -219,6 +219,9 @@ extends Resource
 @export var lurker_sense: float = 14.0
 @export var lurker_speed: float = 3.1
 @export var lurker_grab_range: float = 1.35
+## How long he draws back before a swing, and how long before he can swing again.
+@export var lurker_windup: float = 0.55
+@export var lurker_swing_rest: float = 0.9
 @export var lurker_hold_seconds: float = 1.4
 @export var lurker_hp: int = 2
 ## One duct system in three has him in it. The rest are only dark.
