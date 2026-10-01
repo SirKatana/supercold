@@ -588,3 +588,20 @@ One line per call made in auto mode, with why.
   and every dude is. A joiner that finds itself on the wrong floor loads the host's.
 - `Player.remote` is somebody else's body drawn on this machine: no input, shown in third
   person so there is a person to see rather than a pair of hands.
+
+## Staff rooms, and knowing what killed you
+
+- Ride a lift with one of the staff in it and you do not arrive on the next floor. The cabin
+  sensor watches for a `Cleaner` or a `SecurityGuard` (`_staff_inside`) and, when the ride ends,
+  calls `Game.take_me_to_the_lair()` instead of `next_floor()`.
+- `lair_cleaners` and `lair_security` are generated rooms with no way out: fifteen cleaners or
+  twenty guards, all `born_angry`, and a lift that never arrives because the floor never
+  clears. Dying is the exit: `restart_floor()` notices `in_a_lair()` and puts the player back on
+  the floor he got into the lift on, rather than giving him another go at the staff.
+- Fifteen cleaners shouting the same recorded line would be a wall of noise, so `Cleaner.shout()`
+  puts words in the bubble with no clip behind them.
+- `Player.killed_by` is set by everything that can kill him -- the shooter's `display_name()`, a
+  punch, a barrel, the drop, the thing in the vents -- and the HUD prints "DIED FROM ...". Every
+  character answers `display_name()`; the base dude answers by what he is carrying.
+- The collapsing shelves threw their stock across the whole room. The toss is a third of what
+  it was, so it spills off the shelf and stays there.

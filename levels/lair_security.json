@@ -1,0 +1,14 @@
+{
+  "title": "SECURITY",
+  "intro": "BADGES. ALL OF THEM.",
+  "theme": {
+    "wall": "b9bcc0",
+    "floor": "55595f",
+    "prop": "8b9096",
+    "ambient": "e9eef5",
+    "sky": "c8ccd2",
+    "energy": 0.48,
+    "sun": 0.4
+  },
+  "lair": true
+}

@@ -176,7 +176,7 @@ func _physics_process(delta: float) -> void:
 		face_toward(global_position + _charge_dir, wd)
 		var p: Player = get_player()
 		if p != null and p.alive and flat_distance_to(p.global_position) <= T.beast_swipe_range * 0.8:
-			p.hit_from(p.global_position - global_position)
+			p.hit_from(p.global_position - global_position, display_name())
 		if _charging >= 1.1 or is_on_wall():
 			_charging = -1.0
 			_charge_clock = T.beast_charge_every
@@ -306,3 +306,7 @@ func on_rammed(direction: Vector3) -> void:
 
 func _take_blunt(_damage: int, _stun_time: float, _push: Vector3) -> void:
 	Sfx.play(&"punch", global_position)
+
+
+func display_name() -> String:
+	return "WHATEVER THAT WAS"

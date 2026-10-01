@@ -98,7 +98,8 @@ func _spill(away: Vector3) -> void:
 		var along: float = (float(i) / maxf(how_many - 1.0, 1.0) - 0.5) * length
 		var at: Vector3 = global_position + Vector3(0, randf_range(-0.4, 0.9), 0) \
 			+ global_transform.basis.z * along
-		var toss: Vector3 = away * randf_range(1.2, 3.4) + Vector3.UP * randf_range(0.6, 2.2)
+		# Enough to spill off the shelf, not enough to clear the room.
+		var toss: Vector3 = away * randf_range(0.4, 1.3) + Vector3.UP * randf_range(0.2, 0.9)
 		# The last argument is the shard's size in metres. Passing the throw strength there
 		# filled the room with four-metre slabs of yellow.
 		Shatter.burst(root, at, 1, _stock_material(i), _stock_size(), toss, _stock_shard())

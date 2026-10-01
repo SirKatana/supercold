@@ -841,6 +841,27 @@ func _capture(path: String, after: float) -> void:
 		if _flag("walk"):
 			Game.player.global_position += -Game.player.global_transform.basis.z * 3.0
 		await get_tree().create_timer(float(_arg("at", "0.6")), true, false, true).timeout
+	if _arg("do", "").begins_with("lair:") and Game.player != null:
+		Game.take_me_to_the_lair(StringName(_arg("do", "").trim_prefix("lair:")))
+		await get_tree().create_timer(float(_arg("at", "1.2")), true, false, true).timeout
+		if Game.player != null:
+			Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED
+			Game.player.hands.visible = false
+			Game.player.head.rotation.x = deg_to_rad(-6.0)
+	if _arg("do", "") == "shelf" and Game.player != null:
+		# Stand in front of a run of shelving and bring it down.
+		var shelf: Shelving = get_tree().get_first_node_in_group(&"shelving") as Shelving
+		if shelf != null:
+			Game.player.riding = true
+			Game.player.global_position = shelf.global_position + Vector3(3.0, 0.4, 0.0)
+			Game.player.look_at(shelf.global_position + Vector3(0, 0.9, 0))
+			Game.player.head.rotation.x = 0.0
+			Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED
+			Game.player.hands.visible = false
+			TimeManager.override_scale = 1.0
+			await get_tree().create_timer(0.2, true, false, true).timeout
+			shelf.smash(Vector3.LEFT)
+		await get_tree().create_timer(float(_arg("at", "0.5")), true, false, true).timeout
 	if _arg("do", "") == "kick" and Game.player != null:
 		# Kick on a loop so whenever the frame is grabbed the boot is somewhere in its swing.
 		# Look down at your own legs while kicking, which is where the kick actually is.

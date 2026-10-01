@@ -110,3 +110,7 @@ func _animate(wd: float) -> void:
 		shield_anchor.global_transform = Transform3D(
 			global_transform.basis.orthonormalized() * Basis(Vector3.RIGHT, lean),
 			global_position + forward * 0.58 - global_transform.basis.x.normalized() * 0.10)
+
+
+func display_name() -> String:
+	return "A SHIELD TROOPER"

@@ -72,3 +72,7 @@ func _animate(wd: float) -> void:
 	# The tower shield is as oversized as he is.
 	if shield_anchor != null:
 		shield_anchor.global_transform.basis = shield_anchor.global_transform.basis.orthonormalized().scaled(Vector3.ONE * body_scale)
+
+
+func display_name() -> String:
+	return "THE WARDEN"

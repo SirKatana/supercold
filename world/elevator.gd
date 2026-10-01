@@ -46,6 +46,8 @@ var _screen_in: Label3D
 var _timer: float = 0.0
 var _flash_left: float = 0.0
 var _player_inside: bool = false
+## Who else is in the cabin: &"cleaner", &"security", or nothing.
+var _staff_inside: StringName = &""
 var _announced: bool = false
 
 
@@ -269,13 +271,21 @@ func _build_sensor() -> void:
 	shape.position = Vector3(0, 1.0, 0.2)
 	_inside.add_child(shape)
 	add_child(_inside)
+	# Staff count too: ride down with one of them and you are not going where you thought.
+	_inside.collision_mask = 2 | 256
 	_inside.body_entered.connect(func(body: Node3D) -> void:
 		if body is Player:
-			_player_inside = true)
+			_player_inside = true
+		elif body is Cleaner:
+			_staff_inside = &"cleaner"
+		elif body is SecurityGuard:
+			_staff_inside = &"security")
 	_inside.body_exited.connect(func(body: Node3D) -> void:
 		if body is Player:
 			_player_inside = false
-			_on_player_left())
+			_on_player_left()
+		elif body is Cleaner or body is SecurityGuard:
+			_staff_inside = &"")
 
 
 # ---------------------------------------------------------------- behaviour
@@ -377,7 +387,11 @@ func _process(delta: float) -> void:
 			if _timer <= 0.0:
 				phase = Phase.DONE
 				Game.glitch = 0.0
-				Game.next_floor.call_deferred()
+				if _staff_inside != &"":
+					# You got in with one of the staff. This is not your floor.
+					Game.take_me_to_the_lair.call_deferred(_staff_inside)
+				else:
+					Game.next_floor.call_deferred()
 		Phase.WAITING:
 			_timer -= delta
 			if _timer <= 0.0:

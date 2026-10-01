@@ -331,7 +331,7 @@ func _physics_process(delta: float) -> void:
 	_run_the_boom(delta)
 	if alive and _over_the_edge():
 		# Out of the building. There is nothing out there and nothing catches you.
-		die()
+		killed_by_the("THE DROP")
 		return
 	if riding:
 		velocity = Vector3.ZERO
@@ -383,8 +383,10 @@ func bullet_excludes() -> Array[RID]:
 
 
 ## Killed by something with a direction: a blast, a shove. The body is thrown that way.
-func hit_from(direction: Vector3) -> void:
+func hit_from(direction: Vector3, what: String = "") -> void:
 	_last_hit_direction = direction.normalized()
+	if what != "":
+		killed_by = what
 	die()
 
 
@@ -393,8 +395,23 @@ func _on_enemy_killed(_remaining: int) -> void:
 
 
 func on_bullet_hit(bullet: Node, _point: Vector3, _normal: Vector3) -> void:
+	var from: String = "A STRAY ROUND"
 	if bullet is Bullet:
-		_last_hit_direction = (bullet as Bullet).direction
+		var round_fired: Bullet = bullet
+		_last_hit_direction = round_fired.direction
+		if is_instance_valid(round_fired.shooter) and round_fired.shooter.has_method(&"display_name"):
+			from = str(round_fired.shooter.call(&"display_name"))
+	killed_by_the(from)
+
+
+## What is written on the screen after: "DIED FROM THE GENTLEMAN".
+var killed_by: String = ""
+
+
+## Records the cause and kills him. Everything that can kill the player goes through here, so
+## the death message is never a guess.
+func killed_by_the(what: String) -> void:
+	killed_by = what
 	die()
 
 

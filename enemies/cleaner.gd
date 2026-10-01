@@ -23,6 +23,8 @@ const T: Tuning = preload("res://data/tuning.tres")
 var mode: Mode = Mode.LEAVING
 var alive: bool = true
 var hostile: bool = false
+## Set before he is added to the tree: he is in his own room and you are not meant to be here.
+var born_angry: bool = false
 var skin: Humanoid
 var joints: PackedVector3Array = []
 var voice: HelperVoice
@@ -49,6 +51,8 @@ var _last_why: int = -100000
 
 func _ready() -> void:
 	add_to_group(&"cleaners")
+	if born_angry:
+		call_deferred(&"_snap")      # his room, his rules
 	collision_layer = 256      # like the helper and the guard: bullets stop on him, nobody targets him
 	collision_mask = 1
 	var shape := CollisionShape3D.new()
@@ -173,6 +177,14 @@ func say(id: StringName) -> void:
 	voice.shut_up()
 	voice._current_priority = -1
 	voice.say_line(id, HelperVoice.Priority.IMPORTANT)
+
+
+## Words with no clip behind them: a bubble over his head and nothing spoken. Used for the
+## staff room, where fifteen of them shouting the same recorded line would be a wall of noise.
+func shout(words: String) -> void:
+	voice.shut_up()
+	voice._current_priority = -1
+	voice.say(words, HelperVoice.Priority.IMPORTANT, [])
 
 
 ## `at_home` is where he comes in and goes out: the mouth of the arrival lift.
@@ -402,3 +414,7 @@ func _outraged(who: Node3D, came_from: Vector3) -> void:
 		_last_why = now
 		say(&"cleaner_why")
 	outraged.emit(who)
+
+
+func display_name() -> String:
+	return "THE CLEANER"

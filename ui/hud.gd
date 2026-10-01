@@ -188,7 +188,12 @@ func _on_state_changed(state: Game.State) -> void:
 				else "FLOOR CLEAR. THE ELEVATOR HAS ARRIVED. HIT ITS BUTTON."
 			_words.flash(["SUPER", "COLD"], 0.42, 2)
 		Game.State.DEAD:
-			_hint.text = "R TO RESTART"
+			# Say what got you. Dying over and over without knowing why is the worst part of a
+			# game like this.
+			var by: String = ""
+			if Game.player != null and is_instance_valid(Game.player):
+				by = Game.player.killed_by
+			_hint.text = ("DIED FROM %s     R TO RESTART" % by) if by != "" else "R TO RESTART"
 			_words.flash(["DEAD"], 0.5)
 		Game.State.PLAYING:
 			_hint.text = ""

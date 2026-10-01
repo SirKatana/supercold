@@ -620,11 +620,23 @@ func disarm() -> void:
 	_release_weapon().pop_up(global_position + Vector3(0, 1.5, 0) - global_transform.basis.z * 0.4, player_position())
 
 
+## What the death message calls him. Subclasses say their own.
+func display_name() -> String:
+	if wears_helmet:
+		return "A STATION CREWMAN"
+	match weapon_kind:
+		&"rifle": return "A RIFLEMAN"
+		&"shotgun": return "A SHOTGUNNER"
+		&"smg": return "AN SMG DUDE"
+		&"sniper": return "A SNIPER"
+		_: return "A PINK DUDE"
+
+
 func land_punch() -> void:
 	var p: Player = get_player()
 	if p != null and p.alive and dist_to_player <= punch_range() + 0.5:
 		Sfx.play(punch_sound(), global_position)
-		p.die()
+		p.killed_by_the(display_name())
 
 
 # ---------------------------------------------------------------- cold, wet, smelly

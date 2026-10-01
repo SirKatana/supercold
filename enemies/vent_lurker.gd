@@ -101,7 +101,7 @@ func _physics_process(delta: float) -> void:
 				if _swing_left <= 0.0:
 					# The blow lands if you are still in front of him when it does.
 					if global_position.distance_to(p.global_position) <= T.lurker_grab_range + 0.35:
-						p.die()
+						p.killed_by_the("THE THING IN THE VENTS")
 					else:
 						Sfx.play(&"punch", global_position)
 					mode = Mode.COMING
@@ -257,3 +257,7 @@ func _hurt(amount: int) -> void:
 	Sfx.play(&"shatter", global_position)
 	died.emit()
 	queue_free()
+
+
+func display_name() -> String:
+	return "THE THING IN THE VENTS"

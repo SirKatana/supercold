@@ -125,3 +125,7 @@ func die(at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: String
 			Shatter.burst(Game.entities_root(self), c.global_position + Vector3(0, 1.0, 0), 12, Mats.clone_copy(),
 				Vector3(0.3, 0.8, 0.3), Vector3.UP * 2.0, 0.06)
 			c.die(c.global_position, Vector3.UP * 0.2, &"ice")      # they pop, they do not fall
+
+
+func display_name() -> String:
+	return "THE CLONER"

@@ -116,3 +116,7 @@ func die(at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: String
 ## Both arms come up when he aims: one pistol each.
 func aim_left_amount() -> float:
 	return _aim_raise
+
+
+func display_name() -> String:
+	return "THE DIRECTOR"

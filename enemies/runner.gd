@@ -27,3 +27,7 @@ func move_speed() -> float:
 
 func punch_windup() -> float:
 	return T.runner_windup
+
+
+func display_name() -> String:
+	return "A RUNNER"

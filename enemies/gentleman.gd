@@ -188,3 +188,7 @@ func shoot() -> void:
 	stun(T.gentleman_recoil_seconds)
 	Shatter.burst(Game.entities_root(self), muzzle(), 9, Mats.smoke_grey(),
 		Vector3(0.06, 0.06, 0.06), -global_transform.basis.z * 2.2, 0.11)
+
+
+func display_name() -> String:
+	return "THE GENTLEMAN"

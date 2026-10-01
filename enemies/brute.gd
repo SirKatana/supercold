@@ -137,6 +137,8 @@ func _physics_process(delta: float) -> void:
 		if p != null and p.alive:
 			p.fx.shake(0.06)
 			if flat_distance_to(p.global_position) <= T.brute_slam_range + 0.7:
-				p.hit_from(p.global_position - global_position)
+				p.hit_from(p.global_position - global_position, display_name())
 
 
+func display_name() -> String:
+	return "THE BRUTE"

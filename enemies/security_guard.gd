@@ -44,6 +44,8 @@ var _fetching_for: float = 0.0
 
 func _ready() -> void:
 	add_to_group(&"security")
+	if born_angry:
+		call_deferred(&"_open_fire")      # down here they do not wait to be provoked
 	collision_layer = 256       # bullets stop on him, the player walks round him
 	collision_mask = 1
 	var shape := CollisionShape3D.new()
@@ -165,6 +167,10 @@ func _contraband_in_hand(p: Player) -> Pickup:
 ## How far out of the lift the player has come, measured along the way the doors face.
 func _progress(p: Player) -> float:
 	return (p.global_position - _lift).dot(_out)
+
+
+## Set before he is added to the tree, for the ones waiting in their own room.
+var born_angry: bool = false
 
 
 func _open_fire() -> void:
@@ -337,3 +343,7 @@ func _pose(_wd: float) -> void:
 	var forward: Vector3 = (wrist - joints[Humanoid.index_of(&"elbow_r")]).normalized()
 	var hand_up: Vector3 = Vector3.UP if absf(forward.y) < 0.95 else -global_transform.basis.z
 	_hand.global_transform = Transform3D(Basis.looking_at(forward, hand_up), wrist.lerp(joints[Humanoid.index_of(&"hand_r")], 0.5))
+
+
+func display_name() -> String:
+	return "SECURITY"

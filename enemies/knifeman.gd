@@ -101,3 +101,7 @@ func die(at: Vector3 = Vector3.ZERO, push: Vector3 = Vector3.ZERO, style: String
 	if is_instance_valid(_blade):
 		_blade.queue_free()
 	super(at, push, style)
+
+
+func display_name() -> String:
+	return "A KNIFEMAN"

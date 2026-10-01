@@ -47,6 +47,9 @@ extends Resource
 @export var shelf_heap_height: float = 0.55
 @export var shelf_crush_radius: float = 1.4
 @export var pot_hurt_radius: float = 1.3
+## How many of them are waiting in each staff room.
+@export var lair_cleaners: int = 15
+@export var lair_guards: int = 20
 ## Carrying a body: how far it can be picked up from, how hard it is thrown, how long it stays
 ## dangerous in flight and how close it has to get to knock somebody down.
 @export var body_lift_range: float = 2.4

@@ -154,7 +154,7 @@ func _blast(source: Node) -> int:
 		if d <= _radius * 2.2:
 			player.fx.shake(0.07 * clampf(1.0 - d / (_radius * 2.2), 0.15, 1.0))
 		if d <= T.barrel_player_radius and _reaches(player.chest_position()):
-			player.hit_from(player.chest_position() - here)
+			player.hit_from(player.chest_position() - here, "A GAS BARREL")
 	for group: StringName in [&"doors", &"see_through"]:
 		for node: Node in get_tree().get_nodes_in_group(group):
 			var body: Node3D = node as Node3D

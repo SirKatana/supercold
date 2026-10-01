@@ -1112,6 +1112,27 @@ SPECS = [
 ]
 
 
+
+def lair(name, title, intro, theme_name):
+    """A windowless room at the bottom of the building. You are not meant to be down here and
+    there is nothing in it but the people who are: no exit, no cover worth the name, and one
+    way back out, which is dying."""
+    g = Grid(26, 20)
+    g.room(1, 1, 24, 18)
+    for x, y in [(6, 5), (12, 5), (18, 5), (6, 13), (12, 13), (18, 13)]:
+        g.put("o", (x, y))
+    g.put("c", (3, 9), (3, 10), (22, 9), (22, 10))
+    g.put("P", (13, 17))
+    g.put("X", (13, 1))      # a lift that never arrives: the floor is never clear down here
+    meta = {"title": title, "intro": intro, "theme": theme(theme_name), "lair": True}
+    g.check_spacing(name, between=0.0, from_player=0.0)
+    with open(os.path.join(OUT, name + ".txt"), "w") as f:
+        f.write(g.text())
+    with open(os.path.join(OUT, name + ".json"), "w") as f:
+        json.dump(meta, f, indent=2)
+    print("%s: %dx%d" % (name, g.w, g.h))
+
+
 def f9_pool():
     """Changing rooms along a corridor, and the pool hall beyond them."""
     g = Grid(42, 30)
@@ -1246,6 +1267,8 @@ def f21_lockdown():
 def new_floors():
     for spec in SPECS:
         build_floor(spec)
+    lair("lair_cleaners", "THE CLEANERS' ROOM", "YOU ARE NOT ALLOWED IN HERE.", "sewer")
+    lair("lair_security", "SECURITY", "BADGES. ALL OF THEM.", "concrete")
     f9_pool()
     f10_vault()
     f13_basement()

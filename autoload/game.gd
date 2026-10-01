@@ -35,6 +35,8 @@ const FLOORS: PackedStringArray = [
 ## Where the windows that have been broken are. A punch only throws somebody when there is one
 ## of these to throw him through; everywhere else a punch does what it always did.
 var open_windows: Array[Vector3] = []
+## The floor to put the player back on after a lair. Empty when he is not in one.
+var back_to: String = ""
 
 var gravity_scale: float = 1.0
 const SPACE_GRAVITY: float = 0.5
@@ -149,6 +151,14 @@ func load_floor(index: int) -> bool:
 
 
 func restart_floor() -> void:
+	if in_a_lair() and back_to != "":
+		# You do not get another go at the staff room. You wake up where you got in the lift.
+		var where: String = back_to
+		back_to = ""
+		quick_arrival = true
+		load_level(where)
+		quick_arrival = false
+		return
 	if level_name != "":
 		quick_arrival = true
 		load_level(level_name)
@@ -157,6 +167,11 @@ func restart_floor() -> void:
 
 ## The one floor that is not on the buttons.
 const SECRET_FLOOR: String = "f13_basement"
+## The staff rooms. Getting into a lift with one of the staff takes you to theirs.
+const LAIRS: Dictionary[StringName, String] = {
+	&"cleaner": "lair_cleaners",
+	&"security": "lair_security",
+}
 
 ## How badly the picture is coming apart, 0 to 1. The lift sets it on the way down to the
 ## basement and the HUD draws it.
@@ -179,6 +194,47 @@ func next_floor_name() -> String:
 
 func announce_floor() -> void:
 	floor_announced.emit(floor_label(level_name), data.intro if data != null else "")
+
+
+## You got into the lift with one of the staff. Down you go, to the room they sit in.
+func take_me_to_the_lair(which: StringName) -> void:
+	if not LAIRS.has(which):
+		next_floor()
+		return
+	back_to = level_name
+	carried = {}
+	if load_level(LAIRS[which]):
+		_fill_the_lair(which)
+
+
+## The room is full of them and they all want a word.
+func _fill_the_lair(which: StringName) -> void:
+	var how_many: int = T.lair_cleaners if which == &"cleaner" else T.lair_guards
+	var middle: Vector3 = data.cell_center(Vector2i(data.width / 2, data.height / 2), 0.05)
+	for i: int in how_many:
+		var about: float = TAU * i / float(how_many)
+		var ring: float = 3.0 + float(i % 3) * 1.9
+		var at: Vector3 = middle + Vector3(cos(about) * ring, 0.05, sin(about) * ring * 0.7)
+		if which == &"cleaner":
+			var mop := Cleaner.new()
+			mop.name = "Cleaner%d" % i
+			mop.born_angry = true
+			entities_root(self).add_child(mop)
+			mop.global_position = at
+			if i % 4 == 0:
+				mop.call_deferred(&"shout", "HEY! YOU'RE NOT ALLOWED HERE!")
+		else:
+			var guard := SecurityGuard.new()
+			guard.name = "Guard%d" % i
+			guard.born_angry = true
+			entities_root(self).add_child(guard)
+			guard.global_position = at
+	_set_state(State.PLAYING)
+
+
+## Dying in a lair is the way out of it: you wake up back where you got into the lift.
+func in_a_lair() -> bool:
+	return data != null and data.lair
 
 
 func next_floor() -> void:
