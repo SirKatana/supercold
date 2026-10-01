@@ -46,6 +46,13 @@ var held_by: Node3D = null
 var riding: bool = false
 ## Seconds left in the kick's swing. The leg is the body's own, posed in `_pose_body`.
 var kick_left: float = 0.0
+## Somebody else's player, shown on this machine. It takes no input here and its position is
+## written by whatever arrives over the wire.
+var remote: bool = false
+## What a joined player is pressing, sent up to the host every frame and read in place of the
+## keyboard. {move: Vector2, look: Vector2, fire, alt, kick, interact, throw, jump}
+var relayed: Dictionary = {}
+var use_relayed: bool = false
 ## T swaps between looking out of his own eyes and watching him from behind. The camera is the
 ## same camera either way: in third person it slides back along the head's own -Z until it
 ## meets a wall, so it never ends up on the other side of one.
@@ -196,6 +203,29 @@ func _run_the_boom(delta: float) -> void:
 	camera.position = Vector3(T.tps_shoulder, lift, 1.0).normalized() * _boom
 
 
+## Where this player wants to go, from the keyboard or from the wire.
+func _wish_direction() -> Vector2:
+	if use_relayed:
+		return relayed.get("move", Vector2.ZERO)
+	if remote:
+		return Vector2.ZERO
+	return Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
+
+
+## One button, from whichever source is driving this player.
+func _pressed(action: StringName) -> bool:
+	if use_relayed:
+		return bool(relayed.get(action, false))
+	return not remote and Input.is_action_just_pressed(action)
+
+
+## A joined player's look arrives as a turn in radians rather than as mouse movement.
+func turn_by(yaw: float, pitch: float) -> void:
+	rotate_y(yaw)
+	head.rotation.x = clampf(head.rotation.x + pitch, -1.5, 1.5)
+	_look_accum_deg += rad_to_deg(absf(yaw) + absf(pitch))
+
+
 func chest_position() -> Vector3:
 	return global_position + Vector3(0.0, 1.2, 0.0)
 
@@ -213,6 +243,8 @@ func aim_direction() -> Vector3:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if remote or use_relayed:
+		return      # this one is driven from somewhere else
 	if event.is_action_pressed(&"view_toggle"):
 		set_third_person(not third_person)
 		get_viewport().set_input_as_handled()
@@ -308,11 +340,11 @@ func _physics_process(delta: float) -> void:
 		return
 	var wish := Vector3.ZERO
 	if alive and input_enabled and held_by == null:
-		var input: Vector2 = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
+		var input: Vector2 = _wish_direction()
 		wish = (global_transform.basis * Vector3(input.x, 0.0, input.y)).normalized() * (T.crawl_speed if crawling else T.walk_speed)
 		if swimming():
 			wish = wish.normalized() * T.swim_speed if wish.length() > 0.01 else Vector3.ZERO
-		elif Input.is_action_just_pressed(&"jump") and is_on_floor():
+		elif _pressed(&"jump") and is_on_floor():
 			velocity.y = T.jump_velocity * Game.jump_scale()
 
 	var horizontal := Vector2(velocity.x, velocity.z).move_toward(Vector2(wish.x, wish.z), T.accel * delta)

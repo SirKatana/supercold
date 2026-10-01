@@ -23,6 +23,8 @@ TimeManager="*res://autoload/time_manager.gd"
 Sfx="*res://autoload/sfx.gd"
 Game="*res://autoload/game.gd"
 AdService="*res://autoload/ad_service.gd"
+Net="*res://autoload/net.gd"
+NetSync="*res://autoload/net_sync.gd"
 
 [display]
 

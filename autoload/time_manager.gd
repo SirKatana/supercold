@@ -16,6 +16,9 @@ var override_scale: float = -1.0
 
 var _move_speed: float = 0.0
 var _look_deg_per_sec: float = 0.0
+## The running maximum for this frame, cleared once the frame's scale has been worked out.
+var _move_speed_this_frame: float = 0.0
+var _look_this_frame: float = 0.0
 var _burst_left: float = 0.0
 var _burst_strength: float = 0.0
 var _hit_pause_left: float = 0.0
@@ -33,12 +36,17 @@ static func step_scale(current: float, target: float, delta: float, t: Tuning) -
 	return clampf(move_toward(current, target, rate * delta), t.min_scale, 1.0)
 
 
+## With more than one player the world moves when **any** of them moves: the fastest one sets
+## the pace. Each player reports every frame and the reports are folded together, which is why
+## this takes a maximum rather than an assignment.
 func report_move(horizontal_speed: float) -> void:
-	_move_speed = horizontal_speed
+	_move_speed = maxf(_move_speed_this_frame, horizontal_speed)
+	_move_speed_this_frame = _move_speed
 
 
 func report_look(deg_per_sec: float) -> void:
-	_look_deg_per_sec = deg_per_sec
+	_look_deg_per_sec = maxf(_look_this_frame, deg_per_sec)
+	_look_this_frame = _look_deg_per_sec
 
 
 func burst(seconds: float, strength: float) -> void:
@@ -82,6 +90,9 @@ func _process(delta: float) -> void:
 	world_time += world_delta(delta)
 	RenderingServer.global_shader_parameter_set(&"world_time", world_time)
 	_push_to_group()
+	# Start the next frame's fold from nothing, so a player who has stopped stops counting.
+	_move_speed_this_frame = 0.0
+	_look_this_frame = 0.0
 
 
 func _push_to_group() -> void:

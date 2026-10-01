@@ -108,6 +108,11 @@ func _physics_process(delta: float) -> void:
 		_set_held(null)
 	if player == null or not player.alive or not player.input_enabled:
 		return
+	if player.remote:
+		return      # somebody else's hands: what they do arrives already done
+	if player.use_relayed:
+		_do_relayed()
+		return
 	if Input.is_action_just_pressed(&"primary"):
 		primary()
 	elif Input.is_action_pressed(&"primary") and is_instance_valid(held) and held is Gun and (held as Gun).automatic:
@@ -132,6 +137,23 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed(&"interact"):
 		interact()
 	if Input.is_action_just_pressed(&"use_shield"):
+		toggle_shield()
+
+
+## A joined player's buttons, read off the last packet instead of the keyboard.
+func _do_relayed() -> void:
+	var said: Dictionary = player.relayed
+	if bool(said.get("primary", false)):
+		primary()
+	if bool(said.get("secondary", false)):
+		secondary()
+	if bool(said.get("throw_item", false)):
+		throw_held()
+	if bool(said.get("kick", false)):
+		kick()
+	if bool(said.get("interact", false)):
+		interact()
+	if bool(said.get("use_shield", false)):
 		toggle_shield()
 
 

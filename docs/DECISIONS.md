@@ -569,3 +569,22 @@ One line per call made in auto mode, with why.
 - The beast could never reach a duct: as a liquid it was pathing on a navmesh that stops at the
   wall. It moves itself now (`_seep_toward`), flattening its capsule to 0.45 m so it fits under
   a duct roof, and its hiding places include the duct mouths.
+
+## LAN play with join codes
+
+- `autoload/net.gd`: one machine hosts on a port from `PORT_BASE`, everybody else types a
+  six-character code. The code **is** the address, packed: the last two numbers of the host's
+  LAN address and the port's offset, in a base-32 alphabet with I and O left out so a code can
+  be read down the room. The joiner supplies the first two numbers from its own address, which
+  is sound because a LAN game is by definition on one network. Nothing leaves the building and
+  there is no server anywhere.
+- **The host simulates everything.** That is not laziness: the rule of this game is that the
+  world moves when a player moves, and with several players that can only be decided in one
+  place. `TimeManager.report_move/report_look` now fold reports together with a maximum and
+  clear at the end of the frame, so the fastest player sets the pace and a player standing
+  still does not hold the world back.
+- `autoload/net_sync.gd`: joiners send their movement, look and buttons twenty times a second;
+  the host drives a `Player` for each of them (`use_relayed`) and broadcasts where everybody
+  and every dude is. A joiner that finds itself on the wrong floor loads the host's.
+- `Player.remote` is somebody else's body drawn on this machine: no input, shown in third
+  person so there is a person to see rather than a pair of hands.
