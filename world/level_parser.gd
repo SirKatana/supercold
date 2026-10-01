@@ -22,7 +22,7 @@ const PICKUP_KINDS: Dictionary[String, StringName] = {
 }
 const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar", "h": &"chandelier",
 	"z": &"tank", "Z": &"tank_cracked", "d": &"striplight"}
-const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvezZEQd"
+const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvezZEQdO"
 const DUDE_KINDS: Dictionary[String, StringName] = {
 	"a": &"pistol", "u": &"", "R": &"rifle", "S": &"shotgun", "H": &"shield",
 	"q": &"runner", "N": &"sniper", "U": &"smg",
@@ -85,6 +85,9 @@ static func parse(text: String, json_text: String = "") -> LevelData:
 				data.doors.append({"cell": cell, "along_x": _runs_along_x(data, cell)})
 			elif c == "G":
 				data.glass.append({"cell": cell, "along_x": _runs_along_x(data, cell)})
+			elif c == "O":
+				# A window in the outer wall: glass, with the drop on the far side of it.
+				data.windows.append({"cell": cell, "along_x": _runs_along_x(data, cell)})
 			elif PICKUP_KINDS.has(c):
 				data.pickups.append({"cell": cell, "kind": PICKUP_KINDS[c]})
 			elif PROP_KINDS.has(c):

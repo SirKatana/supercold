@@ -7,12 +7,23 @@ const FOREARM: float = 0.265
 const THIGH: float = 0.431
 const SHIN: float = 0.422
 
+## Real clothes, built from the very same meshes the characters wear in the game: the
+## gentleman's hat, face and suit, the cleaner's cap, belt and gloves, the guard's cap and
+## vest. Dressing a dancer in a cylinder and calling it a top hat was a lie.
+var wearing: StringName = &""
+
 var skin: Humanoid
 var body_scale: float = 1.0
 var hand_anchor: Node3D
 var joints: PackedVector3Array = []
 ## Mirrors left and right, so two dancers side by side are not clones.
 var mirrored: bool = false
+
+var _head_gear: MeshInstance3D
+var _face: MeshInstance3D
+var _torso_gear: MeshInstance3D
+var _shoes: Array[MeshInstance3D] = []
+var _cuffs: Array[MeshInstance3D] = []
 
 
 func setup(material: Material, scale_factor: float, shades: bool) -> void:
@@ -22,6 +33,76 @@ func setup(material: Material, scale_factor: float, shades: bool) -> void:
 	hand_anchor = Node3D.new()
 	hand_anchor.top_level = true
 	add_child(hand_anchor)
+
+
+## Puts the real character's kit on this dancer. `kind` is &"gentleman", &"cleaner" or
+## &"guard". Shoes, cuffs and gloves come in pairs, right first.
+func wear(kind: StringName) -> void:
+	wearing = kind
+	match kind:
+		&"gentleman":
+			skin.set_group_material(&"arms", Mats.gentleman_coat())
+			skin.set_group_material(&"torso", Mats.gentleman_coat())
+			skin.set_group_material(&"legs", Mats.gentleman_trousers())
+			skin.set_group_material(&"head", Mats.gentleman_skin())
+			_head_gear = _accessory(MeshKit.cached(&"gentleman_hat", Gentleman._model_hat))
+			_face = _accessory(MeshKit.cached(&"gentleman_face", Gentleman._model_face))
+			_torso_gear = _accessory(MeshKit.cached(&"gentleman_suit", Gentleman._model_suit))
+			for i: int in 2:
+				_shoes.append(_accessory(MeshKit.cached(&"gentleman_shoe", Gentleman._model_shoe)))
+				_cuffs.append(_accessory(MeshKit.cached(&"gentleman_cuff", Gentleman._model_cuff)))
+		&"cleaner":
+			skin.set_group_material(&"arms", Mats.overalls())
+			skin.set_group_material(&"torso", Mats.overalls())
+			skin.set_group_material(&"legs", Mats.overalls_dark())
+			skin.set_group_material(&"head", Mats.pink())
+			_head_gear = _accessory(MeshKit.cached(&"cleaner_cap", Cleaner._model_cap))
+			_torso_gear = _accessory(MeshKit.cached(&"cleaner_belt", Cleaner._model_belt))
+			for i: int in 2:
+				_cuffs.append(_accessory(MeshKit.cached(&"cleaner_glove", Cleaner._model_glove)))
+		&"guard":
+			skin.set_group_material(&"arms", Mats.security_suit())
+			skin.set_group_material(&"torso", Mats.security_suit())
+			skin.set_group_material(&"legs", Mats.security_suit())
+			_head_gear = _accessory(MeshKit.cached(&"guard_cap", SecurityGuard._model_cap))
+			_torso_gear = _accessory(MeshKit.cached(&"guard_vest", SecurityGuard._model_vest))
+
+
+func _accessory(mesh: Mesh) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.top_level = true      # placed from the joints, not carried by the node's transform
+	add_child(mi)
+	return mi
+
+
+## The same placement the characters use in the game: head gear on the shades frame, the
+## suit or vest on the chest, shoes on the ankles, cuffs and gloves at the wrists.
+func _place_what_is_worn() -> void:
+	if wearing == &"" or joints.is_empty():
+		return
+	if _head_gear != null:
+		_head_gear.global_transform = skin.shades_transform()
+	if _face != null:
+		_face.global_transform = skin.shades_transform()
+	var chest: Vector3 = joints[Humanoid.index_of(&"chest")]
+	var up: Vector3 = (joints[Humanoid.index_of(&"neck")] - joints[Humanoid.index_of(&"spine")]).normalized()
+	var across: Vector3 = (joints[Humanoid.index_of(&"shoulder_r")] - joints[Humanoid.index_of(&"shoulder_l")]).normalized()
+	if _torso_gear != null:
+		_torso_gear.global_transform = Transform3D(Basis(across, up, across.cross(up).normalized()), chest)
+	for i: int in _shoes.size():
+		var ankle: Vector3 = joints[Humanoid.index_of(&"ankle_r" if i == 0 else &"ankle_l")]
+		var toe: Vector3 = joints[Humanoid.index_of(&"toe_r" if i == 0 else &"toe_l")]
+		var forward: Vector3 = (toe - ankle).normalized()
+		if forward.length() > 0.5:
+			_shoes[i].global_transform = Transform3D(Basis.looking_at(forward, Vector3.UP), ankle + Vector3(0, 0.02, 0))
+	for i: int in _cuffs.size():
+		var wrist: Vector3 = joints[Humanoid.index_of(&"wrist_r" if i == 0 else &"wrist_l")]
+		var elbow: Vector3 = joints[Humanoid.index_of(&"elbow_r" if i == 0 else &"elbow_l")]
+		var along: Vector3 = (wrist - elbow).normalized()
+		var ref: Vector3 = Vector3.UP if absf(along.y) < 0.9 else Vector3.FORWARD
+		var x_axis: Vector3 = ref.cross(along).normalized()
+		_cuffs[i].global_transform = Transform3D(Basis(x_axis, along, x_axis.cross(along)), wrist.lerp(elbow, 0.22))
 
 
 func hold(gun: Node3D) -> void:
@@ -81,6 +162,28 @@ func dance(move: StringName, beats: float, blend: float = 1.0, recoil: float = 0
 			pole_r = Vector3(1.0, 0.0, 0.35)
 			pole_l = Vector3(-1.0, 0.0, 0.35)
 			roll = 0.06 * sin(PI * beats * 0.5)
+		&"cha_cha":
+			# Cha-cha-cha: three quick steps on 4-and-1, then a rock step on 2 and 3. The hips
+			# lead and the shoulders stay quiet, which is what makes it read as a cha-cha
+			# rather than a jog on the spot. The feet are offsets from where they already
+			# stand: hang them off the hips instead and the whole dancer floats a metre up.
+			var count: float = fposmod(beats, 4.0)
+			var side: float = 1.0 if fposmod(beats, 8.0) < 4.0 else -1.0
+			var quick: float = clampf((count - 3.0) * 2.0, 0.0, 1.0) if count >= 3.0 else 0.0
+			var rock: float = maxf(sin(PI * clampf(count, 0.0, 2.0) * 0.5), 0.0)
+			sway = 0.075 * side * cos(PI * count * 0.5) + 0.04 * side * quick
+			twist = -0.20 * side * cos(PI * count * 0.5)
+			drop = 0.03 * on_beat + 0.015 * quick
+			lift = 0.012 * quick
+			# One foot crosses on the quick steps, the other takes the weight on the rock.
+			foot_r += Vector3(0.11 + 0.12 * side * quick, 0.05 * quick, -0.14 * rock)
+			foot_l += Vector3(-0.11 + 0.12 * side * quick, 0.05 * (1.0 - quick), 0.09 * rock)
+			# Arms out in frame, swinging against the hips. Cuban, not disco.
+			hand_r = R[&"shoulder_r"] + Vector3(0.30 - 0.08 * side, 0.10 + 0.06 * on_beat, -0.28)
+			hand_l = R[&"shoulder_l"] + Vector3(-0.30 - 0.08 * side, 0.10 + 0.06 * (1.0 - on_beat), -0.28)
+			pole_r = Vector3(0.9, -0.3, 0.4)
+			pole_l = Vector3(-0.9, -0.3, 0.4)
+			roll = 0.045 * side * cos(PI * count * 0.5)
 		&"disco":
 			var s: float = _ease(0.5 - 0.5 * cos(PI * beats))      # 0 down, 1 up, every two beats
 			var up := R[&"shoulder_r"] + Vector3(0.36, 0.52, -0.12)
@@ -209,6 +312,7 @@ func dance(move: StringName, beats: float, blend: float = 1.0, recoil: float = 0
 		local.append(j[joint])
 	joints = Humanoid.to_world(local, global_transform, body_scale)
 	skin.apply(joints)
+	_place_what_is_worn()
 
 	var wrist: Vector3 = joints[Humanoid.index_of(&"wrist_l" if mirrored else &"wrist_r")]
 	var elbow: Vector3 = joints[Humanoid.index_of(&"elbow_l" if mirrored else &"elbow_r")]

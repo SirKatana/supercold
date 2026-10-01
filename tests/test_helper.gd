@@ -95,12 +95,31 @@ func test_closing_the_ad_early_hires_nobody_and_you_can_try_again() -> void:
 	check(capsule.used and Game.helper != null, "second try, watched, hired")
 
 
-func test_the_real_ad_is_the_last_ward_video_and_rewards_after_twenty_seconds() -> void:
-	check(ResourceLoader.exists(AdService.VIDEO_PATH), "ads/the_last_ward.ogv is in the project")
-	check_eq(AdService.AD_TITLE, "THE LAST WARD", "advertises The Last Ward")
-	var stream: VideoStream = load(AdService.VIDEO_PATH)
-	check(stream is VideoStreamTheora, "it is a Theora stream Godot can play")
-	check(T.ad_reward_after < 57.0, "the reward comes before the 57 second video ends")
+func test_the_ads_are_our_own_and_the_reward_lands_inside_one() -> void:
+	check(AdService.SPOTS.size() >= 5, "five house ads at least (%d)" % AdService.SPOTS.size())
+	var ours: int = 0
+	for spot: Dictionary in AdService.SPOTS:
+		var path: String = str(spot["path"])
+		check(ResourceLoader.exists(path), "%s is in the project" % path)
+		check(load(path) is VideoStreamTheora, "%s is Theora, which is all Godot plays" % path)
+		check(str(spot["title"]) != "", "%s has a title for the banner" % path)
+		if path.contains("supercold_ad_"):
+			ours += 1
+	check_eq(ours, 5, "five of them are the SuperCold ads")
+	# They are thirty seconds; the reward has to land well before the end of one.
+	check(T.ad_reward_after < 28.0, "the reward comes before a thirty second ad ends")
+
+
+func test_the_rotation_works_through_them_before_repeating() -> void:
+	AdService._seen.clear()
+	var seen: Dictionary[String, bool] = {}
+	for i: int in AdService.SPOTS.size():
+		AdService._pick_one()
+		check(not seen.has(AdService.video_path), "no repeat until the rest have had a turn: %s" % AdService.video_path)
+		seen[AdService.video_path] = true
+	AdService._pick_one()
+	check(seen.size() == AdService.SPOTS.size(), "every advert came up once first")
+	AdService._seen.clear()
 
 
 func test_ad_pauses_the_game_and_early_close_earns_nothing() -> void:

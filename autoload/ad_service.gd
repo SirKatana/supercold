@@ -1,6 +1,7 @@
 extends Node
-## Rewarded ads. There is one backend: a house ad, the trailer for The Last Ward, played
-## from res://ads/the_last_ward.ogv. The game pauses while it runs.
+## Rewarded ads. The backend is a house one: our own adverts for this game, rendered in this
+## engine by tools/make_ads.sh and played from res://ads/. One is picked at random each time
+## and the game pauses while it runs.
 ##
 ## The reward is earned once `ad_reward_after` seconds have played. Closing sooner earns
 ## nothing. Watching to the end always earns it.
@@ -12,8 +13,20 @@ signal started
 signal finished(rewarded: bool)
 
 const T: Tuning = preload("res://data/tuning.tres")
-const VIDEO_PATH: String = "res://ads/the_last_ward.ogv"
-const AD_TITLE: String = "THE LAST WARD"
+## The house ads, in rotation. Each is thirty seconds and ends in a cha-cha.
+const SPOTS: Array[Dictionary] = [
+	{"path": "res://ads/supercold_ad_1.ogv", "title": "HELPER FOR HIRE"},
+	{"path": "res://ads/supercold_ad_2.ogv", "title": "TIME MANAGEMENT"},
+	{"path": "res://ads/supercold_ad_3.ogv", "title": "THE GENTLEMAN"},
+	{"path": "res://ads/supercold_ad_4.ogv", "title": "WET FLOOR"},
+	{"path": "res://ads/supercold_ad_5.ogv", "title": "EVERY GUN"},
+	{"path": "res://ads/the_last_ward.ogv", "title": "THE LAST WARD"},
+]
+
+var video_path: String = ""
+var ad_title: String = ""
+## Which ones have been shown this run, so the rotation works through them before repeating.
+var _seen: Array[int] = []
 
 ## Tests and the smoke bot: skip the video and answer at once. 1 rewards, 0 refuses, -1 plays the ad.
 var auto_result: int = -1
@@ -37,7 +50,33 @@ func _ready() -> void:
 
 
 func is_available() -> bool:
-	return auto_result >= 0 or ResourceLoader.exists(VIDEO_PATH)
+	if auto_result >= 0:
+		return true
+	for spot: Dictionary in SPOTS:
+		if ResourceLoader.exists(str(spot["path"])):
+			return true
+	return false
+
+
+## The next advert: one at random out of the ones not shown yet, so the same thirty seconds do
+## not come up twice before the rest have had a turn.
+func _pick_one() -> void:
+	var available: Array[int] = []
+	for i: int in SPOTS.size():
+		if ResourceLoader.exists(str(SPOTS[i]["path"])):
+			available.append(i)
+	if available.is_empty():
+		video_path = ""
+		ad_title = ""
+		return
+	var fresh: Array[int] = available.filter(func(i: int) -> bool: return not _seen.has(i))
+	if fresh.is_empty():
+		_seen.clear()
+		fresh = available
+	var pick: int = fresh[randi() % fresh.size()]
+	_seen.append(pick)
+	video_path = str(SPOTS[pick]["path"])
+	ad_title = str(SPOTS[pick]["title"])
 
 
 ## Shows the ad. `finished` fires exactly once with whether the reward was earned.
@@ -49,8 +88,9 @@ func show_rewarded() -> void:
 		started.emit()
 		finished.emit(auto_result == 1)
 		return
-	if not ResourceLoader.exists(VIDEO_PATH):
-		push_warning("ad video missing: %s" % VIDEO_PATH)
+	_pick_one()
+	if video_path == "":
+		push_warning("no ad videos in res://ads/")
 		finished.emit(false)
 		return
 	showing = true
@@ -82,14 +122,14 @@ func _build() -> void:
 	frame.stretch_mode = AspectRatioContainer.STRETCH_FIT
 	_layer.add_child(frame)
 	_video = VideoStreamPlayer.new()
-	_video.stream = load(VIDEO_PATH)
+	_video.stream = load(video_path)
 	_video.expand = true
 	var picture: Texture2D = _video.get_video_texture()
-	frame.ratio = 960.0 / 552.0 if picture == null or picture.get_height() == 0 else float(picture.get_width()) / picture.get_height()
+	frame.ratio = 960.0 / 540.0 if picture == null or picture.get_height() == 0 else float(picture.get_width()) / picture.get_height()
 	frame.add_child(_video)
 	_video.volume_db = -80.0 if Settings.volume <= 0.001 else 0.0
 	_video.finished.connect(func() -> void: _finish(true))
-	_length = maxf(1.0, _video.get_stream_length()) if _video.get_stream_length() > 0.0 else 57.0
+	_length = maxf(1.0, _video.get_stream_length()) if _video.get_stream_length() > 0.0 else 30.0
 
 	var tag := Label.new()
 	tag.text = "ADVERTISEMENT"
@@ -99,7 +139,7 @@ func _build() -> void:
 	_layer.add_child(tag)
 
 	var title := Label.new()
-	title.text = AD_TITLE
+	title.text = ad_title
 	title.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	title.offset_top = 6
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

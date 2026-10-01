@@ -18,6 +18,8 @@ var pickups: Array[Dictionary] = []
 ## {cell: Vector2i, along_x: bool}
 var doors: Array[Dictionary] = []
 var glass: Array[Dictionary] = []
+## Windows in the outer wall. Same pane, but there is nothing behind it to land on.
+var windows: Array[Dictionary] = []
 ## {cell: Vector2i, kind: StringName}
 var props: Array[Dictionary] = []
 var wave_points: Array[Vector2i] = []
@@ -61,11 +63,11 @@ func char_at(cell: Vector2i) -> String:
 
 func is_solid(cell: Vector2i) -> bool:
 	var c: String = char_at(cell)
-	return c == "#" or c == " " or c == "v" or c == "e"      # a duct is wall to anyone who cannot crawl
+	return c == "#" or c == " " or c == "v" or c == "e" or c == "O"      # a duct is wall to anyone who cannot crawl, and a window is still a wall
 
 
 func is_open(cell: Vector2i) -> bool:
-	return not "# cso".contains(char_at(cell))
+	return not "# csoO".contains(char_at(cell))
 
 
 ## Which way an elevator in this cell faces: toward open floor with a wall at its back if it can,

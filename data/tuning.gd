@@ -25,6 +25,12 @@ extends Resource
 @export var accel: float = 40.0
 @export var jump_velocity: float = 4.5
 @export var gravity: float = 12.0
+## Below this height there is no building left to land on: whatever is falling is finished.
+@export var fall_death_y: float = -4.0
+## How hard a punch or a bash moves a dude, and how far off the floor it takes him. Enough to
+## put him through an open window, not enough to launch him across the room.
+@export var blunt_shove: float = 5.2
+@export var blunt_lift: float = 2.1
 ## The orbiters over the open station floors: how many rocks, how big, how high, how many men.
 @export var orbiter_rocks: int = 4
 @export var orbiter_rock_radius: float = 1.9

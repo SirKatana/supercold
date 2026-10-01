@@ -9,6 +9,8 @@ signal enemy_killed(remaining: int)
 signal run_finished
 ## The player stepped out of the arrival elevator. The HUD announces the level on this.
 signal floor_announced(label: String, intro: String)
+## A window in the outer wall has gone. Anything that leaves through it is not coming back.
+signal window_broken(at: Vector3)
 signal helper_changed(active: bool)
 
 enum State { TITLE, PLAYING, DEAD, CLEARED, ENDING }

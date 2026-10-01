@@ -363,3 +363,28 @@ One line per call made in auto mode, with why.
 - Low gravity with the full jump push let the player stand on desks and clear walls. The push is
   now cut by `Game.jump_scale()`, the square root of the pull, which holds apex height at the
   tower's 0.84 m and changes only the hang time. `SPACE_GRAVITY` also went 0.38 to 0.5.
+
+## Our own adverts, and windows to throw people out of
+
+- The ad backend is five house ads of our own, rendered in this engine by `tools/make_ads.sh`
+  from `promo/ad.gd` (`--ad=1..5`), 30 s each, to `ads/supercold_ad_N.ogv`. `AdService` keeps a
+  rotation: it works through all of them before repeating. AdMob was dropped at the user's
+  request; it would have needed an Android build and his own account anyway.
+- `tools/make_cha_cha.py` writes the backing track: an original cha-cha, bass tumbao, montuno,
+  guiro and clave, synthesized here so there is nothing to license.
+- `Dancer.wear()` dresses a dancer in the **real** characters' kit, built from the enemies' own
+  `_model_*` functions: the gentleman's hat, face and suit, the cleaner's cap, belt and gloves,
+  the guard's cap and vest. Earlier the ads used a cylinder for a top hat, which the user
+  rightly called out.
+- A Humanoid that is never posed collapses into a blob at the world origin. Anything built as a
+  dancer has to be driven every frame, extras included.
+- The cha-cha's feet are offsets from where the dancer already stands. Hanging them off the
+  hips, as the cancan does, put the whole cast a metre in the air doing splits.
+- Everyone in an ad faces the camera: a Humanoid looks down its own -Z and the camera is at -Z,
+  so the yaw is zero, not PI.
+- Windows (`O`) are glass in the outer wall with the drop behind them, on floors 10 to 15 apart
+  from the sub-basement. `Grid.windows()` finds them by flood-filling the building's outer
+  shell. Breaking one leaves the frame and a hole; `PinkDude.shove()` puts a punched dude in the
+  air, and anything below `fall_death_y` is finished.
+- The cloner and the shield trooper are on every station floor now, and the cloner also works
+  the tower from 10 to 15.

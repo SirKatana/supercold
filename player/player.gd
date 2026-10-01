@@ -214,6 +214,10 @@ func _physics_process(delta: float) -> void:
 
 	_update_crawl()
 	_crawl_along(delta)
+	if alive and global_position.y < T.fall_death_y:
+		# Through a broken window and down the outside of the building.
+		die()
+		return
 	if riding:
 		velocity = Vector3.ZERO
 		TimeManager.report_move(0.0)

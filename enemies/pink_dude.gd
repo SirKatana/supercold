@@ -39,6 +39,10 @@ var _moving: float = 0.0
 
 # Flags the states drive and the body animates from.
 var desired_velocity: Vector3 = Vector3.ZERO
+## Knocked off his feet: the AI is off and he is a thing in the air until he lands. A punch by
+## an open window is how most of them leave the building.
+var flung: bool = false
+var _flight: Vector3 = Vector3.ZERO
 var aiming: bool = false
 var stunned: bool = false
 var winding_up: bool = false
@@ -298,6 +302,9 @@ func _physics_process(delta: float) -> void:
 		sense()
 	tick(wd)
 
+	if flung:
+		_sail(wd, delta)
+		return
 	var rate: float = wd / delta if delta > 0.0 else 0.0
 	var push: Vector3 = _separation()
 	velocity.x = (desired_velocity.x + push.x) * rate
@@ -307,6 +314,34 @@ func _physics_process(delta: float) -> void:
 	if cull_unseen:
 		_update_cull(delta)
 	if not frozen:      # ice holds the pose he froze in
+		_animate(wd)
+
+
+## Shoved hard enough to leave the floor. Anything can do it: a punch, a ram, a blast.
+func shove(impulse: Vector3) -> void:
+	if not alive or flung:
+		return
+	flung = true
+	_flight = impulse
+	velocity = Vector3.ZERO
+
+
+## In the air. He keeps his pose, turns as he goes, and dies if he is still falling past the
+## bottom of the building.
+func _sail(wd: float, delta: float) -> void:
+	_flight.y -= T.gravity * Game.gravity_scale * wd
+	velocity = _flight * (wd / delta if delta > 0.0 else 0.0)
+	move_and_slide()
+	if global_position.y < T.fall_death_y:
+		# Out of the window and down the side of the building.
+		Sfx.play(&"shatter", global_position)
+		die(global_position, _flight.normalized())
+		return
+	if is_on_floor() and _flight.y <= 0.0:
+		flung = false
+		_flight = Vector3.ZERO
+		stun(T.throw_stun)
+	if not frozen:
 		_animate(wd)
 
 
@@ -656,6 +691,8 @@ func _take_blunt(damage: int, stun_time: float, push: Vector3) -> void:
 		return
 	disarm()
 	stun(stun_time)
+	if push.length() > 0.01:
+		shove(Vector3(push.x, 0.0, push.z).normalized() * T.blunt_shove + Vector3.UP * T.blunt_lift)
 
 
 ## `style` is how the body goes: &"ragdoll" (falls, then shatters), &"melt" (super gun), &"ice" (frozen, shatters at once).

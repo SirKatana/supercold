@@ -28,6 +28,11 @@ GENTLEMEN = {
     "f36_reactor": 2, "f37_comms": 1, "f38_observation": 2, "f39_docking": 3, "f40_bridge": 3,
 }
 
+# Windows in the outer wall: break one and whatever goes through it leaves the building.
+# Floors 10 to 15, the user's pick, with 13 left out because it is the sub-basement and there
+# is nothing outside it to fall into.
+WINDOWS = {"f10_vault": 6, "f11_sewers": 7, "f12_kitchen": 7, "f14_glassworks": 9, "f15_restrooms": 7}
+
 # Which floors get which gadget, and how many. f = fart grenade, F = freeze bomb, j = water bucket.
 # Deliberately uneven: seven floors have none, most have one or two, only two have all three.
 # On a floor that has them they are spread across the rooms, never handed over at the lift.
@@ -230,6 +235,66 @@ class Grid:
                 return
         raise AssertionError(f"{name}: no room for its gentlemen")
 
+    def windows(self, name, seed):
+        """Cuts this floor's windows into the outer wall: a run of glass with nothing but air
+        behind it. A cell qualifies when it is wall, a room is on one side of it, and the other
+        side joins the shell of solid wall that reaches the edge of the map. They are spaced
+        out so one grenade cannot take a whole side off the building."""
+        import random
+        wanted = WINDOWS.get(name, 0)
+        if not wanted:
+            return
+        rng = random.Random(seed)
+        outside = self.outer_shell()
+        spots = []
+        for y in range(1, self.h - 1):
+            for x in range(1, self.w - 1):
+                if self.c[y][x] != "#":
+                    continue
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    inside = (x + dx, y + dy)
+                    out = (x - dx, y - dy)
+                    if self.c[inside[1]][inside[0]] != ".":
+                        continue
+                    if out not in outside:
+                        continue
+                    spots.append((x, y))
+                    break
+        rng.shuffle(spots)
+        placed = []
+        for x, y in spots:
+            if len(placed) >= wanted:
+                break
+            if any(abs(x - px) + abs(y - py) < 5 for px, py in placed):
+                continue
+            self.c[y][x] = "O"
+            placed.append((x, y))
+
+    def outer_shell(self):
+        """Every wall cell you can reach from the edge of the map without passing through a
+        room: the skin of the building, and what is on the far side of a window."""
+        seen = set()
+        stack = []
+        for x in range(self.w):
+            for y in (0, self.h - 1):
+                if self.c[y][x] == "#":
+                    stack.append((x, y))
+        for y in range(self.h):
+            for x in (0, self.w - 1):
+                if self.c[y][x] == "#":
+                    stack.append((x, y))
+        while stack:
+            cell = stack.pop()
+            if cell in seen:
+                continue
+            seen.add(cell)
+            x, y = cell
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.w and 0 <= ny < self.h and (nx, ny) not in seen and self.c[ny][nx] == "#":
+                    stack.append((nx, ny))
+        return seen
+
     def text(self):
         return "\n".join("".join(r) for r in self.c) + "\n"
 
@@ -395,6 +460,7 @@ def f1_lobby():
     g.put("o", (3, 6), (7, 3), (12, 3), (16, 6), (4, 10), (15, 10), (7, 12))
     g.gadgets("f1_lobby", 799)
     g.gentlemen("f1_lobby", 840)
+    g.windows("f1_lobby", 907)
     g.put("h", (4, 3), (14, 3), (8, 9))
     save("f1_lobby", g, {"intro": "LOBBY\nSTAND STILL. TIME CRAWLS."})
 
@@ -427,6 +493,7 @@ def f2_offices():
     g.pillars(15, 16, 28, 20, step=4, ox=3, oy=2)
     g.gadgets("f2_offices", 99)
     g.gentlemen("f2_offices", 140)
+    g.windows("f2_offices", 207)
     save("f2_offices", g, {"intro": "OFFICES\nTHROW THINGS. TAKE THEIR GUNS."})
 
 
@@ -458,6 +525,7 @@ def f3_servers():
     g.put("o", (8, 6), (12, 7), (16, 6), (20, 7), (24, 6), (26, 12))
     g.gadgets("f3_servers", 143)
     g.gentlemen("f3_servers", 184)
+    g.windows("f3_servers", 251)
     save("f3_servers", g, {"intro": "SERVER ROOM\nDOORS BREAK. SO DO THEY."})
 
 
@@ -491,6 +559,7 @@ def f4_labs():
         g.pillars(x0, 14, x0 + 10, 22, step=4, ox=2, oy=2)
     g.gadgets("f4_labs", 684)
     g.gentlemen("f4_labs", 725)
+    g.windows("f4_labs", 792)
     save("f4_labs", g, {
         "intro": "LABS\nLONG HALLS. WATCH THE BULLETS.",
         "waves": [{"after_kills": 6, "count": 4, "armed": 3}],
@@ -537,6 +606,7 @@ def f5_executive():
     g.put("o", (18, 17), (24, 18), (30, 16), (35, 17))
     g.gadgets("f5_executive", 345)
     g.gentlemen("f5_executive", 386)
+    g.windows("f5_executive", 453)
     g.put("h", (4, 3), (14, 3), (24, 3), (34, 3))
     save("f5_executive", g, {
         "intro": "EXECUTIVE FLOOR\nEVERYTHING YOU LEARNED.",
@@ -571,6 +641,7 @@ def roof():
     g.pillars(4, 4, 25, 25, step=5, ox=3, oy=3)
     g.gadgets("roof", 455)
     g.gentlemen("roof", 496)
+    g.windows("roof", 563)
     save("roof", g, {"intro": "ROOF\nTHE DIRECTOR. THREE BULLETS.", "open_sky": True, "exit": "helipad"})
 
 
@@ -869,6 +940,7 @@ def build_floor(spec):
                 g.scatter({"h": CHANDELIERS[spec["name"]]}, rects, spec["seed"] + attempt + 23, floor=".")
             g.gadgets(spec["name"], spec["seed"] + attempt + 11)
             g.gentlemen(spec["name"], spec["seed"] + attempt + 53)
+            g.windows(spec["name"], spec["seed"] + attempt + 71)
             assert walkable_from_lift(g), "somebody cannot be reached"
             cover = len(g.cells("cso"))
             assert cover >= 12, f"only {cover} pieces of cover"
@@ -899,16 +971,16 @@ SPECS = [
          layout={"min_w": 7, "max_w": 11}, enemies={"a": 2, "q": 3, "u": 1, "x": 2, "y": 1}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
     dict(name="f11_sewers", size=(42, 25), style="double", seed=11, theme="sewer", title="SEWERS",
          intro="SEWERS\\nTHEY COME AT YOU WITH BLADES DOWN HERE.", furnish=["columns", "racks"], furnished=0.5, wet=6, wet_corridor=True, start=["p", "n"],
-         enemies={"x": 4, "a": 3, "S": 1, "y": 2}, items={"j": 2, "T": 1, "F": 1, "g": 3, "b": 2, "L": 1}),
+         enemies={"x": 4, "a": 3, "S": 1, "y": 1, "C": 1}, items={"j": 2, "T": 1, "F": 1, "g": 3, "b": 2, "L": 1}),
     dict(name="f12_kitchen", size=(42, 25), style="spine", seed=12, theme="stainless", title="KITCHEN",
          intro="KITCHEN\\nKNIVES EVERYWHERE. SO IS THE GAS.", furnish=["counters", "counters", "tables"], wet=3, ice_rooms=1, start=["M"],
-         enemies={"a": 5, "U": 2, "q": 2, "x": 1}, items={"j": 3, "n": 5, "g": 6, "F": 1, "m": 2}),
+         enemies={"a": 4, "U": 2, "q": 2, "x": 1, "C": 1}, items={"j": 3, "n": 5, "g": 6, "F": 1, "m": 2}),
     dict(name="f14_glassworks", size=(42, 25), style="spine", seed=14, theme="glass", title="GLASSWORKS",
          intro="GLASSWORKS\\nRIGHT CLICK TO LOOK DOWN THE SCOPE.", furnish=["office", "tables", "columns"], glass=7, start=["Y", "p"],
-         layout={"min_w": 7, "max_w": 12}, enemies={"N": 3, "a": 4, "S": 1, "x": 1}, items={"V": 1, "b": 2, "g": 2, "F": 1}),
+         layout={"min_w": 7, "max_w": 12}, enemies={"N": 3, "a": 3, "S": 1, "x": 1, "C": 1}, items={"V": 1, "b": 2, "g": 2, "F": 1}),
     dict(name="f15_restrooms", size=(40, 25), style="double", seed=15, theme="mint", title="RESTROOMS",
          intro="RESTROOMS\\nSTINK GRENADES. THROW ONE INTO A ROOM AND SHUT THE DOOR.", furnish=["stalls", "stalls", "tables"], wet=4, fart=5, start=["f", "p"],
-         layout={"min_w": 5, "max_w": 8}, enemies={"a": 6, "u": 3, "q": 2, "x": 1}, items={"j": 2, "T": 1, "m": 3, "b": 2}),
+         layout={"min_w": 5, "max_w": 8}, enemies={"a": 5, "u": 3, "q": 2, "x": 1, "C": 1}, items={"j": 2, "T": 1, "m": 3, "b": 2}),
     dict(name="f16_armoury", size=(42, 25), style="bsp", seed=16, theme="olive", title="ARMOURY",
          intro="ARMOURY\\nTAKE WHAT YOU LIKE. THEY DID.", furnish=["racks", "office", "columns"], start=["K", "T"],
          enemies={"H": 2, "R": 2, "S": 2, "U": 2, "a": 1, "x": 2, "y": 1}, items={"M": 1, "V": 1, "Y": 1, "F": 2, "r": 1, "n": 1, "g": 4, "A": 1, "L": 1}),
@@ -953,36 +1025,36 @@ SPECS = [
          waves=[{"after_kills": 9, "count": 5, "armed": 4}, {"after_kills": 18, "count": 6, "armed": 5}], wave_points=5),
     dict(name="f31_airlock", in_space=True, size=(40, 25), style="spine", seed=31, theme="airlock", title="AIRLOCK",
          intro="STATION AIRLOCK\\nTHEY WERE EXPECTING THE HELICOPTER.", furnish=["racks", "office"], start=["p"],
-         layout={"min_w": 6, "max_w": 10}, enemies={"a": 5, "u": 2, "q": 2, "x": 1}, items={"p": 2, "k": 2, "g": 2}),
+         layout={"min_w": 6, "max_w": 10}, enemies={"a": 4, "u": 2, "q": 2, "x": 1, "C": 1, "H": 1}, items={"p": 2, "k": 2, "g": 2}),
     dict(name="f32_crewring", in_space=True, size=(44, 27), style="double", seed=32, theme="crewring", title="CREW RING",
          intro="CREW RING\\nBUNKS, MESS, AND EVERYONE IN THEM.", furnish=["tables", "office", "counters"], start=["K"],
-         enemies={"a": 5, "R": 2, "q": 3, "y": 1, "x": 1}, items={"j": 2, "m": 3, "b": 2, "g": 2, "n": 2}),
+         enemies={"a": 4, "R": 2, "q": 3, "y": 1, "C": 1, "H": 1}, items={"j": 2, "m": 3, "b": 2, "g": 2, "n": 2}),
     dict(name="f33_hydroponics", in_space=True, size=(42, 27), style="spine", seed=33, theme="hydro", title="HYDROPONICS",
          intro="HYDROPONICS\\nTHE ONLY GREEN FOR A HUNDRED MILES.", furnish=["counters", "tables"], glass=6, wet=5, start=["p", "n"],
-         layout={"min_w": 7, "max_w": 12}, enemies={"C": 1, "a": 4, "q": 2, "x": 2, "y": 1}, items={"j": 3, "M": 1, "F": 1, "g": 2, "A": 1}),
+         layout={"min_w": 7, "max_w": 12}, enemies={"C": 1, "a": 4, "q": 2, "x": 2, "H": 1}, items={"j": 3, "M": 1, "F": 1, "g": 2, "A": 1}),
     dict(name="f34_solararray", in_space=True, size=(46, 29), style="bsp", seed=34, theme="solar", title="SOLAR ARRAY", open_sky=True,
          intro="SOLAR ARRAY\\nNO COVER OUT HERE BUT WHAT THEY BUILT.", furnish=["columns", "racks"], start=["Y", "p"],
-         layout={"min_side": 7, "max_side": 12}, enemies={"N": 3, "a": 4, "R": 2, "H": 1, "q": 2}, items={"V": 1, "F": 1, "g": 3, "L": 1}),
+         layout={"min_side": 7, "max_side": 12}, enemies={"N": 3, "a": 3, "R": 2, "H": 1, "q": 2, "C": 1}, items={"V": 1, "F": 1, "g": 3, "L": 1}),
     dict(name="f35_cargobay", in_space=True, size=(46, 29), style="double", seed=35, theme="cargo", title="CARGO BAY",
          intro="CARGO BAY\\nEVERY CRATE IS SOMEBODY ELSE'S PROBLEM.", furnish=["racks", "racks", "columns"], start=["T", "r"],
-         enemies={"a": 5, "S": 3, "U": 2, "H": 2, "x": 2}, items={"r": 1, "K": 1, "g": 5, "k": 2, "n": 1}),
+         enemies={"a": 4, "S": 3, "U": 2, "H": 2, "x": 2, "C": 1}, items={"r": 1, "K": 1, "g": 5, "k": 2, "n": 1}),
     dict(name="f36_reactor", in_space=True, size=(44, 27), style="bsp", seed=36, theme="reactor", title="REACTOR",
          intro="REACTOR\\nMIND THE BARRELS. MIND ALL OF THEM.", furnish=["vats", "columns", "racks"], start=["M", "F"],
-         enemies={"a": 4, "R": 3, "S": 2, "N": 1, "y": 2, "C": 1}, items={"g": 9, "F": 2, "V": 1, "r": 1}),
+         enemies={"a": 4, "R": 3, "S": 2, "N": 1, "y": 1, "C": 1, "H": 1}, items={"g": 9, "F": 2, "V": 1, "r": 1}),
     dict(name="f37_comms", in_space=True, size=(42, 25), style="spine", seed=37, theme="comms", title="COMMS",
          intro="COMMS DECK\\nCUT THE SIGNAL BEFORE THEY CALL HOME.", furnish=["office", "racks", "tables"], furnished=1.0, start=["A", "p"],
-         layout={"min_w": 6, "max_w": 10}, enemies={"a": 4, "U": 3, "q": 3, "x": 1, "y": 1}, items={"M": 1, "n": 2, "k": 3, "g": 2, "j": 2}),
+         layout={"min_w": 6, "max_w": 10}, enemies={"a": 4, "U": 3, "q": 2, "x": 1, "C": 1, "H": 1}, items={"M": 1, "n": 2, "k": 3, "g": 2, "j": 2}),
     dict(name="f38_observation", in_space=True, size=(46, 29), style="bsp", seed=38, theme="observ", title="OBSERVATION DECK", open_sky=True,
          intro="OBSERVATION DECK\\nGLASS ALL ROUND. SO ARE THEY.", furnish=["tables", "columns"], glass=12, start=["Y", "V"],
-         layout={"min_side": 7, "max_side": 12}, enemies={"N": 3, "S": 2, "a": 4, "H": 2, "q": 2}, items={"F": 2, "T": 1, "b": 2, "g": 2}),
+         layout={"min_side": 7, "max_side": 12}, enemies={"N": 3, "S": 2, "a": 3, "H": 2, "q": 2, "C": 1}, items={"F": 2, "T": 1, "b": 2, "g": 2}),
     dict(name="f39_docking", in_space=True, open_sky=True, size=(48, 29), style="double", seed=39, theme="docking", title="DOCKING RING",
          intro="DOCKING RING\\nTHE LAST WAY OFF IS BEHIND THEM.", furnish=["racks", "columns", "office"], start=["K", "T"],
-         layout={"min_w": 7, "max_w": 12}, enemies={"a": 5, "R": 3, "S": 2, "U": 2, "H": 2, "x": 2, "y": 1}, items={"r": 1, "Y": 1, "F": 1, "g": 4, "A": 1},
+         layout={"min_w": 7, "max_w": 12}, enemies={"a": 4, "R": 3, "S": 2, "U": 2, "H": 2, "x": 2, "C": 1}, items={"r": 1, "Y": 1, "F": 1, "g": 4, "A": 1},
          waves=[{"after_kills": 8, "count": 5, "armed": 4}], wave_points=5),
     dict(name="f40_bridge", in_space=True, open_sky=True, size=(50, 31), style="bsp", seed=40, theme="bridge", title="THE BRIDGE",
          intro="THE BRIDGE\\nEVERYONE LEFT IS IN THIS ROOM.", furnish=["office", "tables", "columns"], glass=6, start=["K", "V"],
          layout={"min_side": 8, "max_side": 13},
-         enemies={"a": 5, "R": 3, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 2}, items={"Y": 1, "F": 2, "M": 1, "r": 1, "g": 5, "L": 1, "A": 1},
+         enemies={"a": 5, "R": 3, "S": 2, "U": 2, "N": 2, "H": 2, "q": 2, "C": 1, "x": 2, "y": 1}, items={"Y": 1, "F": 2, "M": 1, "r": 1, "g": 5, "L": 1, "A": 1},
          waves=[{"after_kills": 10, "count": 6, "armed": 5}, {"after_kills": 20, "count": 6, "armed": 5}], wave_points=6),
 ]
 
@@ -1009,6 +1081,7 @@ def f9_pool():
     assert walkable_from_lift(g), "pool: somebody cannot be reached"
     g.gadgets("f9_pool", 713)
     g.gentlemen("f9_pool", 754)
+    g.windows("f9_pool", 821)
     save("f9_pool", g, {"title": "POOL", "intro": "POOL\\nFREEZE THEM, OR LET THEM RUN ON THE WET DECK.", "theme": theme("aqua")})
 
 
@@ -1028,12 +1101,14 @@ def f10_vault():
     g.put("c", (17, 22), (18, 22), (21, 22), (22, 22), (10, 15), (29, 15))
     g.put("P", (1, 29)); g.put("X", (38, 29)); g.put("B", (19, 9))
     g.put("H", (14, 14), (25, 14)); g.put("R", (10, 8), (29, 8)); g.put("a", (19, 19), (29, 22))
+    g.put("C", (33, 26))      # the cloner, out at the edge of the vault floor
     g.put("g", (11, 22), (28, 12), (16, 7), (23, 21))
     g.put("K", (6, 27)); g.put("T", (8, 31)); g.put("V", (10, 27)); g.put("r", (6, 31))
     g.put("c", (22, 28), (23, 28), (30, 30), (31, 30), (3, 27), (3, 28), (35, 7), (35, 15), (16, 2), (23, 2))
     assert walkable_from_lift(g), "vault: somebody cannot be reached"
     g.gadgets("f10_vault", 867)
     g.gentlemen("f10_vault", 908)
+    g.windows("f10_vault", 975)
     save("f10_vault", g, {"title": "THE VAULT", "intro": "THE VAULT\\nTHE BRUTE. TWELVE HITS. DO NOT LET HIM REACH YOU.",
                           "boss": "brute", "theme": theme("steel")})
 
@@ -1082,6 +1157,7 @@ def f13_basement():
     assert walkable_from_lift(g), "basement: somebody cannot be reached"
     g.gadgets("f13_basement", 913)
     g.gentlemen("f13_basement", 954)
+    g.windows("f13_basement", 1021)
     save("f13_basement", g, {"title": "LEVEL ????",
                              "intro": "SUB-BASEMENT\\nTHIS FLOOR IS NOT ON THE BUTTONS.",
                              "boss": "beast", "theme": theme("basement")})
@@ -1108,6 +1184,7 @@ def f21_lockdown():
     assert walkable_from_lift(g), "lockdown: somebody cannot be reached"
     g.gadgets("f21_lockdown", 278)
     g.gentlemen("f21_lockdown", 319)
+    g.windows("f21_lockdown", 386)
     save("f21_lockdown", g, {"title": "LOCKDOWN", "intro": "LOCKDOWN\\nTHE WARDEN. THREE ROUNDS THROUGH THE GLASS.",
                              "boss": "warden", "theme": theme("prison")})
 

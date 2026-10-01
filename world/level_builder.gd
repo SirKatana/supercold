@@ -76,6 +76,13 @@ static func _place_breakables(data: LevelData, geometry: Node3D, entities: Node3
 		pane.position = data.cell_center(entry["cell"])
 		# Under Nav so the pane carves the navmesh.
 		geometry.add_child(pane)
+	for entry: Dictionary in data.windows:
+		var window := GlassPane.new()
+		window.name = "Window"
+		window.along_x = entry["along_x"]
+		window.opens_onto_the_drop = true
+		window.position = data.cell_center(entry["cell"])
+		geometry.add_child(window)
 
 
 static func _place_hazards(data: LevelData, entities: Node3D) -> void:

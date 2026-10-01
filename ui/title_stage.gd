@@ -117,8 +117,8 @@ func _tube(radius: float, height: float, at: Vector3, material: Material) -> voi
 
 ## The agent: dark suit, shades, a pistol held across his chest.
 func _build_agent() -> void:
-	_figure = Humanoid.create(self, Mats.security_suit(), 1.0)
-	_figure.set_group_material(&"head", Mats.pink())
+	# Black all over, the same as the player's body in the game. Only the shades mark him out.
+	_figure = Humanoid.create(self, Mats.black(), 1.0)
 	_figure.set_sunglasses(true)
 	_gun = Pistol.create()
 	_gun.state = Pickup.State.HELD
