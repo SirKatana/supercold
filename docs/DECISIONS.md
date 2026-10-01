@@ -508,3 +508,15 @@ One line per call made in auto mode, with why.
 - Guns carry `grip_local` and `fore_grip_local`: where the firing hand closes and where the
   other hand goes. The AK and the shotgun set theirs from their own models, so the player holds
   them where a pink dude holds them.
+
+## Shelves and suits that suit the floor
+
+- `Furniture.shelf_kind()` decides what a floor keeps: books in the tower, stores on the
+  storage floors, **mops, buckets, bottles and cloths** in the sewers and the waterworks, and
+  **pressure suits, helmets and air bottles** on the station. Books on a space station were
+  nobody's idea of right.
+- Everybody on a station floor wears a suit and a bubble helmet. The suit is applied in
+  `PinkDude._ready`, not when the dude is registered: a subclass sets its own colour before it
+  calls `super()`, so anything written earlier is thrown away.
+- The helmet rides on `skin.shades_transform()`, the same frame the sunglasses use, and
+  replaces them.

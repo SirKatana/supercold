@@ -71,6 +71,10 @@ var agent: NavigationAgent3D
 var skin: Humanoid
 ## World positions of all 21 joints this frame. The ragdoll starts from these.
 var joints: PackedVector3Array = []
+## On the station everybody is in a suit, and a suit comes with a bubble on the front of it.
+var wears_helmet: bool = false
+var _helmet: Node3D
+
 var hand_anchor: Node3D
 var off_hand_anchor: Node3D
 
@@ -108,11 +112,17 @@ func _ready() -> void:
 	agent.avoidance_enabled = false
 	add_child(agent)
 
-	if body_material == null:
+	if wears_helmet:
+		# A suit goes over everything, whatever colour the subclass picked for itself. This
+		# has to happen here: a subclass sets its material before it calls super().
+		body_material = Mats.spacesuit()
+	elif body_material == null:
 		body_material = Mats.pink()
 	skin = Humanoid.create(self, body_material, body_scale)
 	skin.bulk = body_bulk()
-	skin.set_sunglasses(wears_shades() and Settings.sunglasses)
+	skin.set_sunglasses(wears_shades() and Settings.sunglasses and not wears_helmet)
+	if wears_helmet:
+		_helmet = _make_helmet()
 	Settings.changed.connect(_on_settings_changed)
 	hand_anchor = _make_anchor("HandAnchor")
 	off_hand_anchor = _make_anchor("OffHandAnchor")
@@ -827,6 +837,7 @@ func _lay_out_pose() -> void:
 	joints = Humanoid.to_world(local, global_transform, body_scale)
 	if drawn:
 		skin.apply(joints)
+	_place_helmet()
 	_place_anchor(hand_anchor, &"elbow_r", &"wrist_r", &"hand_r")
 	_place_anchor(off_hand_anchor, &"elbow_l", &"wrist_l", &"hand_l")
 
@@ -843,6 +854,42 @@ func _aim_laser() -> void:
 
 
 ## Puts a weapon anchor in the palm, with -Z running down the forearm so a gun points where the arm does.
+## A clear bubble over the head, with a white collar under it. Placed on the shades frame, so
+## it follows the skull exactly as the sunglasses do.
+func _make_helmet() -> Node3D:
+	var helmet := Node3D.new()
+	helmet.top_level = true
+	add_child(helmet)
+	var glass := MeshInstance3D.new()
+	var ball := SphereMesh.new()
+	ball.radius = 0.155 * body_scale
+	ball.height = ball.radius * 2.0
+	ball.radial_segments = 12
+	ball.rings = 7
+	ball.material = Mats.visor_glass()
+	glass.mesh = ball
+	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	helmet.add_child(glass)
+	var collar := MeshInstance3D.new()
+	var ring := CylinderMesh.new()
+	ring.top_radius = 0.125 * body_scale
+	ring.bottom_radius = 0.135 * body_scale
+	ring.height = 0.05 * body_scale
+	ring.material = Mats.white_paint()
+	collar.mesh = ring
+	collar.position.y = -0.135 * body_scale
+	collar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	helmet.add_child(collar)
+	return helmet
+
+
+func _place_helmet() -> void:
+	if _helmet == null or joints.is_empty():
+		return
+	var frame: Transform3D = skin.shades_transform()
+	_helmet.global_transform = Transform3D(frame.basis, frame.origin + frame.basis.z * 0.035 * body_scale)
+
+
 func _place_anchor(anchor: Node3D, elbow: StringName, wrist: StringName, hand: StringName) -> void:
 	var w: Vector3 = joints[Humanoid.index_of(wrist)]
 	var h: Vector3 = joints[Humanoid.index_of(hand)]

@@ -51,10 +51,23 @@ static func shelf_size(cells: int) -> Vector3:
 
 
 ## A double-sided shelving unit `cells` long, running along Z. Books or stores, by floor.
+## What a floor keeps on its shelves. Books belong in an office, not on a space station and
+## not in a sewer.
+static func shelf_kind(level_name: String) -> StringName:
+	if level_name.begins_with("f3") or level_name.begins_with("f4"):
+		# The station runs from 31 to 40: suit lockers, not bookcases.
+		var number: String = level_name.substr(1, 2)
+		if number.is_valid_int() and int(number) >= 31:
+			return &"suits"
+	if level_name == "f11_sewers" or level_name == "f28_waterworks":
+		return &"cleaning"
+	return &"store" if level_name in STORAGE_FLOORS else &"books"
+
+
 static func shelf_mesh(cells: int, level_name: String) -> ArrayMesh:
-	var storage: bool = level_name in STORAGE_FLOORS
-	return MeshKit.cached(StringName("furniture_shelf_%d_%s" % [cells, "store" if storage else "books"]),
-		_model_shelf.bind(cells, storage))
+	var kind: StringName = shelf_kind(level_name)
+	return MeshKit.cached(StringName("furniture_shelf_%d_%s" % [cells, kind]),
+		_model_shelf.bind(cells, kind))
 
 
 static func pillar_mesh(height: float) -> ArrayMesh:
@@ -81,15 +94,15 @@ static func _model_pillar(kit: MeshKit, height: float) -> void:
 
 
 ## Shelving open on both long faces, with a back panel down the middle. Origin at its centre.
-static func _model_shelf(kit: MeshKit, cells: int, storage: bool) -> void:
+static func _model_shelf(kit: MeshKit, cells: int, kind: StringName) -> void:
 	var panel: Material = Mats.prop()           # surface 0: themed
-	var board: Material = Mats.steel() if storage else Mats.wood()
+	var board: Material = Mats.wood() if kind == &"books" else Mats.steel()
 	var dark: Material = Mats.polymer()
 	var length: float = shelf_length(cells)
 	var floor_y: float = -SHELF_HEIGHT * 0.5
 	var half: float = SHELF_DEPTH * 0.5
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 4242 + cells * 17 + (1000 if storage else 0)
+	rng.seed = 4242 + cells * 17 + int(kind.hash() % 997)
 
 	kit.box(Vector3(SHELF_DEPTH, SHELF_HEIGHT, 0.04), Vector3(0, 0, -length * 0.5 + 0.02), panel)      # end panels
 	kit.box(Vector3(SHELF_DEPTH, SHELF_HEIGHT, 0.04), Vector3(0, 0, length * 0.5 - 0.02), panel)
@@ -111,10 +124,88 @@ static func _model_shelf(kit: MeshKit, cells: int, storage: bool) -> void:
 			for b: int in bays:
 				var z0: float = -length * 0.5 + 0.04 + bay * b + 0.025
 				var z1: float = z0 + bay - 0.05
-				if storage:
-					_fill_with_stores(kit, rng, face, y0, clear, z0, z1, half)
-				else:
-					_fill_with_books(kit, rng, face, y0, clear, z0, z1, half)
+				match kind:
+					&"store":
+						_fill_with_stores(kit, rng, face, y0, clear, z0, z1, half)
+					&"suits":
+						_fill_with_suits(kit, rng, face, y0, clear, z0, z1, half)
+					&"cleaning":
+						_fill_with_cleaning(kit, rng, face, y0, clear, z0, z1, half)
+					_:
+						_fill_with_books(kit, rng, face, y0, clear, z0, z1, half)
+
+
+## A bay on the station: a suit hanging in it, or helmets and air bottles on the shelf.
+static func _fill_with_suits(kit: MeshKit, rng: RandomNumberGenerator, face: float, y0: float, clear: float,
+		z0: float, z1: float, half: float) -> void:
+	var suit: Material = Mats.spacesuit()
+	var visor: Material = Mats.visor_glass()
+	var dark: Material = Mats.gunmetal()
+	var orange: Material = Mats.hazard_yellow()
+	var middle: float = (z0 + z1) * 0.5
+	var x: float = face * (half - 0.16)
+	var roll: float = rng.randf()
+	if roll < 0.12:
+		return
+	if clear > 0.60 and roll < 0.62:
+		# A pressure suit on its hanger: torso, arms, legs and a helmet on the shelf above.
+		var tall: float = minf(clear - 0.06, 0.78)
+		kit.box(Vector3(0.20, tall * 0.46, 0.30), Vector3(x, y0 + tall * 0.70, middle), suit)
+		for arm: float in [-1.0, 1.0]:
+			kit.box(Vector3(0.14, tall * 0.40, 0.085), Vector3(x, y0 + tall * 0.68, middle + arm * 0.185), suit)
+		for leg: float in [-1.0, 1.0]:
+			kit.box(Vector3(0.16, tall * 0.44, 0.12), Vector3(x, y0 + tall * 0.24, middle + leg * 0.075), suit)
+		kit.box(Vector3(0.21, 0.05, 0.32), Vector3(x, y0 + tall * 0.93, middle), orange)      # shoulder yoke
+		kit.box(Vector3(0.06, 0.10, 0.07), Vector3(x + face * 0.09, y0 + tall * 0.60, middle - 0.10), dark)
+		return
+	# Helmets and air bottles.
+	var z: float = z0 + 0.10
+	while z < z1 - 0.12:
+		if rng.randf() < 0.55:
+			kit.ball(0.105, Vector3(x, y0 + 0.11, z), suit, Vector3(1.0, 0.92, 1.0))
+			kit.ball(0.088, Vector3(x - face * 0.035, y0 + 0.11, z), visor, Vector3(0.75, 0.8, 1.0))
+		else:
+			kit.tube(0.052, 0.052, minf(clear - 0.08, 0.34), Vector3(x, y0 + minf(clear - 0.08, 0.34) * 0.5, z),
+				orange, false, 10)
+			kit.tube(0.018, 0.018, 0.05, Vector3(x, y0 + minf(clear - 0.08, 0.34) + 0.02, z), dark, false, 8)
+		z += 0.26
+
+
+## A bay in the sewers: mops, brooms, buckets and bottles of something strong.
+static func _fill_with_cleaning(kit: MeshKit, rng: RandomNumberGenerator, face: float, y0: float, clear: float,
+		z0: float, z1: float, half: float) -> void:
+	var steel: Material = Mats.steel()
+	var yellow: Material = Mats.mop_bucket_yellow()
+	var bristle: Material = Mats.bristle()
+	var wood: Material = Mats.wood()
+	var plastic: Material = Mats.polymer()
+	var x: float = face * (half - 0.15)
+	var z: float = z0 + 0.09
+	if rng.randf() < 0.1:
+		return
+	while z < z1 - 0.10:
+		var roll: float = rng.randf()
+		if roll < 0.3 and clear > 0.42:
+			# A bucket, sometimes stacked two high.
+			var stack: int = 1 if rng.randf() < 0.6 else 2
+			for i: int in stack:
+				kit.tube(0.115, 0.095, 0.20, Vector3(x, y0 + 0.10 + i * 0.17, z), yellow, false, 12)
+			z += 0.30
+		elif roll < 0.6 and clear > 0.50:
+			# Bottles of cleaner, in a row.
+			for i: int in 3:
+				kit.tube(0.035, 0.038, 0.26, Vector3(x, y0 + 0.13, z + i * 0.085), plastic, false, 8)
+				kit.tube(0.016, 0.016, 0.04, Vector3(x, y0 + 0.28, z + i * 0.085), yellow, false, 8)
+			z += 0.33
+		elif roll < 0.8:
+			# A spare mop head or two, flat on the shelf.
+			kit.box(Vector3(0.22, 0.09, 0.14), Vector3(x, y0 + 0.055, z), bristle)
+			z += 0.22
+		else:
+			# Folded cloths.
+			for i: int in 3:
+				kit.box(Vector3(0.20, 0.035, 0.16), Vector3(x, y0 + 0.02 + i * 0.038, z), steel if i % 2 else wood)
+			z += 0.24
 
 
 ## One bay of one shelf, facing `face` (-1 or +1 along X). Books stand with their spines to the room.

@@ -567,6 +567,10 @@ static func basement_skin() -> ShaderMaterial:
 func _register(dude: PinkDude, at: Vector3) -> void:
 	if level_name == SECRET_FLOOR and dude.body_material == null and not (dude is Gentleman):
 		dude.body_material = basement_skin()
+	elif data != null and data.in_space:
+		# Nobody works a station in his shirtsleeves. The suit itself is put on in `_ready`,
+		# after the subclass has set whatever colour it wanted.
+		dude.wears_helmet = true
 	entities_root(self).add_child(dude)
 	dude.global_position = at
 	if player != null:
