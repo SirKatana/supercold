@@ -421,9 +421,16 @@ static func _build_props(data: LevelData, parent: Node3D) -> void:
 			var run: int = 1
 			while racks.has(cell + Vector2i(0, run)):
 				run += 1
-			var shelf: StaticBody3D = make_box(Furniture.shelf_size(run), prop_material)
+			var shelf := Shelving.new()
 			shelf.name = "Shelving"
-			shelf.add_to_group(&"shelving")      # duplicate names get renamed by the engine
+			shelf.cells = run
+			shelf.stock = Furniture.shelf_kind(data.level_name)
+			var span: Vector3 = Furniture.shelf_size(run)
+			var block := CollisionShape3D.new()
+			var box := BoxShape3D.new()
+			box.size = span
+			block.shape = box
+			shelf.add_child(block)
 			Furniture.dress(shelf, Furniture.shelf_mesh(run, data.level_name), prop_material)
 			var first: Vector3 = data.cell_center(cell, Furniture.SHELF_HEIGHT * 0.5)
 			var last: Vector3 = data.cell_center(cell + Vector2i(0, run - 1), Furniture.SHELF_HEIGHT * 0.5)

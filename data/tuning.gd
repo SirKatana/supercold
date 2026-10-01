@@ -40,6 +40,13 @@ extends Resource
 @export var kick_camera: float = 0.09
 ## How long the leg is out, real seconds: the swing is the body's, not a viewmodel's.
 @export var kick_swing: float = 0.42
+## A dude with a broken leg: how long it puts him down for and how much it slows him after.
+@export var limp_stun: float = 1.2
+@export var limp_speed_scale: float = 0.45
+## Shelving: what is left to hide behind, how far the falling run reaches, and the plant pot.
+@export var shelf_heap_height: float = 0.55
+@export var shelf_crush_radius: float = 1.4
+@export var pot_hurt_radius: float = 1.3
 ## Third person (T): straight behind him and a little above, not off one shoulder.
 @export var tps_boom: float = 3.4
 @export var tps_shoulder: float = 0.0

@@ -792,6 +792,23 @@ static func city_ground() -> StandardMaterial3D:
 		return m)
 
 
+## A pot plant: fired clay and the earth in it.
+static func terracotta() -> StandardMaterial3D:
+	return _cached(&"terracotta", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.70, 0.36, 0.24)
+		m.roughness = 0.9
+		return m)
+
+
+static func soil() -> StandardMaterial3D:
+	return _cached(&"soil", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.22, 0.16, 0.12)
+		m.roughness = 1.0
+		return m)
+
+
 static func pink() -> StandardMaterial3D:
 	return _cached(&"pink", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

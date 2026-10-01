@@ -37,7 +37,9 @@ func test_a_row_of_racks_is_one_bookshelf() -> void:
 			longest = unit
 	var box: BoxShape3D = (longest.get_child(0) as CollisionShape3D).shape
 	check_eq(box.size, Furniture.shelf_size(runs.max()), "one solid block the length of the row")
-	check_eq(longest.collision_layer, LevelBuilder.LAYER_WORLD, "fixed, on the world layer")
+	# World, and a breakable: shelving can be brought down now.
+	check_eq(longest.collision_layer & LevelBuilder.LAYER_WORLD, LevelBuilder.LAYER_WORLD, "on the world layer")
+	check(longest is Shelving, "and it is something that can be knocked over")
 	var mesh: Mesh = (longest.find_children("*", "MeshInstance3D", false, false)[0] as MeshInstance3D).mesh
 	check(mesh.get_surface_count() >= 6, "with shelves and books of several colours on it, got %d surfaces" % mesh.get_surface_count())
 

@@ -531,3 +531,15 @@ One line per call made in auto mode, with why.
   `Hands._physics_process` writes `visible` every frame, so the check belongs there.
 - `aim_origin()` and `aim_direction()` come from the head in third person. Firing from the
   camera would send shots out of a point a metre behind him, at a slant.
+
+## Shelves that come down
+
+- `world/props/shelving.gd` replaces the plain static box: three hits, or one from the ram or a
+  blast, and the run goes over. The stock comes off it (books, boxes, helmets or buckets,
+  whichever that floor keeps), the pot plants fall, and the collision box is cut to
+  `shelf_heap_height` so what is left is still cover but can be seen and shot over.
+- `world/props/falling_pot.gd` is the plant: it falls on world time, breaks where it lands into
+  clay, soil and leaves, and takes the legs from anybody within `pot_hurt_radius` **measured
+  flat** -- a pot that lands at a man's feet landed on him.
+- Neither kills. `PinkDude.break_a_leg()` puts him down for `limp_stun` and leaves him
+  `limping`: `move_speed()` drops to `limp_speed_scale` and the walk gets a hitch.

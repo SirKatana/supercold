@@ -73,6 +73,8 @@ var skin: Humanoid
 var joints: PackedVector3Array = []
 ## On the station everybody is in a suit, and a suit comes with a bubble on the front of it.
 var wears_helmet: bool = false
+## A shelf or a plant pot came down on him. He keeps fighting, at half the pace.
+var limping: bool = false
 var _helmet: Node3D
 
 var hand_anchor: Node3D
@@ -289,7 +291,8 @@ func aim_left_amount() -> float:
 
 
 func move_speed() -> float:
-	return T.dude_run_speed if state_name == &"reposition" else T.dude_speed
+	var pace: float = T.dude_run_speed if state_name == &"reposition" else T.dude_speed
+	return pace * T.limp_speed_scale if limping else pace
 
 
 ## Most unarmed dudes run at you and swing. The cloner does not: he keeps away and lets his
@@ -329,6 +332,16 @@ func _physics_process(delta: float) -> void:
 		_update_cull(delta)
 	if not frozen:      # ice holds the pose he froze in
 		_animate(wd)
+
+
+## Something heavy came down on him. He is not dead and he is not going to be: he limps from
+## here on, slower and with a hitch in the walk, and he cannot rush anybody.
+func break_a_leg() -> void:
+	if not alive or limping:
+		return
+	limping = true
+	Sfx.play(&"punch", global_position)
+	stun(T.limp_stun)
 
 
 ## A boot in the chest: it hurts like a punch and it always takes him off his feet, window or
@@ -810,6 +823,9 @@ func _animate(wd: float) -> void:
 		bend_target = clampf(0.45 + 0.5 * choke_exposure / T.fart_kill_time + spasm, 0.0, 1.0)
 	_bend = move_toward(_bend, bend_target, wd * (3.5 if choking else 2.0))
 	_moving = moving
+	if limping:
+		# A hitch in the walk: he comes off the bad leg quicker than he puts weight on it.
+		_walk_phase += wd * 2.2
 	if not drawn and not (aiming or winding_up):
 		_pose_stale = true      # nobody can see him: `ensure_pose` lays him out when it matters
 		_laser.visible = false
