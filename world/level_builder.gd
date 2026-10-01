@@ -52,6 +52,7 @@ static func build(data: LevelData) -> Node3D:
 	_place_exit_and_triggers(data, nav, entities)
 	_place_hazards(data, entities)
 	_build_pools(data, level, entities)
+	_build_channels(data, level)
 	return level
 
 
@@ -250,7 +251,7 @@ static func _rect_box(data: LevelData, rect: Rect2i, top: float, thickness: floa
 
 
 static func _build_floor(data: LevelData, parent: Node3D) -> void:
-	if data.deep_cells.is_empty():
+	if data.deep_cells.is_empty() and data.channel_cells.is_empty():
 		var size := Vector3(data.width * data.cell_size, 0.5, data.height * data.cell_size)
 		var body: StaticBody3D = make_box(size, floor_material)
 		body.name = "Floor"
@@ -259,8 +260,8 @@ static func _build_floor(data: LevelData, parent: Node3D) -> void:
 		return
 	# A floor with a pool in it: slabs everywhere except over the water, and thick enough
 	# that their cut sides are the pool walls.
-	var thick: float = T.pool_depth + 0.4
-	for rect: Rect2i in cell_rects(data, func(c: String) -> bool: return c != "W"):
+	var thick: float = maxf(T.pool_depth, SewerChannel.DEPTH) + 0.4
+	for rect: Rect2i in cell_rects(data, func(c: String) -> bool: return c != "W" and c != "="):
 		var slab: StaticBody3D = _rect_box(data, rect, 0.0, thick, floor_material)
 		slab.name = "Floor"
 		parent.add_child(slab)
@@ -268,6 +269,21 @@ static func _build_floor(data: LevelData, parent: Node3D) -> void:
 
 ## The basin under each pool: tiled bottom with lane lines, the water itself, and ladder rails.
 ## The bottom is NOT under the navmesh parent, so dudes never try to path across it.
+## The sewer channel. Like a pool, its trough hangs off the level and not off the navmesh
+## parent, so nobody tries to walk down the middle of it.
+static func _build_channels(data: LevelData, level: Node3D) -> void:
+	for rect: Rect2i in cell_rects(data, func(c: String) -> bool: return c == "="):
+		var channel := SewerChannel.new()
+		channel.name = "SewerChannel"
+		channel.rect = rect
+		channel.cell_size = data.cell_size
+		# Local position: the level is still detached while it is built, and setting a global
+		# one on a node outside the tree pushes an error for every channel on the floor.
+		channel.position = Vector3((rect.position.x + rect.size.x * 0.5) * data.cell_size, 0.0,
+			(rect.position.y + rect.size.y * 0.5) * data.cell_size)
+		level.add_child(channel)
+
+
 static func _build_pools(data: LevelData, level: Node3D, entities: Node3D) -> void:
 	for rect: Rect2i in cell_rects(data, func(c: String) -> bool: return c == "W"):
 		var bottom: StaticBody3D = _rect_box(data, rect, -T.pool_depth, 0.4, Mats.pool_tile())

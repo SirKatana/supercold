@@ -426,3 +426,17 @@ One line per call made in auto mode, with why.
   `window_punch_reach` the way the blow is pushing.
 - The duct grate's slats are steel rather than gunmetal, and there are seven of them: nine dark
   ones at an angle read as a smudge from across a dim room.
+
+## The sewer channel
+
+- `world/sewer_channel.gd` replaces the flat wet floor on level 11 with a half-pipe sunk
+  `DEPTH` into the deck: a fan of tilted slabs each side, a slime invert along the bottom, and
+  green water in it. The floor slabs are cut round `=` cells exactly as they are round a pool,
+  which is also what keeps dudes from pathing down the middle of it.
+- `Mats.water_sewer()` is the pool shader with the clarity cut to 0.45 m and the colours taken
+  green, so you cannot see what is under the surface.
+- `world/sewer_body.gd` is one of the pink dudes who did not make it, floating face up and
+  moving: the arms sweep out of step, a knee comes up, the body rolls and turns, and it comes
+  round again at the top of the run. It is a posed Humanoid on world time, not a ragdoll.
+- Setting `global_position` on a node while the level is still detached pushes an engine error
+  for every call. The builder uses a local `position` and adds the child afterwards.

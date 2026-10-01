@@ -946,6 +946,16 @@ def build_floor(spec):
             if spec.get("wet_corridor"):
                 for c in corridors:
                     g.fill("~", c[0], c[1] + 1, c[2], c[3] - 1)
+            if spec.get("channel"):
+                # The middle of each corridor is cut away into a half-pipe of green water, with
+                # a walkway left along both sides of it. The lift end is left dry so nobody
+                # steps out of the arrival cabin straight into the muck.
+                for c in corridors:
+                    x0, y0, x1, y1 = c
+                    if y1 - y0 >= 2:
+                        g.fill("=", x0 + 3, y0 + 1, x1 - 3, y1 - 1)
+                    elif x1 - x0 >= 2:
+                        g.fill("=", x0 + 1, y0 + 3, x1 - 1, y1 - 3)
             everywhere = rects + corridors
             g.scatter(spec["enemies"], everywhere, spec["seed"] + attempt, floor=".~i")
             if spec.get("waves"):
@@ -988,7 +998,7 @@ SPECS = [
          intro="ARCHIVE\\nFAST ONES IN THE STACKS. KEEP A KNIFE.", furnish=["racks", "racks", "office"], start=["n", "p"],
          layout={"min_w": 7, "max_w": 11}, enemies={"a": 2, "q": 3, "u": 1, "x": 2, "y": 1}, items={"j": 2, "n": 2, "F": 1, "k": 2, "g": 1}),
     dict(name="f11_sewers", size=(42, 25), style="double", seed=11, theme="sewer", title="SEWERS",
-         intro="SEWERS\\nTHEY COME AT YOU WITH BLADES DOWN HERE.", furnish=["columns", "racks"], furnished=0.5, wet=6, wet_corridor=True, start=["p", "n"],
+         intro="SEWERS\\nMIND THE CHANNEL. THINGS FLOAT IN IT.", furnish=["columns", "racks"], furnished=0.5, wet=3, channel=True, start=["p", "n"],
          enemies={"x": 4, "a": 3, "S": 1, "y": 1, "C": 1}, items={"j": 2, "T": 1, "F": 1, "g": 3, "b": 2, "L": 1}),
     dict(name="f12_kitchen", size=(42, 25), style="spine", seed=12, theme="stainless", title="KITCHEN",
          intro="KITCHEN\\nKNIVES EVERYWHERE. SO IS THE GAS.", furnish=["counters", "counters", "tables"], wet=3, ice_rooms=1, start=["M"],

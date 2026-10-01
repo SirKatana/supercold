@@ -22,7 +22,7 @@ const PICKUP_KINDS: Dictionary[String, StringName] = {
 }
 const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar", "h": &"chandelier",
 	"z": &"tank", "Z": &"tank_cracked", "d": &"striplight"}
-const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvezZEQdO"
+const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvezZEQdO="
 const DUDE_KINDS: Dictionary[String, StringName] = {
 	"a": &"pistol", "u": &"", "R": &"rifle", "S": &"shotgun", "H": &"shield",
 	"q": &"runner", "N": &"sniper", "U": &"smg",
@@ -77,6 +77,8 @@ static func parse(text: String, json_text: String = "") -> LevelData:
 				data.puddles.append({"cell": cell, "icy": c == "i"})
 			elif c == "W":
 				data.deep_cells.append(cell)
+			elif c == "=":
+				data.channel_cells.append(cell)
 			elif c == "w":
 				data.wave_points.append(cell)
 			elif c == "t":

@@ -20,6 +20,8 @@ var doors: Array[Dictionary] = []
 var glass: Array[Dictionary] = []
 ## Windows in the outer wall. Same pane, but there is nothing behind it to land on.
 var windows: Array[Dictionary] = []
+## The sewer channel: a half-pipe of green water cut into the floor.
+var channel_cells: Array[Vector2i] = []
 ## {cell: Vector2i, kind: StringName}
 var props: Array[Dictionary] = []
 var wave_points: Array[Vector2i] = []

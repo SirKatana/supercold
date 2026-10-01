@@ -353,6 +353,21 @@ static func water() -> ShaderMaterial:
 
 
 ## The pool: two metres of it.
+## Sewer water: the same shader as the pool, turned green and made almost opaque, so what is
+## floating in it is half submerged rather than on show.
+static func water_sewer() -> ShaderMaterial:
+	var m: ShaderMaterial = water_deep().duplicate()
+	m.set_shader_parameter(&"deep_color", Color(0.05, 0.11, 0.06))
+	m.set_shader_parameter(&"shallow_color", Color(0.17, 0.31, 0.15))
+	m.set_shader_parameter(&"sky_color", Color(0.26, 0.30, 0.22))
+	m.set_shader_parameter(&"clarity", 0.45)      # you cannot see far into it at all
+	m.set_shader_parameter(&"caustics", 0.05)
+	m.set_shader_parameter(&"foam_width", 0.10)
+	m.set_shader_parameter(&"ripple", 1.4)
+	m.set_shader_parameter(&"wave_height", 0.025)
+	return m
+
+
 static func water_deep() -> ShaderMaterial:
 	if _water_deep == null:
 		_water_deep = ShaderMaterial.new()
@@ -699,6 +714,35 @@ static func arm_cuff() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()
 		m.albedo_color = Color(0.13, 0.14, 0.16)
 		m.roughness = 0.85
+		return m)
+
+
+## The channel: old brick, the slime line along the bottom, and what is floating in it.
+static func sewer_brick() -> StandardMaterial3D:
+	return _cached(&"sewer_brick", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.30, 0.33, 0.27)
+		m.roughness = 0.95
+		return m)
+
+
+static func sewer_slime() -> StandardMaterial3D:
+	return _cached(&"sewer_slime", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.17, 0.26, 0.15)
+		m.roughness = 0.45
+		return m)
+
+
+## A pink dude who has been in the water a while: drained, and a little green with it.
+static func drowned_pink() -> StandardMaterial3D:
+	return _cached(&"drowned_pink", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.62, 0.34, 0.46)
+		m.roughness = 0.8
+		m.emission_enabled = true
+		m.emission = Color(0.35, 0.16, 0.26)
+		m.emission_energy_multiplier = 0.35
 		return m)
 
 

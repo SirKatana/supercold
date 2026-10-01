@@ -107,6 +107,8 @@ extends Resource
 @export var pour_reach: float = 3.2
 ## Deep water: how far down the pool goes, and how the player moves in it.
 @export var pool_depth: float = 2.2
+## How fast what is floating in the sewer goes past, metres of world time.
+@export var sewer_drift: float = 0.42
 @export var swim_speed: float = 3.0
 @export var swim_up_speed: float = 3.2
 @export var swim_sink_speed: float = 1.4
