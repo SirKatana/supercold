@@ -197,6 +197,23 @@ func _take(item: Pickup) -> void:
 	item.queue_free()
 
 
+## Walks you down and fires when he has the line. Shared by the one on the door and the
+## twenty in the room below.
+func _chase_and_shoot(p: Player, wd: float, delta: float) -> void:
+	var sees: bool = _sees(p)
+	if not sees or _flat_distance(p.global_position) > T.guard_chase_keep:
+		_walk_toward(p.global_position, T.guard_chase_speed, wd, delta)      # he comes after you
+	else:
+		_face(p.global_position, wd)
+	_aim = move_toward(_aim, 1.0, wd * 8.0)
+	if sees and _aim > 0.9 and _cooldown <= 0.0:
+		_cooldown = T.guard_cadence
+		var flight: float = muzzle().distance_to(p.chest_position()) / (T.bullet_speed * T.guard_bullet_speed)
+		var at: Vector3 = p.chest_position() + p.get_real_velocity() * flight
+		gun.cooldown_left = 0.0
+		gun.fire(muzzle(), (at - muzzle()).normalized(), self, false)
+
+
 func _physics_process(delta: float) -> void:
 	var wd: float = TimeManager.world_delta(delta)
 	_cooldown = maxf(0.0, _cooldown - wd)
@@ -205,6 +222,14 @@ func _physics_process(delta: float) -> void:
 	_moving = 0.0
 	if p == null or not p.alive:
 		_aim = move_toward(_aim, 0.0, wd * 4.0)
+		_pose(wd)
+		return
+
+	# In their own room there is no contraband, no lift and nothing to be reasonable about:
+	# twenty of them are coming for you and that is the whole of it.
+	if born_angry:
+		mode = Mode.FIRING
+		_chase_and_shoot(p, wd, delta)
 		_pose(wd)
 		return
 
@@ -255,18 +280,7 @@ func _physics_process(delta: float) -> void:
 	if mode == Mode.WAITING and _progress(p) > _progress_of_post() + T.guard_line:
 		_open_fire()      # he walked on with it
 	if mode == Mode.FIRING:
-		var sees: bool = _sees(p)
-		if not sees or _flat_distance(p.global_position) > T.guard_chase_keep:
-			_walk_toward(p.global_position, T.guard_chase_speed, wd, delta)      # he comes after you
-		else:
-			_face(p.global_position, wd)
-		_aim = move_toward(_aim, 1.0, wd * 8.0)
-		if sees and _aim > 0.9 and _cooldown <= 0.0:
-			_cooldown = T.guard_cadence
-			var flight: float = muzzle().distance_to(p.chest_position()) / (T.bullet_speed * T.guard_bullet_speed)
-			var at: Vector3 = p.chest_position() + p.get_real_velocity() * flight
-			gun.cooldown_left = 0.0
-			gun.fire(muzzle(), (at - muzzle()).normalized(), self, false)
+		_chase_and_shoot(p, wd, delta)
 	else:
 		_face(p.global_position, wd)
 		_aim = move_toward(_aim, 0.0, wd * 4.0)

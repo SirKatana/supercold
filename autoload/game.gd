@@ -231,7 +231,9 @@ func _fill_the_lair(which: StringName) -> void:
 			guard.name = "Guard%d" % i
 			guard.born_angry = true
 			entities_root(self).add_child(guard)
-			guard.global_position = at
+			# Posted where he stands, facing the middle of the room. Without a post he has no
+			# idea where he is and never poses himself, which leaves a heap of parts.
+			guard.post(at, middle, (middle - at).normalized())
 	_set_state(State.PLAYING)
 
 

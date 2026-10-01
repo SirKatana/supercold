@@ -635,3 +635,13 @@ One line per call made in auto mode, with why.
   is what "home" means down there.
 - `floor_label` called a staff room "TEST", because the name is not in `FLOORS`. It reads the
   room's own title now.
+
+## The security room's twenty guards stood down instead of attacking
+
+Two bugs, both from reusing the door guard's brain unchanged. He was never `post()`ed, so he had
+no position, no lift and was never posed; and `_physics_process` sees an empty player hand, decides
+there is no contraband, and switches to `LEAVING` — twenty guards thanking you and walking off to
+a lift that is not down there. `Game._fill_the_lair` now posts each one facing the middle of the
+room, and `born_angry` short-circuits straight to the chase (`_chase_and_shoot`, split out of the
+`FIRING` branch so both paths share it). `tests/test_lair_security.gd` covers posted, spread out,
+hostile, and dying putting you back on your floor.
