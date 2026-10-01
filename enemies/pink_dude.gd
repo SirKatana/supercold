@@ -43,6 +43,10 @@ var desired_velocity: Vector3 = Vector3.ZERO
 ## an open window is how most of them leave the building.
 var flung: bool = false
 var _flight: Vector3 = Vector3.ZERO
+## The height he left the floor at. `is_on_floor()` is unreliable while he is being moved a
+## fraction of a step at a time in slow motion, and without this he sinks for ever and dies of
+## a fall he never took.
+var _ground_y: float = 0.0
 var aiming: bool = false
 var stunned: bool = false
 var winding_up: bool = false
@@ -323,6 +327,7 @@ func shove(impulse: Vector3) -> void:
 		return
 	flung = true
 	_flight = impulse
+	_ground_y = global_position.y
 	velocity = Vector3.ZERO
 
 
@@ -332,12 +337,14 @@ func _sail(wd: float, delta: float) -> void:
 	_flight.y -= T.gravity * Game.gravity_scale * wd
 	velocity = _flight * (wd / delta if delta > 0.0 else 0.0)
 	move_and_slide()
-	if global_position.y < T.fall_death_y:
+	if global_position.y < T.fall_death_y and global_position.y < _ground_y - 3.0:
 		# Out of the window and down the side of the building.
 		Sfx.play(&"shatter", global_position)
 		die(global_position, _flight.normalized())
 		return
-	if is_on_floor() and _flight.y <= 0.0:
+	# Down again: either the floor stopped him, or he is back at the height he left from.
+	if _flight.y <= 0.0 and (is_on_floor() or global_position.y <= _ground_y + 0.02):
+		global_position.y = maxf(global_position.y, _ground_y)
 		flung = false
 		_flight = Vector3.ZERO
 		stun(T.throw_stun)

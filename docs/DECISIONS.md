@@ -388,3 +388,25 @@ One line per call made in auto mode, with why.
   air, and anything below `fall_death_y` is finished.
 - The cloner and the shield trooper are on every station floor now, and the cloner also works
   the tower from 10 to 15.
+
+## Five things that were broken
+
+- **Windows looked at a wall.** The first version picked any wall cell with a room on one side
+  and "outer shell" on the other, but that shell is several cells thick and all of it gets
+  built. `Grid.windows()` now takes a cell whose whole run outward to the edge of the map is
+  wall, turns the first into glass and **carves the rest to void**, which `wall_rects` draws
+  nothing for. There is real air behind every window; the test reads the grid to prove it.
+- **The duct wall was silver in a green room.** `VentDuct._slab` painted everything sheet
+  metal, including the wall above the tunnel and the jambs round a grate, which are part of the
+  room. Those now take `LevelBuilder.wall_material`, so they carry the floor's own theme; the
+  cheeks and the floor pan inside the tunnel stay metal.
+- **Dudes died of falls they never took.** A shoved dude is moved a fraction of a step at a
+  time in slow motion, so `is_on_floor()` never fired, he sank for ever and crossed the kill
+  plane. He now remembers the height he left from, lands when he gets back to it, and the fall
+  death needs him to be 3 m below that as well as past `fall_death_y`.
+- **The thrown spear cartwheeled.** `Pickup.flies_point_first` keeps the model's -Z down the
+  velocity for the whole arc. The spear and the knife use it.
+- **The hand still did not read as under the gun.** The fist and the weapon are both black and
+  sat in the same place, so they merged into one slab. The hold point is 10 cm above the palm
+  now, which puts the fist visibly beneath the weapon, and the forearm is shorter so it reads
+  as an arm rather than a plank.

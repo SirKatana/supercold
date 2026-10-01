@@ -12,6 +12,7 @@ static func create() -> Knife:
 	k.blunt_damage = 3
 	k.hold_offset = Vector3(0.0, 0.012, -0.05)
 	k.hold_euler = Vector3(-0.22, 0.14, 0.30)
+	k.flies_point_first = true
 	return k
 
 

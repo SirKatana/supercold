@@ -13,6 +13,7 @@ static func create() -> Spear:
 	s.blunt_damage = 3
 	s.throw_speed_scale = T.spear_throw_speed
 	s.hold_offset = Vector3(0.02, -0.02, -0.35)
+	s.flies_point_first = true      # two metres of spear has no business cartwheeling
 	return s
 
 

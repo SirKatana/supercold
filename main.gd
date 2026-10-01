@@ -350,6 +350,27 @@ func _capture(path: String, after: float) -> void:
 			for arrow: Node in get_tree().get_nodes_in_group(&"way_out"):
 				(arrow as Node3D).visible = false
 			await get_tree().process_frame
+	if _arg("do", "") == "window" and Game.player != null:
+		# Stand in front of a window, looking out of it. `--break=true` takes the glass out.
+		var panes: Array[Node] = get_tree().get_nodes_in_group(&"windows")
+		if not panes.is_empty():
+			var pane: GlassPane = panes[mini(int(_arg("which", "0")), panes.size() - 1)]
+			# The room is whichever neighbour of the window cell is floor; the other side is air.
+			var here: Vector2i = Game.data.cell_of(pane.global_position)
+			var inside: Vector2i = here
+			var out := Vector3.ZERO
+			for step: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if Game.data.char_at(here + step) == ".":
+					inside = here + step * 2
+					out = -Vector3(step.x, 0, step.y)
+			Game.player.global_position = Game.data.cell_center(inside, 0.05)
+			Game.player.look_at(pane.global_position + Vector3(0, 1.4, 0))
+			Game.player.head.rotation.x = 0.0
+			Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED
+			Game.player.hands.visible = false
+			if _flag("break"):
+				pane.take_damage(9, out)
+		await get_tree().create_timer(float(_arg("at", "0.8")), true, false, true).timeout
 	if _arg("do", "") == "vent" and Game.player != null:
 		# Stand at a grate, or crawl in and meet what is in there with `--inside=true`.
 		var grates: Array[Node] = get_tree().get_nodes_in_group(&"grates")

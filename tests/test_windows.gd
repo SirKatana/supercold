@@ -18,7 +18,9 @@ func test_ten_to_fifteen_have_windows_and_the_basement_does_not() -> void:
 	for floor_name: String in FLOORS_WITH_WINDOWS:
 		var d: LevelData = LevelParser.load_level(floor_name)
 		check(d.errors.is_empty(), "%s parses: %s" % [floor_name, ", ".join(d.errors)])
-		check(d.windows.size() >= 4, "%s has windows (%d)" % [floor_name, d.windows.size()])
+		# Three is what the stricter rule leaves on the tighter layouts: a window has to have
+		# real air behind it, and not every outside wall does.
+		check(d.windows.size() >= 3, "%s has windows (%d)" % [floor_name, d.windows.size()])
 	# 13 is the sub-basement. There is nothing outside it to fall into.
 	check_eq(LevelParser.load_level("f13_basement").windows.size(), 0, "no windows underground")
 	check_eq(LevelParser.load_level("f1_lobby").windows.size(), 0, "and none on the ground floor")
@@ -37,7 +39,7 @@ func test_breaking_one_leaves_a_hole_and_says_so() -> void:
 	var panes: Array[Node] = []
 	for node: Node in get_tree().get_nodes_in_group(&"windows"):
 		panes.append(node)
-	check(panes.size() >= 4, "the windows are built (%d)" % panes.size())
+	check(panes.size() >= 3, "the windows are built (%d)" % panes.size())
 	var told: Dictionary = {"count": 0}
 	var on_broken: Callable = func(_at: Vector3) -> void: told["count"] += 1
 	Game.window_broken.connect(on_broken)

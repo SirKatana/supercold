@@ -38,7 +38,7 @@ static func build(data: LevelData, geometry: Node3D, entities: Node3D) -> void:
 			geometry.add_child(pan)
 			# The wall above the tunnel, so a duct still reads as a wall from the room.
 			_slab(geometry, Vector3(cell, T.wall_height - HEIGHT, cell),
-				centre + Vector3(0, HEIGHT + (T.wall_height - HEIGHT) * 0.5, 0))
+				centre + Vector3(0, HEIGHT + (T.wall_height - HEIGHT) * 0.5, 0), true)
 			# Which way does the tunnel run through this cell? A cell can connect on both
 			# axes, and then it is an open junction: no side walls at all, or they would
 			# seal the turn.
@@ -68,15 +68,15 @@ static func build(data: LevelData, geometry: Node3D, entities: Node3D) -> void:
 					for jamb: float in [-1.0, 1.0]:
 						var across := Vector3(0, 0, jamb) if along_x else Vector3(jamb, 0, 0)
 						_slab(geometry, Vector3(GRATE_THICKNESS, HEIGHT, side) if along_x else Vector3(side, HEIGHT, GRATE_THICKNESS),
-							centre + offset * 0.92 + across * (cell - side) * 0.5 + Vector3(0, HEIGHT * 0.5, 0))
+							centre + offset * 0.92 + across * (cell - side) * 0.5 + Vector3(0, HEIGHT * 0.5, 0), true)
 					_slab(geometry, Vector3(cell, T.wall_height - HEIGHT, GRATE_THICKNESS) if not along_x else Vector3(GRATE_THICKNESS, T.wall_height - HEIGHT, cell),
-						centre + offset * 0.92 + Vector3(0, HEIGHT + (T.wall_height - HEIGHT) * 0.5, 0))
+						centre + offset * 0.92 + Vector3(0, HEIGHT + (T.wall_height - HEIGHT) * 0.5, 0), true)
 				else:
 					# Solid that way: cap the end of the tunnel. The cap is thin along the
 					# direction it faces and as wide as the cell across it: the other way round
 					# and it lies across the tunnel and seals it.
 					_slab(geometry, Vector3(GRATE_THICKNESS, HEIGHT, cell) if along_x else Vector3(cell, HEIGHT, GRATE_THICKNESS),
-						centre + offset - Vector3(dir.x, 0, dir.y) * GRATE_THICKNESS * 0.5 + Vector3(0, HEIGHT * 0.5, 0))
+						centre + offset - Vector3(dir.x, 0, dir.y) * GRATE_THICKNESS * 0.5 + Vector3(0, HEIGHT * 0.5, 0), true)
 			if not junction:
 				# A straight length: narrow it to `WIDTH` with a cheek down each side.
 				for cheek: float in [-1.0, 1.0]:
@@ -110,10 +110,14 @@ static func _connects(data: LevelData, cell: Vector2i, dir: Vector2i) -> bool:
 const T: Tuning = preload("res://data/tuning.tres")
 
 
-static func _slab(parent: Node3D, size: Vector3, at: Vector3) -> void:
-	# Everything that makes up a duct is sheet metal, inside and out.
-	var body: StaticBody3D = LevelBuilder.make_box(size, Mats.duct_metal())
-	body.name = "Duct"
+## `seen_from_the_room` is what decides the colour: the wall above a tunnel and the jambs round
+## a grate are part of the room's wall and are painted as such, while the cheeks and caps inside
+## the tunnel stay sheet metal.
+static func _slab(parent: Node3D, size: Vector3, at: Vector3, seen_from_the_room: bool = false) -> void:
+	# The room side takes this floor's own themed wall colour, not the plain white one.
+	var body: StaticBody3D = LevelBuilder.make_box(size,
+		LevelBuilder.wall_material if seen_from_the_room and LevelBuilder.wall_material != null else Mats.duct_metal())
+	body.name = "DuctWall" if seen_from_the_room else "Duct"
 	body.position = at
 	parent.add_child(body)
 

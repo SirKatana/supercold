@@ -236,39 +236,57 @@ class Grid:
         raise AssertionError(f"{name}: no room for its gentlemen")
 
     def windows(self, name, seed):
-        """Cuts this floor's windows into the outer wall: a run of glass with nothing but air
-        behind it. A cell qualifies when it is wall, a room is on one side of it, and the other
-        side joins the shell of solid wall that reaches the edge of the map. They are spaced
-        out so one grenade cannot take a whole side off the building."""
+        """Cuts this floor's windows into the outer wall, with real air behind them.
+
+        A candidate is a wall cell with a room on one side where the whole run outward from
+        there to the edge of the map is solid wall: nothing on the far side to ruin. The first
+        cell becomes glass and every cell behind it is carved to void, which the builder draws
+        nothing for. Without that carve you get a window looking straight at more wall, which
+        is exactly what the first version shipped."""
         import random
         wanted = WINDOWS.get(name, 0)
         if not wanted:
             return
         rng = random.Random(seed)
-        outside = self.outer_shell()
         spots = []
         for y in range(1, self.h - 1):
             for x in range(1, self.w - 1):
                 if self.c[y][x] != "#":
                     continue
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    inside = (x + dx, y + dy)
-                    out = (x - dx, y - dy)
-                    if self.c[inside[1]][inside[0]] != ".":
-                        continue
-                    if out not in outside:
-                        continue
-                    spots.append((x, y))
+                    if self.c[y + dy][x + dx] != ".":
+                        continue      # the room has to be on this side
+                    behind = self.run_to_the_edge(x, y, -dx, -dy)
+                    if behind is None or len(behind) > 12:
+                        continue      # something else is back there
+                    spots.append((x, y, tuple(behind)))
                     break
         rng.shuffle(spots)
         placed = []
-        for x, y in spots:
+        for x, y, behind in spots:
             if len(placed) >= wanted:
                 break
-            if any(abs(x - px) + abs(y - py) < 5 for px, py in placed):
+            if any(abs(x - px) + abs(y - py) < 4 for px, py in placed):
                 continue
+            if any(self.c[by][bx] != "#" for bx, by in behind):
+                continue      # an earlier window already took this stretch
             self.c[y][x] = "O"
+            for bx, by in behind:
+                self.c[by][bx] = " "      # open air: the builder puts nothing here
             placed.append((x, y))
+
+    def run_to_the_edge(self, x, y, dx, dy):
+        """The wall cells from (x,y) outward to the edge of the map, or None if anything other
+        than wall is in the way."""
+        out = []
+        cx, cy = x + dx, y + dy
+        while 0 <= cx < self.w and 0 <= cy < self.h:
+            if self.c[cy][cx] != "#":
+                return None
+            out.append((cx, cy))
+            cx += dx
+            cy += dy
+        return out
 
     def outer_shell(self):
         """Every wall cell you can reach from the edge of the map without passing through a

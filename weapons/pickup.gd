@@ -25,6 +25,9 @@ var state: State = State.RESTING
 var fragile: bool = false
 var velocity: Vector3 = Vector3.ZERO
 var spin: Vector3 = Vector3.ZERO
+## A spear or a knife does not tumble: it flies point first, nose following the arc. Anything
+## that sets this keeps its own -Z pointed down its velocity for the whole flight.
+var flies_point_first: bool = false
 var thrower: Node = null
 ## True only for a deliberate throw. A weapon popped out of a hand does no damage.
 var dangerous: bool = false
@@ -196,9 +199,22 @@ func step_flight(wd: float) -> void:
 			hit = body
 	if hit.is_empty():
 		global_position = to
-		_mesh_root.rotation += spin * wd
+		if flies_point_first:
+			_aim_down_the_arc()
+		else:
+			_mesh_root.rotation += spin * wd
 		return
 	_on_flight_hit(hit["collider"], hit["position"], hit["normal"])
+
+
+## Nose into the wind: the model's -Z follows the velocity, so a thrown spear stays straight
+## and dips as it falls instead of cartwheeling.
+func _aim_down_the_arc() -> void:
+	if velocity.length() < 0.2:
+		return
+	var along: Vector3 = velocity.normalized()
+	var up: Vector3 = Vector3.UP if absf(along.y) < 0.98 else Vector3.FORWARD
+	_mesh_root.global_transform = Transform3D(Basis.looking_at(along, up), _mesh_root.global_position)
 
 
 ## The first person a sphere of `hit_radius` touches between `from` and `to`, as a ray result.

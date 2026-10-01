@@ -25,7 +25,7 @@ var _arm_tween: Tween
 const ARM_REST_R := Vector3(0.30, -0.35, -0.54)
 ## Holding: the fist is under the crosshair line, not out to the side of it, and the weapon
 # sits on top of it.
-const ARM_HOLD_R := Vector3(0.18, -0.30, -0.56)
+const ARM_HOLD_R := Vector3(0.15, -0.33, -0.56)
 const ARM_REST_L := Vector3(-0.30, -0.35, -0.54)
 ## The off hand on the fore-end of a long gun: forward, inboard, and under the barrel.
 const ARM_SUPPORT_L := Vector3(-0.11, -0.37, -0.74)
@@ -44,7 +44,9 @@ func _ready() -> void:
 	_hold_point.name = "HoldPoint"
 	# The weapon sits ON the hand: the palm is under it, the fingers close up round the grip.
 	# Off to one side and it reads as a gun floating beside a fist.
-	_hold_point.position = Vector3(0.0, 0.03, -0.21)
+	# High enough that the fist is visibly below the weapon. Level with the palm the two black
+	# shapes merge into one slab and it stops reading as a hand holding anything.
+	_hold_point.position = Vector3(0.0, 0.10, -0.20)
 	# The arm is pitched; the gun is not. Without this it points at the ceiling.
 	_hold_point.rotation = Vector3(-ARM_PITCH, 0.0, 0.0)
 	_arm_r.add_child(_hold_point)
@@ -57,7 +59,7 @@ func _build_arm(rest: Vector3, inward: float) -> Node3D:
 	arm.position = rest
 	arm.rotation = Vector3(ARM_PITCH, 0.10 * inward, 0.0)
 	add_child(arm)
-	_add_arm_box(arm, Vector3(0.088, 0.084, 0.26), Vector3(0, -0.006, 0.20))     # upper forearm
+	_add_arm_box(arm, Vector3(0.088, 0.084, 0.20), Vector3(0, -0.006, 0.17))     # upper forearm
 	_add_arm_box(arm, Vector3(0.086, 0.082, 0.20), Vector3(0, -0.002, 0.02))     # forearm, tapering
 	_add_arm_box(arm, Vector3(0.070, 0.064, 0.07), Vector3(0, 0.0, -0.085))      # wrist
 	_add_arm_box(arm, Vector3(0.086, 0.050, 0.115), Vector3(0, 0.004, -0.175))   # palm, back of the hand
