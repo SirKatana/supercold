@@ -520,3 +520,14 @@ One line per call made in auto mode, with why.
   calls `super()`, so anything written earlier is thrown away.
 - The helmet rides on `skin.shades_transform()`, the same frame the sunglasses use, and
   replaces them.
+
+## Third person on T
+
+- `Player.set_third_person()` slides the same camera back along the head's own axis: straight
+  behind him and a little above, the way the user asked for, not off one shoulder. The boom
+  raycasts and gives way to walls -- out slowly, in at once, so a wall never puts the camera
+  inside his head.
+- The body's head and arms come back for the wider view and the first-person arms go away.
+  `Hands._physics_process` writes `visible` every frame, so the check belongs there.
+- `aim_origin()` and `aim_direction()` come from the head in third person. Firing from the
+  camera would send shots out of a point a metre behind him, at a slant.

@@ -832,6 +832,11 @@ func _capture(path: String, after: float) -> void:
 		Game.entities_root(self).add_child(pistol)
 		Game.player.hands.pick_up(pistol)
 		await get_tree().create_timer(0.1, true, false, true).timeout
+	if _arg("do", "") == "tps" and Game.player != null:
+		Game.player.set_third_person(true)
+		if _flag("walk"):
+			Game.player.global_position += -Game.player.global_transform.basis.z * 3.0
+		await get_tree().create_timer(float(_arg("at", "0.6")), true, false, true).timeout
 	if _arg("do", "") == "kick" and Game.player != null:
 		# Kick on a loop so whenever the frame is grabbed the boot is somewhere in its swing.
 		# Look down at your own legs while kicking, which is where the kick actually is.

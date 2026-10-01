@@ -118,7 +118,8 @@ func _physics_process(delta: float) -> void:
 	# A ram or a thrown gun may have been freed by the input handled just above.
 	var can_scope: bool = is_instance_valid(held) and held is Gun and (held as Gun).has_scope
 	player.fx.scope_wanted = can_scope and Input.is_action_pressed(&"secondary")
-	visible = player.fx.scope_amount < 0.55 and player.alive
+	# No first-person arms while the camera is behind him: he already has a pair.
+	visible = player.fx.scope_amount < 0.55 and player.alive and not player.third_person
 	if Input.is_action_just_pressed(&"kick"):
 		kick()
 	if Input.is_action_just_pressed(&"interact"):

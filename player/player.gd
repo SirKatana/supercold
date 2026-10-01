@@ -46,6 +46,11 @@ var held_by: Node3D = null
 var riding: bool = false
 ## Seconds left in the kick's swing. The leg is the body's own, posed in `_pose_body`.
 var kick_left: float = 0.0
+## T swaps between looking out of his own eyes and watching him from behind. The camera is the
+## same camera either way: in third person it slides back along the head's own -Z until it
+## meets a wall, so it never ends up on the other side of one.
+var third_person: bool = false
+var _boom: float = 0.0
 
 var _crawl_bob: float = 0.0
 var _shape: CollisionShape3D
@@ -81,6 +86,7 @@ func _ready() -> void:
 	body = Humanoid.create(self, Mats.arm())
 	body.set_group_visible(&"head", false)
 	body.set_group_visible(&"arms", false)
+	body.set_sunglasses(false)
 	_pose_body(0.0)
 
 	fx = CameraFx.new()
@@ -156,19 +162,59 @@ func start_kick() -> void:
 	kick_left = T.kick_swing
 
 
+## Over the shoulder, or back in his head. The body's head and arms come back for the wider
+## view, and the first-person hands go away: two sets of arms is one too many.
+func set_third_person(on: bool) -> void:
+	if third_person == on:
+		return
+	third_person = on
+	body.set_group_visible(&"head", on)
+	body.set_group_visible(&"arms", on)
+	if hands != null and is_instance_valid(hands):
+		hands.visible = not on
+	if not on:
+		camera.position = Vector3.ZERO
+		_boom = 0.0
+
+
+## Keeps the camera off the walls: it sits as far back as there is room for, up to `tps_boom`.
+func _run_the_boom(delta: float) -> void:
+	if not third_person:
+		return
+	var from: Vector3 = head.global_position
+	var back: Vector3 = head.global_transform.basis * Vector3(T.tps_shoulder, T.tps_lift, 1.0)
+	var want: float = T.tps_boom
+	var query := PhysicsRayQueryParameters3D.create(from, from + back.normalized() * (T.tps_boom + 0.3), 1 | 32)
+	query.exclude = [get_rid()]
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		want = maxf(0.25, from.distance_to(hit["position"]) - 0.3)
+	# Out slowly, in at once: a wall should never put the camera inside the player's head.
+	_boom = want if want < _boom else lerpf(_boom, want, clampf(delta * 6.0, 0.0, 1.0))
+	camera.position = Vector3(T.tps_shoulder, T.tps_lift, 1.0).normalized() * _boom
+
+
 func chest_position() -> Vector3:
 	return global_position + Vector3(0.0, 1.2, 0.0)
 
 
 func aim_origin() -> Vector3:
+	if third_person:
+		return head.global_position
 	return camera.global_position
 
 
 func aim_direction() -> Vector3:
-	return -camera.global_transform.basis.z
+	# The head, not the camera: over the shoulder the camera is a metre behind him and angled
+	# across, and shots would leave at a slant.
+	return -head.global_transform.basis.z if third_person else -camera.global_transform.basis.z
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"view_toggle"):
+		set_third_person(not third_person)
+		get_viewport().set_input_as_handled()
+		return
 	if not alive or not input_enabled:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -248,6 +294,7 @@ func _physics_process(delta: float) -> void:
 
 	_update_crawl()
 	_crawl_along(delta)
+	_run_the_boom(delta)
 	if alive and _over_the_edge():
 		# Out of the building. There is nothing out there and nothing catches you.
 		die()
