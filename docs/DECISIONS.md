@@ -440,3 +440,18 @@ One line per call made in auto mode, with why.
   round again at the top of the run. It is a posed Humanoid on world time, not a ragdoll.
 - Setting `global_position` on a node while the level is still detached pushes an engine error
   for every call. The builder uses a local `position` and adds the child afterwards.
+
+## Out of the window, and what stops you going with them
+
+- `world/city_below.gd` builds the rest of the city on any floor that has windows: rings of
+  towers from well above this floor down to sixty metres below it, glazed faces, lit rooms and
+  a beacon on the tall ones, all merged by MeshKit into four surfaces. No collision. Dark
+  concrete on purpose -- the first version was pale grey against a pale sky and read as fog.
+- The floor is now cut round void cells as well as pools and channels, so outside a broken
+  window there is a real drop instead of an invisible ledge.
+- The player cannot fall out. `Player._over_the_edge()` notices him over a void cell and
+  `fx/boxing_glove.gd` swings a telescopic red glove out of the hole behind him: he is thrown
+  back inside, tumbles with the view rolling over, lands and picks himself up. Swimming is not
+  falling, so a pool or a sewer channel never triggers it.
+- The channel cut the sewer corridor in two and made half the level unreachable. The generator
+  leaves a crossing every seven cells, which the reachability test checks.

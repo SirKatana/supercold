@@ -26,7 +26,14 @@ extends Resource
 @export var jump_velocity: float = 4.5
 @export var gravity: float = 12.0
 ## Below this height there is no building left to land on: whatever is falling is finished.
+## The player never reaches it -- a glove puts him back long before.
 @export var fall_death_y: float = -4.0
+## The glove: how hard it throws him back inside, how long he is in the air, and how long he
+## takes to pick himself up.
+@export var tumble_speed: float = 9.5
+@export var tumble_lift: float = 4.2
+@export var tumble_seconds: float = 1.1
+@export var tumble_get_up: float = 0.55
 ## How hard a punch or a bash moves a dude, and how far off the floor it takes him. Enough to
 ## put him through an open window, not enough to launch him across the room.
 @export var blunt_shove: float = 5.2

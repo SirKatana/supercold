@@ -746,6 +746,61 @@ static func drowned_pink() -> StandardMaterial3D:
 		return m)
 
 
+## The city out of the window: concrete, glazing, lit rooms and a beacon on the tall ones.
+static func city_concrete() -> StandardMaterial3D:
+	return _cached(&"city_concrete", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.17, 0.19, 0.24)
+		m.roughness = 0.95
+		return m)
+
+
+static func city_glass() -> StandardMaterial3D:
+	return _cached(&"city_glass", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.12, 0.16, 0.22)
+		m.metallic = 0.3
+		m.roughness = 0.25
+		return m)
+
+
+static func city_lit() -> StandardMaterial3D:
+	return _cached(&"city_lit", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(1.0, 0.92, 0.72)
+		m.emission_enabled = true
+		m.emission = Color(1.0, 0.88, 0.62)
+		m.emission_energy_multiplier = 2.2
+		return m)
+
+
+static func city_beacon() -> StandardMaterial3D:
+	return _cached(&"city_beacon", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(1.0, 0.25, 0.22)
+		m.emission_enabled = true
+		m.emission = Color(1.0, 0.2, 0.18)
+		m.emission_energy_multiplier = 3.0
+		return m)
+
+
+static func city_ground() -> StandardMaterial3D:
+	return _cached(&"city_ground", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.10, 0.11, 0.13)
+		m.roughness = 1.0
+		return m)
+
+
+## The glove that stops you leaving the building.
+static func glove_red() -> StandardMaterial3D:
+	return _cached(&"glove_red", func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.72, 0.09, 0.11)
+		m.roughness = 0.55
+		return m)
+
+
 static func pink() -> StandardMaterial3D:
 	return _cached(&"pink", func() -> StandardMaterial3D:
 		var m := StandardMaterial3D.new()

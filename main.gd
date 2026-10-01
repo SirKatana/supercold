@@ -350,6 +350,33 @@ func _capture(path: String, after: float) -> void:
 			for arrow: Node in get_tree().get_nodes_in_group(&"way_out"):
 				(arrow as Node3D).visible = false
 			await get_tree().process_frame
+	if _arg("do", "") == "citycheck" and Game.player != null:
+		# High and well outside the building, looking back at it and the city round it.
+		Game.player.riding = true
+		var middle := Vector3(Game.data.width * Game.data.cell_size * 0.5, 0.0,
+			Game.data.height * Game.data.cell_size * 0.5)
+		Game.player.global_position = middle + Vector3(0, 30.0, -90.0)
+		Game.player.look_at(middle + Vector3(0, -12.0, 0))
+		Game.player.head.rotation.x = Game.player.rotation.x
+		Game.player.rotation.x = 0.0
+		Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED
+		Game.player.hands.visible = false
+		await get_tree().create_timer(0.4, true, false, true).timeout
+	if _arg("do", "") == "glove" and Game.player != null:
+		# Step out of a window and get put back. `--at` is when the picture is taken.
+		var holes: Array[Node] = get_tree().get_nodes_in_group(&"windows")
+		if not holes.is_empty():
+			var hole: GlassPane = holes[mini(int(_arg("which", "0")), holes.size() - 1)]
+			var cell: Vector2i = Game.data.cell_of(hole.global_position)
+			var air := Vector2i.ZERO
+			for step: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if Game.data.char_at(cell + step) == " ":
+					air = step
+			hole.take_damage(9, Vector3(air.x, 0, air.y))
+			Game.player.global_position = Game.data.cell_center(cell + air * 2, 0.1)
+			Game.player.rotation.y = atan2(float(air.x), float(air.y))
+			Game.player.head.rotation.x = deg_to_rad(float(_arg("pitch", "-20")))
+		await get_tree().create_timer(float(_arg("at", "0.35")), true, false, true).timeout
 	if _arg("do", "") == "window" and Game.player != null:
 		# Stand in front of a window, looking out of it. `--break=true` takes the glass out.
 		var panes: Array[Node] = get_tree().get_nodes_in_group(&"windows")
@@ -364,6 +391,9 @@ func _capture(path: String, after: float) -> void:
 					inside = here + step * 2
 					out = -Vector3(step.x, 0, step.y)
 			Game.player.global_position = Game.data.cell_center(inside, 0.05)
+			# Right up against the opening, looking out and a little down at the city.
+			Game.player.global_position = pane.global_position - out * 1.1 + Vector3(0, 0.05, 0)
+			Game.player.look_at(pane.global_position + out * 40.0 + Vector3(0, -8.0, 0))
 			Game.player.look_at(pane.global_position + Vector3(0, 1.4, 0))
 			Game.player.head.rotation.x = 0.0
 			Game.player.hands.process_mode = Node.PROCESS_MODE_DISABLED

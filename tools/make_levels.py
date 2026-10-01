@@ -954,8 +954,18 @@ def build_floor(spec):
                     x0, y0, x1, y1 = c
                     if y1 - y0 >= 2:
                         g.fill("=", x0 + 3, y0 + 1, x1 - 3, y1 - 1)
+                        # Crossings: without them the channel cuts the floor in two and half
+                        # the level is unreachable, which the validator catches.
+                        for bx in range(x0 + 5, x1 - 3, 7):
+                            for by in range(y0 + 1, y1):
+                                if g.c[by][bx] == "=":
+                                    g.c[by][bx] = "."      # a crossing: fill() only touches floor
                     elif x1 - x0 >= 2:
                         g.fill("=", x0 + 1, y0 + 3, x1 - 1, y1 - 3)
+                        for by in range(y0 + 5, y1 - 3, 7):
+                            for bx in range(x0 + 1, x1):
+                                if g.c[by][bx] == "=":
+                                    g.c[by][bx] = "."
             everywhere = rects + corridors
             g.scatter(spec["enemies"], everywhere, spec["seed"] + attempt, floor=".~i")
             if spec.get("waves"):

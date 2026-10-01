@@ -44,6 +44,12 @@ var held_by: Node3D = null
 ## Being carried by something that drives his position itself: the helicopter off the roof.
 ## Gravity and movement are off while it is true, or he falls out of the cabin.
 var riding: bool = false
+## Knocked back inside by the glove: he is in the air, rolling, and not in charge of it. He
+## gets up on his own when he lands.
+var tumbling: bool = false
+var _tumble_left: float = 0.0
+var _tumble_spin: float = 0.0
+var _getting_up: float = 0.0
 
 var _crawl_bob: float = 0.0
 var _shape: CollisionShape3D
@@ -214,9 +220,10 @@ func _physics_process(delta: float) -> void:
 
 	_update_crawl()
 	_crawl_along(delta)
-	if alive and global_position.y < T.fall_death_y:
-		# Through a broken window and down the outside of the building.
-		die()
+	if alive and not tumbling and _over_the_edge():
+		_glove_him_back()
+	if tumbling:
+		_tumble(delta)
 		return
 	if riding:
 		velocity = Vector3.ZERO
@@ -246,6 +253,96 @@ func _physics_process(delta: float) -> void:
 		_pose_body(delta)
 	TimeManager.report_move(Vector2(real.x, real.z).length() if alive else 0.0)
 	TimeManager.report_look(_look_rate if alive else 0.0)
+
+
+## Is he off the edge of the building: over a cell that is not floor, or below the deck?
+func _over_the_edge() -> bool:
+	if Game.data == null or riding:
+		return false
+	var cell: Vector2i = Game.data.cell_of(global_position)
+	var here: String = Game.data.char_at(cell)
+	if here == " " or here == "":
+		return true
+	# Being below the deck is only a problem when it is not meant to be: a pool and a sewer
+	# channel are both well under it, and swimming out of one is not falling out of anything.
+	if here == "W" or here == "=" or swimming():
+		return false
+	return global_position.y < -1.2
+
+
+## A glove swings out of the hole he is going through and puts him back inside.
+func _glove_him_back() -> void:
+	var inside: Vector3 = _back_towards_the_floor()
+	var away: Vector3 = (inside - global_position)
+	away.y = 0.0
+	if away.length() < 0.1:
+		away = global_transform.basis.z
+	away = away.normalized()
+	# The glove comes out of the hole behind him, so it is swinging the way he is thrown.
+	BoxingGlove.swing(Game.entities_root(self), global_position - away * BoxingGlove.REACH * 0.9
+		+ Vector3(0, 0.35, 0), away, self)
+
+
+## The nearest bit of floor he should have stayed on.
+func _back_towards_the_floor() -> Vector3:
+	var d: LevelData = Game.data
+	var here: Vector2i = d.cell_of(global_position)
+	var best: Vector3 = d.cell_center(d.player_start, 0.0)
+	var best_distance: float = INF
+	for radius: int in range(1, 7):
+		for dy: int in range(-radius, radius + 1):
+			for dx: int in range(-radius, radius + 1):
+				var cell := here + Vector2i(dx, dy)
+				if d.char_at(cell) != ".":
+					continue
+				var at: Vector3 = d.cell_center(cell, 0.0)
+				var distance: float = at.distance_to(global_position)
+				if distance < best_distance:
+					best_distance = distance
+					best = at
+		if best_distance < INF:
+			return best
+	return best
+
+
+## Taken on the chin: thrown back inside, rolling, and up again where he lands.
+func punched_back(direction: Vector3) -> void:
+	if tumbling or not alive:
+		return
+	tumbling = true
+	input_enabled = false
+	_tumble_left = T.tumble_seconds
+	_getting_up = 0.0
+	_tumble_spin = 0.0
+	var flat := Vector3(direction.x, 0.0, direction.z).normalized()
+	velocity = flat * T.tumble_speed + Vector3.UP * T.tumble_lift
+	fx.kick(2.5)
+	Sfx.play(&"punch", global_position)
+
+
+## In the air after the glove: the camera rolls over with him, then he picks himself up.
+func _tumble(delta: float) -> void:
+	velocity.y -= T.gravity * Game.gravity_scale * delta
+	move_and_slide()
+	_tumble_left = maxf(0.0, _tumble_left - delta)
+	if is_on_floor() and _tumble_left < T.tumble_seconds - 0.15:
+		# Down. Getting up takes a moment, and the view comes back level.
+		_getting_up += delta
+		_tumble_spin = lerpf(_tumble_spin, 0.0, clampf(delta * 6.0, 0.0, 1.0))
+		head.position.y = lerpf(head.position.y, T.eye_height, clampf(delta * 5.0, 0.0, 1.0))
+		camera.rotation.z = _tumble_spin
+		velocity.x = move_toward(velocity.x, 0.0, 24.0 * delta)
+		velocity.z = move_toward(velocity.z, 0.0, 24.0 * delta)
+		if _getting_up >= T.tumble_get_up:
+			tumbling = false
+			input_enabled = true
+			camera.rotation.z = 0.0
+			head.position.y = T.eye_height
+		return
+	# Still flying: roll the view over and drop the head toward the floor.
+	_tumble_spin += delta * 7.0
+	camera.rotation.z = sin(_tumble_spin) * 1.1
+	head.position.y = lerpf(head.position.y, 0.75, clampf(delta * 4.0, 0.0, 1.0))
 
 
 func bullet_excludes() -> Array[RID]:

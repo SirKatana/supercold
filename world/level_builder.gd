@@ -53,6 +53,13 @@ static func build(data: LevelData) -> Node3D:
 	_place_hazards(data, entities)
 	_build_pools(data, level, entities)
 	_build_channels(data, level)
+	if not data.windows.is_empty():
+		# Something to see through the hole once the glass is gone.
+		var city := CityBelow.new()
+		city.name = "CityBelow"
+		city.around = Vector3(data.width * data.cell_size * 0.5, 0.0, data.height * data.cell_size * 0.5)
+		city.footprint = maxf(data.width, data.height) * data.cell_size * 0.5
+		level.add_child(city)
 	return level
 
 
@@ -82,7 +89,12 @@ static func _place_breakables(data: LevelData, geometry: Node3D, entities: Node3
 		window.name = "Window"
 		window.along_x = entry["along_x"]
 		window.opens_onto_the_drop = true
-		window.position = data.cell_center(entry["cell"])
+		# Against the room's face of the cell: in the middle of it you look down a slot.
+		var toward_room := Vector3.ZERO
+		for step: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			if data.char_at(entry["cell"] + step) == ".":
+				toward_room = Vector3(step.x, 0.0, step.y) * data.cell_size * 0.42
+		window.position = data.cell_center(entry["cell"]) + toward_room
 		geometry.add_child(window)
 
 
@@ -251,7 +263,7 @@ static func _rect_box(data: LevelData, rect: Rect2i, top: float, thickness: floa
 
 
 static func _build_floor(data: LevelData, parent: Node3D) -> void:
-	if data.deep_cells.is_empty() and data.channel_cells.is_empty():
+	if data.deep_cells.is_empty() and data.channel_cells.is_empty() and not data.rows_contain(" "):
 		var size := Vector3(data.width * data.cell_size, 0.5, data.height * data.cell_size)
 		var body: StaticBody3D = make_box(size, floor_material)
 		body.name = "Floor"
@@ -261,7 +273,7 @@ static func _build_floor(data: LevelData, parent: Node3D) -> void:
 	# A floor with a pool in it: slabs everywhere except over the water, and thick enough
 	# that their cut sides are the pool walls.
 	var thick: float = maxf(T.pool_depth, SewerChannel.DEPTH) + 0.4
-	for rect: Rect2i in cell_rects(data, func(c: String) -> bool: return c != "W" and c != "="):
+	for rect: Rect2i in cell_rects(data, func(c: String) -> bool: return c != "W" and c != "=" and c != " "):
 		var slab: StaticBody3D = _rect_box(data, rect, 0.0, thick, floor_material)
 		slab.name = "Floor"
 		parent.add_child(slab)

@@ -63,6 +63,15 @@ func char_at(cell: Vector2i) -> String:
 	return rows[cell.y][cell.x]
 
 
+## Is this character anywhere on the floor plan? Used to decide whether the floor has to be
+## cut up into slabs instead of being one slab across the whole map.
+func rows_contain(what: String) -> bool:
+	for row: String in rows:
+		if row.contains(what):
+			return true
+	return false
+
+
 func is_solid(cell: Vector2i) -> bool:
 	var c: String = char_at(cell)
 	return c == "#" or c == " " or c == "v" or c == "e" or c == "O"      # a duct is wall to anyone who cannot crawl, and a window is still a wall
