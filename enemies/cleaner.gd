@@ -57,7 +57,10 @@ var _last_why: int = -100000
 func _ready() -> void:
 	add_to_group(&"cleaners")
 	if born_angry:
-		call_deferred(&"_snap")      # his room, his rules
+		# His room, his rules. He is already where he belongs, so he is on duty the moment he
+		# exists: without this the `_on_duty` guard leaves a staff room full of statues.
+		_on_duty = true
+		call_deferred(&"_snap")
 	collision_layer = 256      # like the helper and the guard: bullets stop on him, nobody targets him
 	collision_mask = 1
 	var shape := CollisionShape3D.new()

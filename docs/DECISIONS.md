@@ -626,3 +626,12 @@ One line per call made in auto mode, with why.
   doors open for `cleaner_lift_wait` (6 real seconds), the cleaner says "GOING DOWN?", and
   anybody who steps in within `cleaner_lift_share` goes down to the staff room with them.
   Nobody gets in, they leave on their own and the floor carries on.
+
+## An empty staff room
+
+- The `_on_duty` guard added to stop a cleaner walking before he had been posted also stopped
+  the fifteen in the staff room: they are never posted, so they never ran their step at all and
+  stood as unposed heaps. They are put on duty where they stand (`report_for_duty(at)`), which
+  is what "home" means down there.
+- `floor_label` called a staff room "TEST", because the name is not in `FLOORS`. It reads the
+  room's own title now.

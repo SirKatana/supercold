@@ -181,6 +181,9 @@ var glitch: float = 0.0
 func floor_label(name_of_level: String) -> String:
 	if name_of_level == SECRET_FLOOR:
 		return "LEVEL ????"
+	if name_of_level.begins_with("lair_"):
+		# A staff room has no number. It has a title, which is what gets flashed up.
+		return data.title if data != null and data.title != "" else "STAFF ONLY"
 	if name_of_level == "roof":
 		return "ROOF"
 	var index: int = FLOORS.find(name_of_level)
@@ -220,7 +223,7 @@ func _fill_the_lair(which: StringName) -> void:
 			mop.name = "Cleaner%d" % i
 			mop.born_angry = true
 			entities_root(self).add_child(mop)
-			mop.global_position = at
+			mop.report_for_duty(at)      # down here "home" is where he is standing
 			if i % 4 == 0:
 				mop.call_deferred(&"shout", "HEY! YOU'RE NOT ALLOWED HERE!")
 		else:
