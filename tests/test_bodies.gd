@@ -28,12 +28,20 @@ func _a_settled_body() -> Ragdoll:
 	dude.global_position = Game.player.global_position + Vector3(1.4, 0, 0)
 	await wait_physics(2)
 	dude.die()
+	await wait_physics(2)
+	var body: Ragdoll = get_tree().get_first_node_in_group(&"ragdolls") as Ragdoll
+	if body == null:
+		return null
+	# A dude's body bursts into shards after a few seconds. Hold this one still so the test is
+	# about picking it up rather than about racing that timer.
+	body.shatter_after = -1.0
 	for step: int in 400:
 		await wait_physics(1)
-		var body: Ragdoll = get_tree().get_first_node_in_group(&"ragdolls") as Ragdoll
-		if body != null and body.liftable():
+		if not is_instance_valid(body):
+			return null
+		if body.liftable():
 			return body
-	return get_tree().get_first_node_in_group(&"ragdolls") as Ragdoll
+	return body
 
 
 func test_a_body_can_be_picked_up_once_it_has_stopped_moving() -> void:

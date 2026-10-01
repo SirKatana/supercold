@@ -25,6 +25,9 @@ var alive: bool = true
 var hostile: bool = false
 ## Set before he is added to the tree: he is in his own room and you are not meant to be here.
 var born_angry: bool = false
+## He does nothing at all until he has been told where he comes in and goes out. Running his
+## walk before that sent him to the middle of the world and took the engine with him.
+var _on_duty: bool = false
 var skin: Humanoid
 var joints: PackedVector3Array = []
 var voice: HelperVoice
@@ -191,6 +194,7 @@ func shout(words: String) -> void:
 func report_for_duty(at_home: Vector3) -> void:
 	_home = at_home
 	global_position = at_home
+	_on_duty = true
 
 
 ## Something was spilled. `count` is how many that makes on this floor.
@@ -221,7 +225,7 @@ func _player() -> Player:
 
 
 func _physics_process(delta: float) -> void:
-	if not alive:
+	if not alive or not _on_duty:
 		return
 	var wd: float = TimeManager.world_delta(delta)
 	_moving = 0.0
@@ -262,6 +266,18 @@ func _physics_process(delta: float) -> void:
 					mode = Mode.WALKING_TO_SPILL
 		Mode.LEAVING:
 			if _flat(_home) < 0.6:
+				# He is back at the lift and about to ride down. Anybody standing in it with him
+				# is coming too, which is not where they wanted to go.
+				var tag_along: Player = _player()
+				if tag_along != null and tag_along.alive \
+						and tag_along.global_position.distance_to(global_position) < T.cleaner_lift_share:
+					# Do NOT free him here. The level is torn down to build the staff room, and
+					# freeing a node and then loading a level from inside the same physics step
+					# takes the engine down with it.
+					left.emit()
+					mode = Mode.WALKING_TO_SPILL
+					Game.take_me_to_the_lair.call_deferred(&"cleaner")
+					return
 				left.emit()
 				queue_free()
 				return

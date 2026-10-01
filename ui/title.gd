@@ -17,6 +17,8 @@ var _lan: VBoxContainer
 var _code_label: Label
 var _code_entry: LineEdit
 var _lan_note: Label
+var _titles: Array[Label] = []
+var _controls: Label
 
 
 func _ready() -> void:
@@ -39,10 +41,16 @@ func _ready() -> void:
 	column.add_theme_constant_override(&"separation", 12)
 	add_child(column)
 
-	column.add_child(_label("SUPER", 112, Color(0.04, 0.04, 0.05)))
-	column.add_child(_label("COLD", 112, Mats.PINK))
-	column.add_child(_label("TIME CRAWLS WHEN YOU STAND STILL", 20, Color(0.04, 0.04, 0.05)))
-	column.add_child(_label("", 14, Color.BLACK))
+	# Kept, because a panel of controls does not fit underneath them: the big words stand down
+	# while settings or the LAN panel is open, or the last button falls off the screen.
+	_titles = [
+		_label("SUPER", 112, Color(0.04, 0.04, 0.05)),
+		_label("COLD", 112, Mats.PINK),
+		_label("TIME CRAWLS WHEN YOU STAND STILL", 20, Color(0.04, 0.04, 0.05)),
+		_label("", 14, Color.BLACK),
+	]
+	for row: Label in _titles:
+		column.add_child(row)
 
 	_menu = VBoxContainer.new()
 	_menu.add_theme_constant_override(&"separation", 12)
@@ -69,8 +77,9 @@ func _ready() -> void:
 	_button(_settings, "BACK", func() -> void: _show_settings(false))
 
 	column.add_child(_label("", 14, Color.BLACK))
-	column.add_child(_label("WASD move   MOUSE look   LMB punch / shoot   RMB grab / throw\nE swap   Q throw   F shield   R restart   ESC pause",
-		14, Color(0.3, 0.32, 0.36)))
+	_controls = _label("WASD move   MOUSE look   LMB punch / shoot   RMB grab / throw\nE swap   Q throw   C kick   F shield   T view   R restart   ESC pause",
+		14, Color(0.3, 0.32, 0.36))
+	column.add_child(_controls)
 
 	visibility_changed.connect(_refresh)
 	_refresh()
@@ -87,6 +96,7 @@ func _show_settings(on: bool) -> void:
 	_settings.visible = on
 	if on:
 		_lan.visible = false
+	_make_room(on)
 
 
 ## The LAN panel: host and read the code out, or type one in and join.
@@ -96,6 +106,15 @@ func _show_lan(on: bool) -> void:
 	if on:
 		_settings.visible = false
 		_refresh_lan()
+	_make_room(on)
+
+
+## A panel needs the room the big words were taking.
+func _make_room(for_a_panel: bool) -> void:
+	for row: Label in _titles:
+		row.visible = not for_a_panel
+	if _controls != null:
+		_controls.visible = not for_a_panel
 
 
 func _build_lan() -> void:

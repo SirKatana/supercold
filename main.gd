@@ -841,6 +841,11 @@ func _capture(path: String, after: float) -> void:
 		if _flag("walk"):
 			Game.player.global_position += -Game.player.global_transform.basis.z * 3.0
 		await get_tree().create_timer(float(_arg("at", "0.6")), true, false, true).timeout
+	if _arg("do", "") == "lan":
+		# Open the LAN panel on the title screen and leave it open for the picture.
+		if _title != null:
+			_title._show_lan(true)
+		await get_tree().create_timer(0.4, true, false, true).timeout
 	if _arg("do", "").begins_with("lair:") and Game.player != null:
 		Game.take_me_to_the_lair(StringName(_arg("do", "").trim_prefix("lair:")))
 		await get_tree().create_timer(float(_arg("at", "1.2")), true, false, true).timeout

@@ -48,6 +48,9 @@ extends Resource
 @export var shelf_crush_radius: float = 1.4
 @export var pot_hurt_radius: float = 1.3
 ## How many of them are waiting in each staff room.
+## How close you have to be standing when a member of staff takes the lift for you to be in it
+## with them.
+@export var cleaner_lift_share: float = 1.9
 @export var lair_cleaners: int = 15
 @export var lair_guards: int = 20
 ## Carrying a body: how far it can be picked up from, how hard it is thrown, how long it stays

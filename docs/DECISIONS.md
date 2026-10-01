@@ -605,3 +605,17 @@ One line per call made in auto mode, with why.
   character answers `display_name()`; the base dude answers by what he is carrying.
 - The collapsing shelves threw their stock across the whole room. The toss is a third of what
   it was, so it spills off the shelf and stays there.
+
+## Two that did not work when played
+
+- The cleaner **vanished into the lift** rather than taking you anywhere: the staff room was
+  wired to the exit lift closing, and the cleaner leaves by the arrival lift when his work is
+  done. Standing within `cleaner_lift_share` of him as he reaches it now takes you down with
+  him; the guard does the same.
+- Doing that crashed the engine. He freed himself and then asked for a level load in the same
+  physics step. He is left standing instead and the unload takes him away.
+- `Cleaner` did nothing at all until `report_for_duty` had told him where he comes in: running
+  his walk before that sent him to the middle of the world and took the engine with him.
+- The LAN panel's BACK button was **off the bottom of the screen**: the big SUPER COLD words
+  plus a panel of controls do not fit in 720. The title stands down while any panel is open,
+  and a test now fails if a visible button ends below the viewport.
