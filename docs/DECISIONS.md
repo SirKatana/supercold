@@ -357,3 +357,9 @@ One line per call made in auto mode, with why.
   the sunglasses toggle so the pause menu and the main menu share one copy.
 - A camera aimed before it is in the tree needs `look_at_from_position`; `look_at` pushes an
   error and leaves it pointing at the floor.
+
+## Jumping on the station
+
+- Low gravity with the full jump push let the player stand on desks and clear walls. The push is
+  now cut by `Game.jump_scale()`, the square root of the pull, which holds apex height at the
+  tower's 0.84 m and changes only the hang time. `SPACE_GRAVITY` also went 0.38 to 0.5.

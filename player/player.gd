@@ -226,7 +226,7 @@ func _physics_process(delta: float) -> void:
 		if swimming():
 			wish = wish.normalized() * T.swim_speed if wish.length() > 0.01 else Vector3.ZERO
 		elif Input.is_action_just_pressed(&"jump") and is_on_floor():
-			velocity.y = T.jump_velocity
+			velocity.y = T.jump_velocity * Game.jump_scale()
 
 	var horizontal := Vector2(velocity.x, velocity.z).move_toward(Vector2(wish.x, wish.z), T.accel * delta)
 	velocity.x = horizontal.x

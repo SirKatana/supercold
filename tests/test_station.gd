@@ -87,3 +87,15 @@ func test_a_bullet_still_takes_him_off_his_rock() -> void:
 	flyer.on_bullet_hit(null, flyer.global_position + Vector3.UP, Vector3.LEFT)
 	check(not flyer.alive, "one round is enough, same as anyone else")
 	check_eq(Game.alive_enemies, before - 1, "and the floor count knows")
+
+
+func test_low_gravity_does_not_turn_a_jump_into_a_leap_onto_the_furniture() -> void:
+	# Apex height is velocity squared over twice the pull. Cutting the push by the square root
+	# of the pull keeps that number where it is in the tower: floatier, not higher.
+	Game.gravity_scale = 1.0
+	var tower: float = pow(T.jump_velocity * Game.jump_scale(), 2.0) / (2.0 * T.gravity * Game.gravity_scale)
+	Game.gravity_scale = Game.SPACE_GRAVITY
+	var station: float = pow(T.jump_velocity * Game.jump_scale(), 2.0) / (2.0 * T.gravity * Game.gravity_scale)
+	Game.gravity_scale = 1.0
+	check(absf(station - tower) < 0.02, "same height up there: %.2f m against %.2f m" % [station, tower])
+	check(tower < 1.1, "and neither of them clears a desk (%.2f m)" % tower)

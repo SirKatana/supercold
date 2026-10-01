@@ -29,9 +29,16 @@ const FLOORS: PackedStringArray = [
 ]
 
 ## A fraction of a g. One on every floor in the tower, `SPACE_GRAVITY` up on the station:
-## the jumps go higher, thrown things sail, and a ragdoll takes its time coming down.
+## thrown things sail and a ragdoll takes its time coming down.
 var gravity_scale: float = 1.0
-const SPACE_GRAVITY: float = 0.38
+const SPACE_GRAVITY: float = 0.5
+
+
+## How hard he pushes off. Weaker pull with the same push would send him onto the desks and
+## over the walls, so the push is cut by the square root of the pull: apex height comes out the
+## same as in the tower, and only the hang time changes.
+func jump_scale() -> float:
+	return sqrt(gravity_scale)
 
 var state: State = State.TITLE
 var level_root: Node3D
