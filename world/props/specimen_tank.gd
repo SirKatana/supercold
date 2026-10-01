@@ -10,6 +10,8 @@ const HEIGHT: float = 2.45
 
 ## An empty tank with the glass broken out of it. The fluid on the floor is a separate puddle.
 var cracked: bool = false
+## What is inside, once it has been let out. Nothing until the release is thrown.
+var opened: bool = false
 
 
 static func stand(parent: Node3D, at: Vector3, is_cracked: bool) -> SpecimenTank:
@@ -45,6 +47,33 @@ func _ready() -> void:
 		glow.light_color = Color(0.45, 1.0, 0.65)
 		glow.shadow_enabled = false
 		add_child(glow)
+
+
+## The release has been thrown: the glass goes, the fluid goes across the floor, and whatever
+## was curled up in there walks out. Already-cracked tanks have nothing left to give.
+func let_it_out() -> PinkDude:
+	if cracked or opened:
+		return null
+	opened = true
+	for child: Node in get_children():
+		if child is MeshInstance3D:
+			(child as MeshInstance3D).mesh = MeshKit.cached(&"tank_cracked", _model.bind(true))
+		elif child is OmniLight3D:
+			(child as OmniLight3D).light_energy = 0.12
+	Shatter.burst(Game.entities_root(self), global_position + Vector3(0, HEIGHT * 0.6, 0), 14,
+		Mats.glass(), Vector3(0.3, 0.6, 0.3), Vector3.UP * 2.2, 0.13)
+	Sfx.play(&"shatter", global_position)
+	var spill := Puddle.new()
+	spill.name = "TankFluid"
+	spill.radius = 1.5
+	spill.life = -1.0
+	Game.entities_root(self).add_child(spill)
+	spill.global_position = Vector3(global_position.x, 0.0, global_position.z)
+	# What was in it. Down here they all wear the same skin as everything else.
+	var out: PinkDude = Game.spawn_dude(global_position + Vector3(0, 0.05, 0), false, &"runner")
+	if out != null:
+		out.alerted = true
+	return out
 
 
 static func _model(kit: MeshKit, is_cracked: bool) -> void:

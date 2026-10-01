@@ -21,8 +21,8 @@ const PICKUP_KINDS: Dictionary[String, StringName] = {
 	"L": &"spear", "A": &"crossbow",
 }
 const PROP_KINDS: Dictionary[String, StringName] = {"c": &"desk", "s": &"rack", "o": &"pillar", "h": &"chandelier",
-	"z": &"tank", "Z": &"tank_cracked", "d": &"striplight"}
-const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvezZEQdO="
+	"z": &"tank", "Z": &"tank_cracked", "d": &"striplight", "!": &"release"}
+const KNOWN: String = "#. DGPXauBwtpbmklcsorRSKTHgnFMVYqNU~ifWjxyCLAhvezZEQdO=!"
 const DUDE_KINDS: Dictionary[String, StringName] = {
 	"a": &"pistol", "u": &"", "R": &"rifle", "S": &"shotgun", "H": &"shield",
 	"q": &"runner", "N": &"sniper", "U": &"smg",

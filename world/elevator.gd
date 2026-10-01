@@ -142,7 +142,14 @@ func _build_cabin() -> void:
 	lamp.omni_range = 3.2
 	# Gentle, and with no specular. At 0.7 with a highlight, the steel doors threw a white bloom
 	# across the view and the white walls burned out to a blank screen.
-	lamp.light_energy = 0.3
+	#
+	# But a cabin has to be lit by its own lamp, not by the floor it is on. At the basement's
+	# ambient of 0.16 a lamp of 0.3 left the whole ride pitch black with music playing, which
+	# is exactly what it looked like: a bug.
+	var ambient: float = 0.55
+	if Game.data != null:
+		ambient = float(Game.data.theme.get("energy", 0.55))
+	lamp.light_energy = clampf(0.3 + (0.5 - ambient) * 1.3, 0.3, 0.92)
 	lamp.light_specular = 0.0
 	lamp.light_color = Color(0.8, 0.95, 1.0)
 	lamp.shadow_enabled = false

@@ -557,3 +557,15 @@ One line per call made in auto mode, with why.
   in the wall. The kick works in there, which it always did.
 - `Shatter.burst`'s last argument is the shard's size in metres. Passing the throw strength
   there filled the room with four-metre slabs, which is what the collapsing shelves were doing.
+
+## The basement: a release, a lit lift, and a liquid that uses the ducts
+
+- The ride out of level 13 was a black screen with music because the cabin lamp is 0.3, tuned
+  for the white HQ, and the basement's ambient is 0.16. The lamp now scales with the floor's
+  own ambient, up to 0.92: a lift is lit by its own light.
+- `world/props/release_lever.gd` is the big red lever the basement was missing: punch it, shoot
+  it or throw something at it and every sealed tank opens at once, each letting out what was
+  being grown in it. Once only, and what comes out counts toward clearing the floor.
+- The beast could never reach a duct: as a liquid it was pathing on a navmesh that stops at the
+  wall. It moves itself now (`_seep_toward`), flattening its capsule to 0.45 m so it fits under
+  a duct roof, and its hiding places include the duct mouths.

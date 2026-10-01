@@ -124,6 +124,12 @@ func _become(next: Form) -> void:
 	skin.visible = not is_liquid
 	_slick.visible = is_liquid or next == Form.RISING or next == Form.SINKING
 	collision_layer = 0 if is_liquid else 4
+	# As a slick it is low enough to go under a duct's roof and thin enough to seep past a
+	# grate: the navmesh stops at the wall, so a liquid has to move itself.
+	if _capsule != null:
+		_capsule.height = 0.45 if is_liquid else 1.8 * body_scale
+	if _body_shape != null:
+		_body_shape.position.y = 0.22 if is_liquid else 0.9 * body_scale
 	if next == Form.LIQUID:
 		_patience = randf_range(T.beast_hide_min, T.beast_hide_max)
 		poured_away.emit()
@@ -192,12 +198,30 @@ func _physics_process(delta: float) -> void:
 
 ## Where it goes when it has had enough for the moment: a duct if there is one on this floor,
 ## otherwise a dark corner well away from the player.
+## Straight there, along the floor, through whatever will let it past. A navmesh agent cannot
+## enter a duct -- the tunnel is shorter than the agent -- so the liquid does not use one.
+func _seep_toward(target: Vector3, wd: float) -> void:
+	var flat := Vector3(target.x - global_position.x, 0.0, target.z - global_position.z)
+	if flat.length() < 0.15:
+		desired_velocity = Vector3.ZERO
+		return
+	desired_velocity = flat.normalized() * T.beast_liquid_speed
+	if flat.length() > 0.5:
+		look_at(Vector3(target.x, global_position.y, target.z))
+	# It is moved here rather than by the dude's own walk, which goes through the navmesh.
+	var step: Vector3 = desired_velocity * wd
+	var collided: KinematicCollision3D = move_and_collide(step)
+	if collided != null:
+		# Round whatever is in the way: a slick finds the gap rather than stopping at it.
+		move_and_collide(step.slide(collided.get_normal()))
+
+
 func _somewhere_to_hide() -> Vector3:
 	var ducts: Array[Vector2i] = []
 	if Game.data != null:
 		for y: int in Game.data.height:
 			for x: int in Game.data.width:
-				if Game.data.rows[y][x] == "v":
+				if Game.data.rows[y][x] == "v" or Game.data.rows[y][x] == "e":
 					ducts.append(Vector2i(x, y))
 	var from: Vector3 = player_position()
 	if not ducts.is_empty():
@@ -226,11 +250,9 @@ func _run_as_liquid(wd: float) -> void:
 		# Working its way to somewhere near you, by way of the ducts if there are any.
 		if _went_under.distance_to(global_position) < 0.4 or randf() < 0.01:
 			_went_under = _somewhere_to_hide()
-		set_nav_target(_went_under)
-		move_along_path(wd)
+		_seep_toward(_went_under, wd)
 		return
-	set_nav_target(p.global_position)
-	move_along_path(wd)
+	_seep_toward(p.global_position, wd)
 	# Close enough, and it can see you: it pours up out of the floor behind you.
 	if to_player <= T.beast_rise_distance and can_see_player:
 		Sfx.play(&"splash", global_position)

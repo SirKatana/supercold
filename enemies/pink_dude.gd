@@ -77,6 +77,9 @@ var wears_helmet: bool = false
 var limping: bool = false
 var _helmet: Node3D
 
+var _body_shape: CollisionShape3D
+var _capsule: CapsuleShape3D
+
 var hand_anchor: Node3D
 var off_hand_anchor: Node3D
 
@@ -107,6 +110,9 @@ func _ready() -> void:
 	shape.shape = capsule
 	shape.position.y = 0.9 * body_scale
 	add_child(shape)
+	# Kept, so a subclass can change shape: the beast flattens itself to get into a duct.
+	_body_shape = shape
+	_capsule = capsule
 
 	agent = NavigationAgent3D.new()
 	agent.path_desired_distance = 0.6

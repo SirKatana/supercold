@@ -413,6 +413,18 @@ static func _build_props(data: LevelData, parent: Node3D) -> void:
 	for prop: Dictionary in data.props:
 		var kind: StringName = prop["kind"]
 		var cell: Vector2i = prop["cell"]
+		if kind == &"release":
+			var lever := ReleaseLever.new()
+			lever.name = "ReleaseLever"
+			lever.position = data.cell_center(cell, 0.0)
+			# Backed against whichever wall it stands beside, so it reads as fixed to it.
+			for step: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if data.is_solid(cell + step):
+					lever.rotation.y = atan2(float(step.x), float(step.y))
+					lever.position += Vector3(step.x, 0, step.y) * data.cell_size * 0.42
+					break
+			parent.add_child(lever)
+			continue
 		if kind == &"rack":
 			# Shelving that stands in a row is one unit, not a line of separate blocks. A run is
 			# built once, from its first cell.

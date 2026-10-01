@@ -1189,6 +1189,7 @@ def f13_basement():
         g.put("~", (x, y))                                        # its fluid, still on the floor
     g.put("z", (3, 14), (3, 18), (8, 14))
     g.put("Z", (8, 18))
+    g.put("!", (20, 2))      # the containment release, on the wall behind the tanks
     g.put("~", (8, 17), (7, 18), (8, 19))
     # Cover to fight him round, and the machines that keep the tanks running.
     g.put("o", (11, 5), (20, 5), (29, 5), (11, 3), (29, 3))
